@@ -46,6 +46,9 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
 
         //#113
         //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).
-        @Query("SELECT e FROM Envio e WHERE e.chofer.persona_asociada.id_usuario.username = :username")
+        @Query("SELECT e FROM Envio e WHERE e.chofer.persona_asociada.id_usuario.username = :username" + 
+                " AND e.estado_actual NOT IN (" +
+                " com.logitrack.sistema_logistica.model.enums.Estado_Envio.ENTREGADO, " +
+                " com.logitrack.sistema_logistica.model.enums.Estado_Envio.CANCELADO)")
         List<Envio> findByChoferUsername(@Param("username") String username);
 }
