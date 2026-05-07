@@ -43,4 +43,8 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
             @Param("estado") Estado_Envio estado,
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
+
+        //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).
+        @Query("SELECT e FROM Envio e WHERE e.chofer.persona_asociada.id_usuario.username = :username")
+        List<Envio> findByChoferUsername(@Param("username") String username);
 }
