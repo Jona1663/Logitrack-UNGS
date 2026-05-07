@@ -89,6 +89,14 @@ public class EnvioService {
         return envioRepository.findAll(spec, pageable);
     }
 
+    //#113
+    // Lógica de obtención
+    // Conecta la identidad del usuario con la base de datos.
+    public List<Envio> obtenerEnviosPorChofer(String username) {
+        return envioRepository.findByChoferUsername(username);
+    }       
+
+
     /**
      * Obtiene el historial de eventos de un envío por su identificador.
      * Primero valida que el envío exista y luego devuelve los registros de historial
