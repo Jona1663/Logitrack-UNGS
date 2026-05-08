@@ -60,12 +60,18 @@ async function login() {
                 rol: data.rol
             }));
 
-            // Redirigimos al menú principal
-            window.location.href = "./views/menu.html";
+            // NORMALIZAMOS EL ROL PARA EVALUAR LA REDIRECCIÓN
+            const rolUser = data.rol.toLowerCase().replace('role_', '');
+
+            // Redirigimos según el rol
+            if (rolUser === 'chofer') {
+                window.location.href = "./views/viajeChofer.html";
+            } else {
+                window.location.href = "./views/menu.html"; // Operadores, Supervisores y Admins van al panel
+            }
         } else {
             throw new Error("Respuesta inválida del servidor.");
         }
-
     } catch (error) {
         console.error("Error en el login:", error);
         // Mostrar mensaje de error en la interfaz

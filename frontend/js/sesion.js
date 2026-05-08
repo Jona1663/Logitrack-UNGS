@@ -8,6 +8,21 @@ if (!usuarioJSON || !token) {
 }
 
 const usuario = JSON.parse(usuarioJSON);
+const rolActual = usuario.rol.toLowerCase().replace('role_', '');
+
+// --- NUEVO: GUARDIÁN DE RUTAS POR ROL ---
+const rutaActual = window.location.pathname;
+
+// Si es Chofer y no está en su vista asignada, lo pateamos a su viaje
+if (rolActual === "chofer" && !rutaActual.includes("viajeChofer.html")) {
+    window.location.href = "viajeChofer.html";
+}
+
+// Si NO es Chofer y trata de entrar a la vista del chofer, lo mandamos al menú
+if (rolActual !== "chofer" && rutaActual.includes("viajeChofer.html")) {
+    window.location.href = "menu.html";
+}
+// ----------------------------------------
 
 // 2. Cargar datos en la Interfaz (Adaptado para Desktop y Mobile)
 // Limpiamos el rol por si Spring Boot envía "ROLE_SUPERVISOR" y lo ponemos bonito

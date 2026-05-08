@@ -1,0 +1,27 @@
+/* viajeChofer.css */
+.tracking-wider { letter-spacing: 0.1em; }
+
+.rounded-top-5 {
+    border-top-left-radius: 2rem !important;
+    border-top-right-radius: 2rem !important;
+}
+
+/* Animación de pulso para el botón activo */
+#btnAccionPrincipal:not(:disabled) {
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(25, 135, 84, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+}
+
+/* Para los botones de estado */
+.btn-lg { font-size: 1.25rem; }
+
+/* Deshabilitar scroll cuando el panel de incidencia está abierto */
+.offcanvas-body textarea {
+    resize: none;
+    font-size: 1.1rem;
+}
