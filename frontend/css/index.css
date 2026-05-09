@@ -1,7 +1,0 @@
-.glass-effect {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-}
-
-/* Pequeño ajuste para el botón de revelar contraseña */
-.cursor-pointer { cursor: pointer; }
