@@ -1,0 +1,430 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { 
+  Loader2, Building, MapPin, Truck, User, Wheat, 
+  Scale, FileText, AlertTriangle, CheckSquare 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Autocomplete } from '@/components/forms/autocomplete';
+import { useCatalogos } from '@/hooks/use-catalogos';
+import { envioSchema, type EnvioFormData } from '@/lib/validators';
+import { api } from '@/lib/api';
+import { normalizarEnum, getNombreChofer } from '@/lib/utils';
+import type { TipoGrano } from '@/types';
+
+export function EnvioForm() {
+  const router = useRouter();
+  const {
+    empresas,
+    choferes,
+    camiones,
+    tiposGrano,
+    establecimientos,
+    loadingEstablecimientos,
+    isLoading: loadingCatalogos,
+    cargarEstablecimientos,
+    buscarEmpresas,
+    buscarGranos,
+  } = useCatalogos();
+
+  const [filteredEmpresas, setFilteredEmpresas] = useState(empresas);
+  const [filteredGranos, setFilteredGranos] = useState<TipoGrano[]>(tiposGrano);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<EnvioFormData>({
+    resolver: zodResolver(envioSchema),
+    defaultValues: {
+      tracking_ctg: '',
+      cpe: '',
+      clienteCuit: '',
+      id_origen: 0,
+      id_destino: 0,
+      id_chofer: 0,
+      patente_camion: '',
+      tipo_grano: '',
+      kg_origen: 0,
+      acepta_terminos: false,
+    },
+  });
+
+  const clienteCuit = watch('clienteCuit');
+  const aceptaTerminos = watch('acepta_terminos');
+
+  useEffect(() => {
+    if (clienteCuit) {
+      cargarEstablecimientos(clienteCuit);
+      setValue('id_origen', 0);
+      setValue('id_destino', 0);
+    }
+  }, [clienteCuit, cargarEstablecimientos, setValue]);
+
+  const empresaOptions = useMemo(
+    () =>
+      filteredEmpresas.map((e) => ({
+        value: e.cuit,
+        label: e.razon_social,
+        description: `CUIT: ${e.cuit}`,
+      })),
+    [filteredEmpresas]
+  );
+
+  const granoOptions = useMemo(
+    () =>
+      filteredGranos.map((g) => ({
+        value: g,
+        label: normalizarEnum(g),
+      })),
+    [filteredGranos]
+  );
+
+  const onSubmit = async (data: EnvioFormData) => {
+    try {
+      const envioData = {
+        tracking_ctg: data.tracking_ctg,
+        cpe: data.cpe,
+        id_origen: data.id_origen,
+        id_destino: data.id_destino,
+        id_chofer: data.id_chofer,
+        patente_camion: data.patente_camion,
+        tipo_grano: data.tipo_grano as TipoGrano,
+        kg_origen: data.kg_origen,
+      } as any; 
+
+      const nuevoEnvio = await api.crearEnvio(envioData);
+      toast.success('Viaje registrado con éxito');
+      router.push(`/menu`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al registrar el viaje';
+      toast.error('No se pudo registrar el viaje', { description: message });
+    }
+  };
+
+  if (loadingCatalogos) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-[#1b4332]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden mb-10">
+      {/* Header de la Tarjeta (Réplica visual exacta del original) */}
+      <div className="bg-[#198754]/10 px-6 py-5 md:px-10 md:py-6 border-b border-[#198754]/25">
+        <h4 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2 mb-1">
+          <Truck className="h-6 w-6 text-[#198754]" /> Registrar Nuevo Envío
+        </h4>
+        <p className="text-muted-foreground text-sm m-0">
+          Complete la orden de transporte seleccionando el cliente y la ruta.
+        </p>
+      </div>
+
+      {/* Cuerpo del Formulario */}
+      <div className="p-6 md:p-10">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+          
+          {/* Sección: Cliente */}
+          <div className="space-y-5">
+            <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
+              <Building className="h-5 w-5" /> Empresa Cliente
+            </h6>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Buscar Cliente <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                name="clienteCuit"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    placeholder="Ingrese Razón Social o CUIT..."
+                    options={empresaOptions}
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    onSearch={(query) => setFilteredEmpresas(buscarEmpresas(query))}
+                    error={errors.clienteCuit?.message}
+                    className="bg-muted/30"
+                  />
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Sección: Origen y Destino */}
+          <div className="space-y-5">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
+                  <MapPin className="h-5 w-5" /> Establecimiento Origen
+                </h6>
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Punto de Carga <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  name="id_origen"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value?.toString() || ''}
+                      onValueChange={(v) => field.onChange(parseInt(v, 10))}
+                      disabled={!clienteCuit || loadingEstablecimientos}
+                    >
+                      <SelectTrigger className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.id_origen ? 'ring-2 ring-destructive' : ''}`}>
+                        <SelectValue placeholder="Seleccione un cliente primero..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {establecimientos.map((est) => (
+                          <SelectItem key={est.id_establecimiento} value={est.id_establecimiento.toString()}>
+                            {est.nombre_lugar} ({est.direccion})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.id_origen && <p className="text-xs text-destructive">{errors.id_origen.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
+                  <MapPin className="h-5 w-5" /> Establecimiento Destino
+                </h6>
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Punto de Descarga <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  name="id_destino"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value?.toString() || ''}
+                      onValueChange={(v) => field.onChange(parseInt(v, 10))}
+                      disabled={!clienteCuit || loadingEstablecimientos}
+                    >
+                      <SelectTrigger className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.id_destino ? 'ring-2 ring-destructive' : ''}`}>
+                        <SelectValue placeholder="Seleccione un cliente primero..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {establecimientos.map((est) => (
+                          <SelectItem key={est.id_establecimiento} value={est.id_establecimiento.toString()}>
+                            {est.nombre_lugar} ({est.direccion})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.id_destino && <p className="text-xs text-destructive">{errors.id_destino.message}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Sección: Documentación Fiscal */}
+          <div className="space-y-5">
+            <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
+              <FileText className="h-5 w-5" /> Documentación Fiscal
+            </h6>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Código CTG <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  placeholder="Nro. de Trazabilidad"
+                  {...register('tracking_ctg')}
+                  className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.tracking_ctg ? 'ring-2 ring-destructive' : ''}`}
+                />
+                {errors.tracking_ctg && <p className="text-xs text-destructive">{errors.tracking_ctg.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  CPE (Carta de Porte) <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  placeholder="Nro. de Carta de Porte"
+                  {...register('cpe')}
+                  className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.cpe ? 'ring-2 ring-destructive' : ''}`}
+                />
+                {errors.cpe && <p className="text-xs text-destructive">{errors.cpe.message}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Sección: Transporte */}
+          <div className="space-y-5">
+            <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
+              <Truck className="h-5 w-5" /> Asignación de Transporte
+            </h6>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Chofer Asignado <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  name="id_chofer"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value?.toString() || ''} onValueChange={(v) => field.onChange(parseInt(v, 10))}>
+                      <SelectTrigger className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.id_chofer ? 'ring-2 ring-destructive' : ''}`}>
+                        <SelectValue placeholder="Cargando choferes..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {choferes.map((chofer) => (
+                          <SelectItem key={chofer.id_chofer} value={chofer.id_chofer.toString()}>
+                            {getNombreChofer(chofer)} (Lic: {chofer.nro_licencia})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.id_chofer && <p className="text-xs text-destructive">{errors.id_chofer.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Vehículo (Camión) <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  name="patente_camion"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.patente_camion ? 'ring-2 ring-destructive' : ''}`}>
+                        <SelectValue placeholder="Cargando flota..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {camiones.map((camion) => (
+                          <SelectItem key={camion.patente} value={camion.patente}>
+                            Patente: {camion.patente} (Tara: {camion.tara_vacio_kg}kg)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.patente_camion && <p className="text-xs text-destructive">{errors.patente_camion.message}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Sección: Carga */}
+          <div className="space-y-5">
+            <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
+              <Wheat className="h-5 w-5" /> Detalle de Carga
+            </h6>
+            <div className="grid md:grid-cols-12 gap-6">
+              <div className="col-span-12 md:col-span-4 space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Peso Neto (Tn) <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    placeholder="Ej. 30.5"
+                    className={`bg-muted/30 border-0 shadow-sm h-11 pr-12 ${errors.kg_origen ? 'ring-2 ring-destructive' : ''}`}
+                    {...register('kg_origen', { valueAsNumber: true })}
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">Tn</span>
+                </div>
+                {errors.kg_origen && <p className="text-xs text-destructive">{errors.kg_origen.message}</p>}
+              </div>
+              <div className="col-span-12 md:col-span-8 space-y-2">
+                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                  Tipo de Grano <span className="text-destructive">*</span>
+                </Label>
+                <Controller
+                  name="tipo_grano"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      placeholder="Ej. Soja, Trigo..."
+                      options={granoOptions}
+                      value={field.value}
+                      onChange={(value) => field.onChange(value)}
+                      onSearch={(query) => setFilteredGranos(buscarGranos(query))}
+                      error={errors.tipo_grano?.message}
+                      className="bg-muted/30"
+                    />
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Checkbox Legal (Réplica exacta de tu HTML) */}
+          <div className="bg-[#198754]/10 p-4 rounded-lg border border-[#198754]/25">
+            <Controller
+              name="acepta_terminos"
+              control={control}
+              render={({ field }) => (
+                <div className="flex items-center space-x-3">
+                  <Checkbox 
+                    id="acepta_terminos" 
+                    checked={field.value} 
+                    onCheckedChange={field.onChange} 
+                    className="data-[state=checked]:bg-[#198754] data-[state=checked]:border-[#198754]"
+                  />
+                  <label
+                    htmlFor="acepta_terminos"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Acepta el tratamiento de los datos según la Ley 25.326.
+                  </label>
+                </div>
+              )}
+            />
+            {errors.acepta_terminos && <p className="text-xs text-destructive mt-2">{errors.acepta_terminos.message}</p>}
+          </div>
+
+          {/* Botones de Acción */}
+          <div className="flex flex-col md:flex-row justify-end gap-4 pt-6 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="px-8 h-11 text-muted-foreground font-semibold border-0 shadow-sm"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !aceptaTerminos}
+              className="px-10 h-11 font-bold text-white bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] hover:from-[#2d6a4f] hover:to-[#40916c] border-none shadow-sm transition-all"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Registrando...
+                </>
+              ) : (
+                'Registrar Viaje'
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
