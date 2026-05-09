@@ -47,29 +47,31 @@ export function LoginForm() {
     setError,
     reset,
     setFocus,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
+
+  const camposCompletos = watch('username') && watch('password');
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data);
       toast.success('Bienvenido al sistema');
     } catch (error) {
-
-      // Marcar campos con error para que se pongan rojos
-      setError('username', { type: 'manual' });
-      setError('password', { type: 'manual' });
-
       // Mostrar el mensaje de error
       const esSinConexion = error instanceof Error && error.message === 'Failed to fetch';
       toast.error(esSinConexion ? 'Sin conexión con el servidor' : 'Credenciales inválidas', {
         description: obtenerMensajeError(error),
       });
 
-      // Limpiar los campos (puedes elegir limpiar ambos o solo la contraseña)
-      reset({ username: '', password: '' }, { keepErrors: true });
+      if (!esSinConexion) {
+        // Marcar campos con error para que se pongan rojos
+        setError('username', { type: 'manual' });
+        setError('password', { type: 'manual' });
+
+        // Limpiar los campos (puedes elegir limpiar ambos o solo la contraseña)
+        reset({ username: '', password: '' }, { keepErrors: true });
+      }
 
       // Devolver el foco al campo de usuario (como en tu versión original)
       // setTimeout(() => setFocus('username'), 100);
@@ -124,17 +126,17 @@ export function LoginForm() {
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
-        {(errors.username || errors.password) && (
+        {/* {(errors.username || errors.password) && (
           <p className="text-sm text-destructive font-medium">
             Verifique sus credenciales e intente nuevamente.
           </p>
-        )}
+        )} */}
       </div>
 
       <Button
         type="submit"
         className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] hover:from-[#2d6a4f] hover:to-[#40916c] transition-all duration-300"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !camposCompletos}
       >
         {isSubmitting ? (
           <>
