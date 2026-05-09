@@ -19,6 +19,24 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// Agregá esta función arriba del componente LoginForm
+function obtenerMensajeError(error: unknown): string {
+  if (!(error instanceof Error)) return 'Error de autenticación';
+
+  // Sin conexión al servidor
+  if (error.message === 'Failed to fetch') {
+    return 'No se pudo conectar con el servidor. Verifique su conexión o intente más tarde.';
+  }
+
+  // Credenciales incorrectas (viene de api.ts)
+  if (error.message === 'Credenciales incorrectas o usuario inactivo') {
+    return 'El usuario o la contraseña son incorrectos.';
+  }
+
+  // Cualquier otro error técnico
+  return 'Ocurrió un error inesperado. Intente nuevamente.';
+}
+
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
@@ -40,20 +58,20 @@ export function LoginForm() {
       toast.success('Bienvenido al sistema');
     } catch (error) {
 
-      // 1. Marcar campos con error para que se pongan rojos
+      // Marcar campos con error para que se pongan rojos
       setError('username', { type: 'manual' });
       setError('password', { type: 'manual' });
 
-      // 2. Mostrar el mensaje de error
-      const message = error instanceof Error ? error.message : 'Error de autenticación';
-      toast.error('Credenciales inválidas', {
-        description: message,
+      // Mostrar el mensaje de error
+      const esSinConexion = error instanceof Error && error.message === 'Failed to fetch';
+      toast.error(esSinConexion ? 'Sin conexión con el servidor' : 'Credenciales inválidas', {
+        description: obtenerMensajeError(error),
       });
 
-      // 3. Limpiar los campos (puedes elegir limpiar ambos o solo la contraseña)
+      // Limpiar los campos (puedes elegir limpiar ambos o solo la contraseña)
       reset({ username: '', password: '' }, { keepErrors: true });
 
-      // 4. Devolver el foco al campo de usuario (como en tu versión original)
+      // Devolver el foco al campo de usuario (como en tu versión original)
       // setTimeout(() => setFocus('username'), 100);
     }
   };
