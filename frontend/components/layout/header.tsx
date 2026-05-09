@@ -34,7 +34,9 @@ export function Header() {
             {/* <div className="p-1.5 bg-white/10 rounded-lg">
               <Wheat className="h-7 w-7" />
             </div> */}
-            <Image src="/images/logo-white.png" alt="Logo" width={50} height={50} />
+            <div className="relative w-[50px] h-[50px]">
+              <Image src="/images/logo-white.png" alt="Logo" fill style={{ objectFit: 'contain' }} />
+            </div>
             <div className="hidden sm:block">
               <span className="text-xl font-bold tracking-tight">LogiTrack</span>
               <span className="text-sm text-white/80 ml-1">Agro</span>

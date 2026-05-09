@@ -27,8 +27,10 @@ export default function LoginPage() {
 
         {/* Header Logo */}
         <div className="flex items-center gap-3">
-          {/* Si quieres usar tu imagen original, descomenta la línea de abajo y borra el div del icono Wheat */}
-          <Image src="/images/logo-white.png" alt="Logo" width={70} height={70} />
+          {/* Si quieres usar tu imagen original, descomenta las líneas de abajo y borra el div del icono Wheat */}
+          <div className="relative w-[70px] h-[70px]">
+            <Image src="/images/logo-white.png" alt="Logo" fill style={{ objectFit: 'contain' }} />
+          </div>
           {/* <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
             <Wheat className="h-8 w-8 text-warning" />
           </div> */}
@@ -73,7 +75,9 @@ export default function LoginPage() {
               {/* <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-[#1b4332] to-[#2d6a4f] rounded-2xl shadow-lg">
                 <Wheat className="h-10 w-10 text-white" />
               </div> */}
-              <Image src="/images/logo-logitrack.png" alt="Logo" width={150} height={150} />
+              <div className="relative w-[150px] h-[150px]">
+                <Image src="/images/logo-logitrack.png" alt="Logo" fill style={{ objectFit: 'contain' }} />
+              </div>
             </div>
 
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
