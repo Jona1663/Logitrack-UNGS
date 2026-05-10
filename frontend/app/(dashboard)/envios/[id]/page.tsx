@@ -14,6 +14,7 @@ import { EstadoTimeline } from '@/components/envios/estado-timeline';
 import { HistorialTable } from '@/components/envios/historial-table';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { TruckStepper } from '@/components/envios/truck-stepper';
 import {
   Select,
   SelectContent,
@@ -201,7 +202,12 @@ export default function DetalleEnvioPage({
           </h6>
           <div className="mb-12">
             <EstadoTimeline estadoActual={envio.estado_actual} />
+
+            <div className="mt-6">
+              <TruckStepper estadoActual={envio.estado_actual} />
+            </div>
           </div>
+
 
           {/* Gestión Operativa (Roles y Permisos) */}
           {(permisos?.editarEstado || permisos?.editarPrioridad) && (
