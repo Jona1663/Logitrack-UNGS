@@ -30,6 +30,9 @@ import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 
+import java.security.Principal;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/envios")
 public class EnvioController {
@@ -84,7 +87,8 @@ public class EnvioController {
 
             String termino = (query != null && !query.isBlank()) ? query.trim() : null;
             Pageable pageable = PageRequest.of(page, size);
-            Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino, pageable);
+            Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
+                    pageable);
             return ResponseEntity.ok(envios);
         } catch (DateTimeParseException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
@@ -92,7 +96,8 @@ public class EnvioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (IllegalArgumentException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
-            error.setMessage("Estado inválido. Use uno de los valores permitidos: PENDIENTE, EN_TRANSITO, ENTREGADO, CANCELADO");
+            error.setMessage(
+                    "Estado inválido. Use uno de los valores permitidos: PENDIENTE, EN_TRANSITO, ENTREGADO, CANCELADO");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
@@ -101,7 +106,8 @@ public class EnvioController {
     @GetMapping("/{idEnvio}/historial")
     public ResponseEntity<?> consultarHistorial(@PathVariable String idEnvio) {
         try {
-            // Llamar al servicio que valida el envío y devuelve los eventos ya transformados a DTO
+            // Llamar al servicio que valida el envío y devuelve los eventos ya
+            // transformados a DTO
             List<HistorialResponseDTO> historial = envioService.obtenerHistorialPorEnvio(idEnvio);
             return ResponseEntity.ok(historial);
         } catch (RuntimeException e) {
@@ -157,7 +163,7 @@ public class EnvioController {
         }
     }
 
-    //El Front va a llamar cuando el usuario escriba en la barra de búsqueda.
+    // El Front va a llamar cuando el usuario escriba en la barra de búsqueda.
     @GetMapping("/buscar/{id_envio}")
     public ResponseEntity<?> obtenerEnvioPorTracking(@PathVariable String id_envio) {
         try {
@@ -176,7 +182,7 @@ public class EnvioController {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////
     // Lo siguiente se agregó como recomendación de Gemini para
     // cumplir con las funciones que tiene el front.
 
@@ -217,58 +223,91 @@ public class EnvioController {
         }
     }
 
-    // ─── PUT: ACTUALIZAR ESTADO Y PRIORIDAD ───
-    @PutMapping("/{idEnvio}")
-    public ResponseEntity<?> actualizarEnvio(
-            @PathVariable String idEnvio,
-            @RequestBody UpdateEnvioDTO dto,
-            Authentication authentication) {
+    /*
+     * // ─── PUT: ACTUALIZAR ESTADO Y PRIORIDAD ───
+     * 
+     * @PutMapping("/{idEnvio}")
+     * public ResponseEntity<?> actualizarEnvio(
+     * 
+     * @PathVariable String idEnvio,
+     * 
+     * @RequestBody UpdateEnvioDTO dto,
+     * Authentication authentication) {
+     * try {
+     * // 1. Identificar al usuario que hace el cambio
+     * String username = authentication.getName();
+     * Usuario usuario = usuarioRepository.findByUsername(username)
+     * .orElseThrow(() -> new RuntimeException("Usuario autenticado no válido"));
+     * 
+     * // 2. Aquí llamamos a tu Servicio.
+     * // NOTA PARA TI: En tu EnvioService.java deberás crear este método.
+     * // Ese método debe buscar el envío, comparar los estados, crear el registro
+     * en
+     * // Historial_Estados con el 'usuario' capturado y guardar los cambios.
+     * Envio envioActualizado = envioService.actualizarEstadoYPrioridad(
+     * idEnvio,
+     * dto.getEstado(),
+     * dto.getPrioridad(),
+     * usuario);
+     * 
+     * return ResponseEntity.ok(envioActualizado);
+     * } catch (RuntimeException e) {
+     * return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+     * }
+     * }
+     * 
+     * @PatchMapping("/{idEnvio}/estado")
+     * 
+     * @PreAuthorize("hasRole('CHOFER')")
+     * public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
+     * 
+     * @PathVariable String idEnvio,
+     * 
+     * @RequestBody EstadoUpdateRequestDTO dto,
+     * Authentication auth) {
+     * 
+     * // Extraemos el username del JWT
+     * String username = auth.getName();
+     * 
+     * // Ejecutamos la lógica
+     * Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio,
+     * dto.getNuevoEstado(), username);
+     * 
+     * // Construimos la respuesta según el contrato
+     * EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
+     * .mensaje("Estado actualizado correctamente")
+     * .estado_actual(envioActualizado.getEstado_actual().name())
+     * .fecha_actualizacion(LocalDateTime.now())
+     * .build();
+     * 
+     * return ResponseEntity.ok(response);
+     * }
+     */
+    // endopitn cancelar envio
+    // @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')") // Descomentar cuando
+    // actives la seguridad por roles
+    @PutMapping("/{id}/cancelar")
+    public ResponseEntity<?> cancelarEnvio(@PathVariable String id, Principal principal) {
         try {
-            // 1. Identificar al usuario que hace el cambio
-            String username = authentication.getName();
-            Usuario usuario = usuarioRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Usuario autenticado no válido"));
-
-            // 2. Aquí llamamos a tu Servicio.
-            // NOTA PARA TI: En tu EnvioService.java deberás crear este método.
-            // Ese método debe buscar el envío, comparar los estados, crear el registro en
-            // Historial_Estados con el 'usuario' capturado y guardar los cambios.
-            Envio envioActualizado = envioService.actualizarEstadoYPrioridad(
-                    idEnvio,
-                    dto.getEstado(),
-                    dto.getPrioridad(),
-                    usuario);
-
-            return ResponseEntity.ok(envioActualizado);
+            // principal.getName() nos da el username del usuario logueado en el JWT
+            Envio envioCancelado = envioService.cancelarEnvio(id, principal.getName());
+            return ResponseEntity.ok(envioCancelado);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-
-    @PatchMapping("/{idEnvio}/estado")
-    @PreAuthorize("hasRole('CHOFER')")
-    public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
-            @PathVariable String idEnvio,
-            @RequestBody EstadoUpdateRequestDTO dto,
-            Authentication auth) {
-
-        // Extraemos el username del JWT
-        String username = auth.getName();
-
-        // Ejecutamos la lógica
-        Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio, dto.getNuevoEstado(), username);
-
-        // Construimos la respuesta según el contrato
-        EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
-                .mensaje("Estado actualizado correctamente")
-                .estado_actual(envioActualizado.getEstado_actual().name())
-                .fecha_actualizacion(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.ok(response);
+    // endopiont editar envio
+    // @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editarEnvio(@PathVariable String id, @RequestBody EnvioRequestDTO dto,
+            Principal principal) {
+        try {
+            Envio envioEditado = envioService.editarEnvio(id, dto, principal.getName());
+            return ResponseEntity.ok(envioEditado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
-
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////
 }
