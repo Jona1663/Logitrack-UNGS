@@ -359,9 +359,13 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                 <div className="relative">
                   <Input
                     type="number"
+                    min="0.1"
                     step="0.1"
                     placeholder="Ej. 30.5"
                     className={`bg-muted/30 border-0 shadow-sm h-11 pr-12 ${errors.kg_origen ? 'ring-2 ring-destructive' : ''}`}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
+                    }}
                     {...register('kg_origen', { valueAsNumber: true })}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">Tn</span>
