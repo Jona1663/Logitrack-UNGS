@@ -5,65 +5,61 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { 
-  Loader2, Building, MapPin, Truck, User, Wheat, 
-  Scale, FileText, AlertTriangle, CheckSquare 
+import {
+  Loader2, Building, MapPin, Truck, User, Wheat,
+  Scale, FileText, AlertTriangle, CheckSquare, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Autocomplete } from '@/components/forms/autocomplete';
 import { useCatalogos } from '@/hooks/use-catalogos';
 import { envioSchema, type EnvioFormData } from '@/lib/validators';
 import { api } from '@/lib/api';
 import { normalizarEnum, getNombreChofer } from '@/lib/utils';
-import type { TipoGrano } from '@/types';
+import type { Envio, TipoGrano } from '@/types';
 
-export function EnvioForm() {
+interface EnvioFormProps {
+  modo?: 'crear' | 'editar';
+  envioInicial?: Envio;        // Solo en modo editar
+  envioId?: string | number;   // Solo en modo editar
+}
+
+export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormProps) {
+  const esEdicion = modo === 'editar';
   const router = useRouter();
+
   const {
-    empresas,
-    choferes,
-    camiones,
-    tiposGrano,
-    establecimientos,
-    loadingEstablecimientos,
-    isLoading: loadingCatalogos,
-    cargarEstablecimientos,
-    buscarEmpresas,
-    buscarGranos,
+    empresas, choferes, camiones, tiposGrano, establecimientos,
+    loadingEstablecimientos, isLoading: loadingCatalogos,
+    cargarEstablecimientos, buscarEmpresas, buscarGranos,
   } = useCatalogos();
 
   const [filteredEmpresas, setFilteredEmpresas] = useState(empresas);
   const [filteredGranos, setFilteredGranos] = useState<TipoGrano[]>(tiposGrano);
 
+  // En edición, el CUIT viene del establecimiento origen del envío
+  const cuitInicial = esEdicion ? envioInicial?.origen?.empresa?.cuit ?? '' : '';
+
   const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    setValue,
+    register, handleSubmit, control, watch, setValue,
     formState: { errors, isSubmitting },
   } = useForm<EnvioFormData>({
     resolver: zodResolver(envioSchema),
     defaultValues: {
-      tracking_ctg: '',
-      cpe: '',
-      clienteCuit: '',
-      id_origen: 0,
-      id_destino: 0,
-      id_chofer: 0,
-      patente_camion: '',
-      tipo_grano: '',
-      kg_origen: 0,
+      tracking_ctg: esEdicion ? envioInicial?.tracking_ctg ?? '' : '',
+      cpe: esEdicion ? envioInicial?.cpe ?? '' : '',
+      clienteCuit: cuitInicial,
+      id_origen: esEdicion ? envioInicial?.origen?.id_establecimiento ?? 0 : 0,
+      id_destino: esEdicion ? envioInicial?.destino?.id_establecimiento ?? 0 : 0,
+      id_chofer: esEdicion ? envioInicial?.chofer?.id_chofer ?? 0 : 0,
+      patente_camion: esEdicion ? envioInicial?.camion?.patente ?? '' : '',
+      tipo_grano: esEdicion ? envioInicial?.tipo_grano ?? '' : '',
+      kg_origen: esEdicion ? (envioInicial?.kg_origen ?? 0) / 1000 : 0,
       acepta_terminos: false,
     },
   });
@@ -71,36 +67,42 @@ export function EnvioForm() {
   const clienteCuit = watch('clienteCuit');
   const aceptaTerminos = watch('acepta_terminos');
 
+  // Cargar establecimientos al montar en modo edición
   useEffect(() => {
-    if (clienteCuit) {
+    if (esEdicion && cuitInicial) {
+      cargarEstablecimientos(cuitInicial);
+    }
+  }, [esEdicion, cuitInicial, cargarEstablecimientos]);
+
+  // Cargar establecimientos al cambiar cliente en modo creación
+  useEffect(() => {
+    if (!esEdicion && clienteCuit) {
       cargarEstablecimientos(clienteCuit);
       setValue('id_origen', 0);
       setValue('id_destino', 0);
     }
-  }, [clienteCuit, cargarEstablecimientos, setValue]);
+  }, [clienteCuit, esEdicion, cargarEstablecimientos, setValue]);
 
   const empresaOptions = useMemo(
-    () =>
-      filteredEmpresas.map((e) => ({
-        value: e.cuit,
-        label: e.razon_social,
-        description: `CUIT: ${e.cuit}`,
-      })),
+    () => filteredEmpresas.map((e) => ({
+      value: e.cuit,
+      label: e.razon_social,
+      description: `CUIT: ${e.cuit}`,
+    })),
     [filteredEmpresas]
   );
 
   const granoOptions = useMemo(
-    () =>
-      filteredGranos.map((g) => ({
-        value: g,
-        label: normalizarEnum(g),
-      })),
+    () => filteredGranos.map((g) => ({
+      value: g,
+      label: normalizarEnum(g),
+    })),
     [filteredGranos]
   );
 
   const onSubmit = async (data: EnvioFormData) => {
     try {
-      const envioData = {
+      const payload = {
         tracking_ctg: data.tracking_ctg,
         cpe: data.cpe,
         id_origen: data.id_origen,
@@ -108,15 +110,24 @@ export function EnvioForm() {
         id_chofer: data.id_chofer,
         patente_camion: data.patente_camion,
         tipo_grano: data.tipo_grano as TipoGrano,
-        kg_origen: data.kg_origen,
-      } as any; 
+        kg_origen: data.kg_origen * 1000, // El form trabaja en Tn, backend en kg
+      } as any;
 
-      const nuevoEnvio = await api.crearEnvio(envioData);
-      toast.success('Viaje registrado con éxito');
-      router.push(`/menu`);
+      if (esEdicion && envioId) {
+        await api.actualizarEnvio(envioId, payload);
+        toast.success('Envío actualizado con éxito');
+        router.push(`/envios/${envioId}`);
+      } else {
+        await api.crearEnvio(payload);
+        toast.success('Viaje registrado con éxito');
+        router.push('/menu');
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al registrar el viaje';
-      toast.error('No se pudo registrar el viaje', { description: message });
+      const message = error instanceof Error ? error.message : 'Error inesperado';
+      toast.error(
+        esEdicion ? 'No se pudo actualizar el envío' : 'No se pudo registrar el viaje',
+        { description: message }
+      );
     }
   };
 
@@ -130,20 +141,27 @@ export function EnvioForm() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden mb-10">
-      {/* Header de la Tarjeta (Réplica visual exacta del original) */}
+
+      {/* Header — cambia título e ícono según el modo */}
       <div className="bg-[#198754]/10 px-6 py-5 md:px-10 md:py-6 border-b border-[#198754]/25">
         <h4 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2 mb-1">
-          <Truck className="h-6 w-6 text-[#198754]" /> Registrar Nuevo Envío
+          {esEdicion
+            ? <><Pencil className="h-6 w-6 text-[#198754]" /> Editar Envío #{envioId}</>
+            : <><Truck className="h-6 w-6 text-[#198754]" /> Registrar Nuevo Envío</>
+          }
         </h4>
         <p className="text-muted-foreground text-sm m-0">
-          Complete la orden de transporte seleccionando el cliente y la ruta.
+          {esEdicion
+            ? 'Modificá los datos del envío. Solo podés editar envíos en estado Pendiente.'
+            : 'Complete la orden de transporte seleccionando el cliente y la ruta.'
+          }
         </p>
       </div>
 
-      {/* Cuerpo del Formulario */}
+      {/* Cuerpo — idéntico al original, sin cambios */}
       <div className="p-6 md:p-10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
-          
+
           {/* Sección: Cliente */}
           <div className="space-y-5">
             <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
@@ -380,10 +398,10 @@ export function EnvioForm() {
               control={control}
               render={({ field }) => (
                 <div className="flex items-center space-x-3">
-                  <Checkbox 
-                    id="acepta_terminos" 
-                    checked={field.value} 
-                    onCheckedChange={field.onChange} 
+                  <Checkbox
+                    id="acepta_terminos"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
                     className="data-[state=checked]:bg-[#198754] data-[state=checked]:border-[#198754]"
                   />
                   <label
@@ -398,7 +416,7 @@ export function EnvioForm() {
             {errors.acepta_terminos && <p className="text-xs text-destructive mt-2">{errors.acepta_terminos.message}</p>}
           </div>
 
-          {/* Botones de Acción */}
+          {/* Solo el botón de submit cambia el texto */}
           <div className="flex flex-col md:flex-row justify-end gap-4 pt-6 border-t">
             <Button
               type="button"
@@ -414,15 +432,15 @@ export function EnvioForm() {
               className="px-10 h-11 font-bold text-white bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] hover:from-[#2d6a4f] hover:to-[#40916c] border-none shadow-sm transition-all"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Registrando...
+                <><Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {esEdicion ? 'Guardando...' : 'Registrando...'}
                 </>
               ) : (
-                'Registrar Viaje'
+                esEdicion ? 'Guardar Cambios' : 'Registrar Viaje'
               )}
             </Button>
           </div>
+
         </form>
       </div>
     </div>
