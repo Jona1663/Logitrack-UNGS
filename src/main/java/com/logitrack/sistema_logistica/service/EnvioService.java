@@ -213,8 +213,10 @@ public class EnvioService {
     }
 
  
+
         ////////////////////////////////////////////////////////////////////////////////////////////////
        /**
+
      * #121: Método calcular el ETA (Tiempo Estimado de Llegada) de un envío,
      * Velocidad promedio fija: 65 km/h
         */   
@@ -249,7 +251,6 @@ public class EnvioService {
         return fecha_salida.plusMinutes(minutosViaje);
         }
 
-
     /**
     *  #122 — OBTENER DETALLE CON ETA
     *   Usado por el endpoint GET /api/envios/{id}
@@ -264,6 +265,7 @@ public class EnvioService {
 
         return EnvioDetalleResponseDTO.fromEntity(envio, eta);
     }
+
 
 }
   
