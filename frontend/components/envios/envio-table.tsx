@@ -106,14 +106,14 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
                           <>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                {/* <Button variant="outline" size="sm" className="text-amber-600 border-amber-400/40 hover:bg-amber-50 shadow-sm" asChild>
+                                <Button variant="outline" size="sm" className="text-amber-600 border-amber-400/40 hover:bg-amber-50 shadow-sm" asChild>
                                   <Link href={`/envios/${envio.id_envio}/editar`}>
                                     <Pencil className="h-4 w-4" />
                                   </Link>
-                                </Button> */}
-                                <Button variant="outline" size="sm" className="text-amber-600 border-amber-400/40 hover:bg-amber-50 shadow-sm">
-                                  <Pencil className="h-4 w-4" />
                                 </Button>
+                                {/* <Button variant="outline" size="sm" className="text-amber-600 border-amber-400/40 hover:bg-amber-50 shadow-sm">
+                                  <Pencil className="h-4 w-4" />
+                                </Button> */}
                               </TooltipTrigger>
                               <TooltipContent>Editar envío</TooltipContent>
                             </Tooltip>
@@ -185,14 +185,14 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
                 {/* 2 y 3. Solo visibles si el envío está PENDIENTE */}
                 {envio.estado_actual === 'PENDIENTE' && (
                   <>
-                    {/* <Button variant="outline" className="w-full text-amber-600 border-amber-400/40 hover:bg-amber-50" asChild>
+                    <Button variant="outline" className="w-full text-amber-600 border-amber-400/40 hover:bg-amber-50" asChild>
                       <Link href={`/envios/${envio.id_envio}/editar`}>
                         <Pencil className="h-4 w-4 mr-2" /> Editar Envío
                       </Link>
-                    </Button> */}
-                    <Button variant="outline" className="w-full text-amber-600 border-amber-400/40 hover:bg-amber-50">
-                      <Pencil className="h-4 w-4 mr-2" /> Editar Envío
                     </Button>
+                    {/* <Button variant="outline" className="w-full text-amber-600 border-amber-400/40 hover:bg-amber-50">
+                      <Pencil className="h-4 w-4 mr-2" /> Editar Envío
+                    </Button> */}
 
                     <Button
                       variant="outline"
