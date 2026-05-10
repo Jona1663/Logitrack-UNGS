@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Eye, MapPin, Pencil, XCircle } from 'lucide-react';
+import { Eye, MapPin, Pencil, XCircle, AlertTriangle } from 'lucide-react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -15,12 +15,42 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface EnvioTableProps {
   envios: Envio[];
+  onCancelar: (id: string | number) => Promise<void>;
 }
 
-export function EnvioTable({ envios }: EnvioTableProps) {
+export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
+  const [cancelando, setCancelando] = useState(false);
+  const [envioAConfirmar, setEnvioAConfirmar] = useState<Envio | null>(null);
+  const handleConfirmarCancelacion = async () => {
+    if (!envioAConfirmar) return;
+    setCancelando(true);
+    try {
+      await onCancelar(envioAConfirmar.id_envio);
+      toast.success(`Envío #${envioAConfirmar.id_envio} cancelado correctamente`);
+    } catch {
+      toast.error('No se pudo cancelar el envío', {
+        description: 'Intentá nuevamente o contactá al administrador.',
+      });
+    } finally {
+      setCancelando(false);
+      setEnvioAConfirmar(null);
+    }
+  };
   return (
     <>
       {/* Vista Desktop - 5 Columnas Originales */}
@@ -90,7 +120,12 @@ export function EnvioTable({ envios }: EnvioTableProps) {
 
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="outline" size="sm" className="text-red-500 border-red-300/40 hover:bg-red-50 shadow-sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-500 border-red-300/40 hover:bg-red-50 shadow-sm"
+                                  onClick={() => setEnvioAConfirmar(envio)}
+                                >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
@@ -159,7 +194,11 @@ export function EnvioTable({ envios }: EnvioTableProps) {
                       <Pencil className="h-4 w-4 mr-2" /> Editar Envío
                     </Button>
 
-                    <Button variant="outline" className="w-full text-red-500 border-red-300/40 hover:bg-red-50">
+                    <Button
+                      variant="outline"
+                      className="w-full text-red-500 border-red-300/40 hover:bg-red-50"
+                      onClick={() => setEnvioAConfirmar(envio)}
+                    >
                       <XCircle className="h-4 w-4 mr-2" /> Cancelar Envío
                     </Button>
                   </>
@@ -170,6 +209,33 @@ export function EnvioTable({ envios }: EnvioTableProps) {
           );
         })}
       </div>
+
+      <AlertDialog open={!!envioAConfirmar} onOpenChange={(open) => !open && setEnvioAConfirmar(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Cancelar envío #{envioAConfirmar?.id_envio}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción cancelará el envío de forma permanente. El estado cambiará a{' '}
+              <span className="font-semibold text-red-600">Cancelado</span> y no podrá revertirse.
+              ¿Estás seguro?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelando}>Volver</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmarCancelacion}
+              disabled={cancelando}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {cancelando ? 'Cancelando...' : 'Sí, cancelar envío'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </>
   );
 }

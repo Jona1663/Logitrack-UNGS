@@ -14,6 +14,7 @@ export default function BusquedaPage() {
   const {
     envios, isLoading, totalPages, totalElements, currentPage,
     filters, hasSearched, updateFilters, limpiarFiltros, buscar,
+    cancelarEnvio,   // ← agregar
     paginaAnterior, paginaSiguiente, hasPreviousPage, hasNextPage,
   } = useEnvios();
 
@@ -56,7 +57,7 @@ export default function BusquedaPage() {
               <h5 className="font-bold text-gray-900 m-0 text-lg">Resultados de la consulta</h5>
             </div>
             <div className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden">
-              <EnvioTable envios={envios} />
+              <EnvioTable envios={envios} onCancelar={cancelarEnvio} />
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}

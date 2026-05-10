@@ -73,6 +73,12 @@ export function useEnvios() {
     }
   }, [filters]);
 
+  const cancelarEnvio = useCallback(async (id: string | number) => {
+    await api.cancelarEnvio(id);
+    // Recarga la página actual manteniendo filtros y paginación
+    await buscar(state.currentPage);
+  }, [buscar, state.currentPage]);
+
   const updateFilters = useCallback((newFilters: Partial<UseEnviosFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
@@ -122,6 +128,7 @@ export function useEnvios() {
     updateFilters,
     limpiarFiltros,
     buscar,
+    cancelarEnvio,
     irAPagina,
     paginaAnterior,
     paginaSiguiente,
