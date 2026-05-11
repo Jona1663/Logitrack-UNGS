@@ -115,7 +115,7 @@ export default function MiViajePage() {
                 <div>
                   <ActionButton
                     estadoActual={viaje.estado_actual}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     isLoading={isUpdating}
                   />
                 </div>
@@ -124,8 +124,7 @@ export default function MiViajePage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirmar accion</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta a punto de cambiar el estado del envio a &quot;{flujo.siguiente ? FLUJO_LOGISTICO[flujo.siguiente as keyof typeof FLUJO_LOGISTICO]?.btnText || flujo.siguiente : ''}&quot;.
-                    Esta accion no se puede deshacer.
+                    {flujo.confirmacionText}<br />Esta acciÃ³n no se puede deshacer.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
