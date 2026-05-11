@@ -126,9 +126,8 @@ class ApiClient {
   }
 
   async cambiarEstadoChofer(id: string | number, nuevoEstado: string): Promise<Envio> {
-    return this.request<Envio>(`/envios/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ estado: nuevoEstado }),
+    return this.request<Envio>(`/envios/${id}/estado?nuevoEstado=${nuevoEstado}`, {
+      method: 'PATCH',
     });
   }
 
