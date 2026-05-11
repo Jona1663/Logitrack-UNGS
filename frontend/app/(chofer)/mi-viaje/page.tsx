@@ -124,7 +124,7 @@ export default function MiViajePage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirmar accion</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {flujo.confirmacionText}<br />Esta acciÃ³n no se puede deshacer.
+                    {flujo.confirmacionText}<br />Esta acción no se puede deshacer.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
