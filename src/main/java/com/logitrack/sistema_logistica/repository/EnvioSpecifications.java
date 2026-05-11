@@ -19,6 +19,15 @@ public class EnvioSpecifications {
         };
     }
 
+    public static Specification<Envio> esDeTipoGrano(String tipoGrano) {
+        return (root, query, criteriaBuilder) -> {
+            if (tipoGrano == null || tipoGrano.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("tipo_grano"), tipoGrano);
+        };
+    }
+
     public static Specification<Envio> fechaCreacionEntre(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         return (root, query, criteriaBuilder) -> {
             if (fechaInicio == null || fechaFin == null) {
@@ -26,8 +35,7 @@ public class EnvioSpecifications {
             }
             return criteriaBuilder.and(
                     criteriaBuilder.greaterThanOrEqualTo(root.get("fecha_creacion"), fechaInicio),
-                    criteriaBuilder.lessThan(root.get("fecha_creacion"), fechaFin)
-            );
+                    criteriaBuilder.lessThan(root.get("fecha_creacion"), fechaFin));
         };
     }
 
@@ -46,10 +54,13 @@ public class EnvioSpecifications {
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("cpe")), likePattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("tipo_grano").as(String.class)), likePattern),
                     criteriaBuilder.like(criteriaBuilder.lower(origenJoin.get("nombre_lugar")), likePattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(origenJoin.join("empresa", JoinType.LEFT).get("razon_social")), likePattern),
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(origenJoin.join("empresa", JoinType.LEFT).get("razon_social")),
+                            likePattern),
                     criteriaBuilder.like(criteriaBuilder.lower(destinoJoin.get("nombre_lugar")), likePattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(destinoJoin.join("empresa", JoinType.LEFT).get("razon_social")), likePattern)
-            );
+                    criteriaBuilder.like(
+                            criteriaBuilder.lower(destinoJoin.join("empresa", JoinType.LEFT).get("razon_social")),
+                            likePattern));
         };
     }
 }

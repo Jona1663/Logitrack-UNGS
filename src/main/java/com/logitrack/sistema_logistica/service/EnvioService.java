@@ -222,10 +222,11 @@ public class EnvioService {
         }
 
         public Page<Envio> buscarEnviosConFiltros(Estado_Envio estado, LocalDateTime fechaInicio,
-                        LocalDateTime fechaFin, String termino, Pageable pageable) {
+                        LocalDateTime fechaFin, String termino, String tipoGrano, Pageable pageable) {
                 Specification<Envio> spec = Specification.where(EnvioSpecifications.tieneEstado(estado))
                                 .and(EnvioSpecifications.fechaCreacionEntre(fechaInicio, fechaFin))
-                                .and(EnvioSpecifications.contieneTermino(termino));
+                                .and(EnvioSpecifications.contieneTermino(termino))
+                                .and(EnvioSpecifications.esDeTipoGrano(tipoGrano));
                 return envioRepository.findAll(spec, pageable);
         }
 

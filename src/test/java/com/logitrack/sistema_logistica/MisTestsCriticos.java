@@ -48,8 +48,8 @@ public class MisTestsCriticos {
 
     @Mock
     private JwtService jwtService;
-    
-// --- MOCKS PARA US 3 2 5 ---
+
+    // --- MOCKS PARA US 3 2 5 ---
     @Mock
     private EnvioRepository envioRepository;
     @Mock
@@ -60,7 +60,7 @@ public class MisTestsCriticos {
 
     @InjectMocks
     private EnvioController envioController;
-    
+
     @BeforeEach
     void setUp() {
         // Inicializamos los mocks antes de cada test
@@ -82,7 +82,7 @@ public class MisTestsCriticos {
         usuarioMock.setUsername("operador1");
         usuarioMock.setPassword_hash("hash_secreto");
         usuarioMock.setActivo(true);
-        usuarioMock.setRol(Rol_Usuario.OPERADOR); 
+        usuarioMock.setRol(Rol_Usuario.OPERADOR);
 
         // Simulamos el comportamiento esperado de la BD y las utilidades
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
@@ -117,7 +117,8 @@ public class MisTestsCriticos {
         // WHEN: Llamamos al login
         ResponseEntity<?> response = authController.login(request);
 
-        // THEN: Nos devuelve 401 Unauthorized y el mensaje de error del Criterio de Aceptación 2
+        // THEN: Nos devuelve 401 Unauthorized y el mensaje de error del Criterio de
+        // Aceptación 2
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertEquals("Credenciales incorrectas", response.getBody());
     }
@@ -126,8 +127,9 @@ public class MisTestsCriticos {
     public void acceso_aRecursoProtegidoSinToken_debeRetornarNoAutorizado() {
         // GIVEN: Una petición sin token
         boolean tokenPresente = false;
-        
-        // WHEN & THEN: Simulamos el rechazo de seguridad de Spring (lo mantenemos simple para que te dé verde directo)
+
+        // WHEN & THEN: Simulamos el rechazo de seguridad de Spring (lo mantenemos
+        // simple para que te dé verde directo)
         assertFalse(tokenPresente, "El token no está presente, el acceso debe ser denegado");
         assertEquals(HttpStatus.UNAUTHORIZED.value(), 401);
     }
@@ -156,7 +158,7 @@ public class MisTestsCriticos {
 
         Envio envioSimulado = new Envio();
         envioSimulado.setEstado_actual(Estado_Envio.PENDIENTE);
-        
+
         when(envioService.crearNuevoEnvio(any(EnvioRequestDTO.class))).thenReturn(envioSimulado);
 
         ResponseEntity<?> response = envioController.crearEnvio(request, authenticationMock);
@@ -172,7 +174,7 @@ public class MisTestsCriticos {
         request.setId_origen(1);
         request.setId_destino(2);
         request.setKg_origen(30000);
-        request.setId_envio(null); 
+        request.setId_envio(null);
 
         Authentication authenticationMock = mock(Authentication.class);
         when(authenticationMock.getName()).thenReturn("operador1");
@@ -183,8 +185,8 @@ public class MisTestsCriticos {
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
 
         Envio envioSimulado = new Envio();
-        envioSimulado.setId_envio("LT-ABC-123"); 
-        
+        envioSimulado.setId_envio("LT-ABC-123");
+
         when(envioService.crearNuevoEnvio(any(EnvioRequestDTO.class))).thenReturn(envioSimulado);
 
         ResponseEntity<?> response = envioController.crearEnvio(request, authenticationMock);
@@ -210,7 +212,7 @@ public class MisTestsCriticos {
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
 
         when(envioService.crearNuevoEnvio(any(EnvioRequestDTO.class)))
-            .thenThrow(new IllegalArgumentException("Faltan campos obligatorios como origen, destino o grano"));
+                .thenThrow(new IllegalArgumentException("Faltan campos obligatorios como origen, destino o grano"));
 
         ResponseEntity<?> response = envioController.crearEnvio(request, authenticationMock);
 
@@ -227,12 +229,12 @@ public class MisTestsCriticos {
         // GIVEN: Creamos los envíos usando el patrón Builder y los ESTADOS REALES
         Envio envio1 = Envio.builder()
                 .id_envio("LT-1000")
-                .estado_actual(Estado_Envio.PENDIENTE) 
+                .estado_actual(Estado_Envio.PENDIENTE)
                 .build();
 
         Envio envio2 = Envio.builder()
                 .id_envio("LT-1001")
-                .estado_actual(Estado_Envio.EN_TRANSITO) 
+                .estado_actual(Estado_Envio.EN_TRANSITO)
                 .build();
 
         // Simulamos que el repositorio devuelve nuestra lista
@@ -244,7 +246,7 @@ public class MisTestsCriticos {
         // THEN: Validamos la respuesta
         assertNotNull(resultado, "La lista no debe ser nula");
         assertEquals(2, resultado.size(), "Debe retornar exactamente 2 envíos");
-        assertEquals("LT-1000", resultado.get(0).getId_envio(), "El ID del primer envío debe coincidir"); 
+        assertEquals("LT-1000", resultado.get(0).getId_envio(), "El ID del primer envío debe coincidir");
     }
 
     @Test
@@ -269,7 +271,7 @@ public class MisTestsCriticos {
         // GIVEN: Un envío registrado con el ID "TRK-123" y estado "En Camino"
         Envio envioMock = Envio.builder()
                 .id_envio("TRK-123")
-                .estado_actual(Estado_Envio.EN_TRANSITO) 
+                .estado_actual(Estado_Envio.EN_TRANSITO)
                 .build();
 
         // Simulamos que el SERVICIO encuentra el envío
@@ -282,7 +284,7 @@ public class MisTestsCriticos {
         assertEquals(HttpStatus.OK, response.getStatusCode(), "El estado HTTP debe ser 200 OK");
         assertNotNull(response.getBody(), "El cuerpo de la respuesta no debe ser nulo");
         assertTrue(response.getBody() instanceof Envio, "Debe retornar un objeto Envio");
-        
+
         Envio envioDevuelto = (Envio) response.getBody();
         assertEquals("TRK-123", envioDevuelto.getId_envio(), "El ID debe coincidir");
         assertEquals(Estado_Envio.EN_TRANSITO, envioDevuelto.getEstado_actual(), "El estado debe ser EN_TRANSITO");
@@ -292,7 +294,7 @@ public class MisTestsCriticos {
     public void consultarTracking_conIdInexistente_debeMostrarMensajeError() {
         // GIVEN: Un ID que no existe ("INVALIDO")
         String idInvalido = "INVALIDO";
-        
+
         when(envioService.buscarPorId(idInvalido)).thenThrow(new RuntimeException("Envío no encontrado"));
 
         // WHEN: Se intenta buscar ese tracking
@@ -301,7 +303,7 @@ public class MisTestsCriticos {
         // THEN: Devuelve 404 Not Found y el DTO con el mensaje de error
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode(), "Debe retornar 404 Not Found");
         assertTrue(response.getBody() instanceof ErrorResponseDTO, "Debe retornar un ErrorResponseDTO");
-        
+
         ErrorResponseDTO error = (ErrorResponseDTO) response.getBody();
         assertNotNull(error.getMessage(), "El mensaje de error no debe ser nulo");
         assertTrue(error.getMessage().contains("no encontrado"), "El mensaje debe indicar que no se encontró");
@@ -314,7 +316,7 @@ public class MisTestsCriticos {
                 .id_historial(1)
                 .estado_nuevo(Estado_Envio.PENDIENTE)
                 .build();
-                
+
         Historial_Estados historial2 = Historial_Estados.builder()
                 .id_historial(2)
                 .estado_anterior(Estado_Envio.PENDIENTE)
@@ -325,16 +327,18 @@ public class MisTestsCriticos {
         HistorialResponseDTO dto1 = HistorialResponseDTO.fromEntity(historial1);
         HistorialResponseDTO dto2 = HistorialResponseDTO.fromEntity(historial2);
 
-        // 2. Simulamos que el servicio devuelve este historial (Ahora le pasamos los DTOs)
+        // 2. Simulamos que el servicio devuelve este historial (Ahora le pasamos los
+        // DTOs)
         when(envioService.obtenerHistorialPorEnvio("TRK-123")).thenReturn(Arrays.asList(dto1, dto2));
 
-        // 3. WHEN: El supervisor consulta el historial del envío (Cambiamos Object por ?)
+        // 3. WHEN: El supervisor consulta el historial del envío (Cambiamos Object por
+        // ?)
         ResponseEntity<?> response = envioController.consultarHistorial("TRK-123");
 
         // THEN: Devuelve 200 OK y la lista con los 2 estados del historial
         assertEquals(HttpStatus.OK, response.getStatusCode(), "El estado HTTP debe ser 200 OK");
         assertNotNull(response.getBody(), "El cuerpo de la respuesta no debe ser nulo");
-        
+
         // 4. Validamos casteando a la lista de DTOs en lugar de la entidad cruda
         @SuppressWarnings("unchecked")
         List<HistorialResponseDTO> historialDevuelto = (List<HistorialResponseDTO>) response.getBody();
@@ -352,7 +356,8 @@ public class MisTestsCriticos {
         boolean entornoCargadoCorrectamente = true;
 
         // THEN: El pipeline valida que el contexto compila y los tests corren
-        assertTrue(entornoCargadoCorrectamente, "Si este test corre en GitHub Actions, la build y los tests pasan exitosamente");
+        assertTrue(entornoCargadoCorrectamente,
+                "Si este test corre en GitHub Actions, la build y los tests pasan exitosamente");
     }
 
     @Test
@@ -373,32 +378,37 @@ public class MisTestsCriticos {
         // WHEN: Se realiza una consulta simulando el acceso remoto
         when(usuarioRepository.count()).thenReturn(5L);
 
-        // THEN: La base de datos acepta la conexión y devuelve la información solicitada
+        // THEN: La base de datos acepta la conexión y devuelve la información
+        // solicitada
         Long cantidadUsuarios = usuarioRepository.count();
         assertNotNull(cantidadUsuarios);
         assertEquals(5L, cantidadUsuarios, "La conexión a la BD en la nube es exitosa y permite hacer consultas");
     }
 
     // ==========================================
-    // US 6: Definición de Contratos y Prototipado 
+    // US 6: Definición de Contratos y Prototipado
     // ==========================================
 
     @Test
-    public void prototipoAltaEnvio_debeSerNavegableDeInicioAFin() { 
+    public void prototipoAltaEnvio_debeSerNavegableDeInicioAFin() {
         // GIVEN: El diseño del prototipo en Figma o la vista HTML
         // WHEN: Se verifica el flujo de navegación hacia "Nuevo Envío"
         boolean redireccionAFormulario = true; // Simulamos la aprobación del equipo de diseño/frontend
 
         // THEN: El sistema de navegación debe estar validado sin rutas rotas
-        assertTrue(redireccionAFormulario, "El prototipo debe navegar correctamente desde el inicio hasta el formulario de Alta");
+        assertTrue(redireccionAFormulario,
+                "El prototipo debe navegar correctamente desde el inicio hasta el formulario de Alta");
     }
 
     @Test
-    public void contratoApi_debeCoincidirEntreFrontYBack() { 
-        // GIVEN: El contrato JSON acordado (El Frontend espera que el peso se llame "kg_origen" y no "kilos")
-        // WHEN: Verificamos los atributos de la clase que usa el Backend (EnvioRequestDTO)
-        
-        // THEN: Validamos que los campos existan con el nombre exacto usando Reflection para que no explote la conexión
+    public void contratoApi_debeCoincidirEntreFrontYBack() {
+        // GIVEN: El contrato JSON acordado (El Frontend espera que el peso se llame
+        // "kg_origen" y no "kilos")
+        // WHEN: Verificamos los atributos de la clase que usa el Backend
+        // (EnvioRequestDTO)
+
+        // THEN: Validamos que los campos existan con el nombre exacto usando Reflection
+        // para que no explote la conexión
         assertDoesNotThrow(() -> {
             EnvioRequestDTO.class.getDeclaredField("kg_origen");
             EnvioRequestDTO.class.getDeclaredField("id_origen");
@@ -407,7 +417,7 @@ public class MisTestsCriticos {
     }
 
     // ==========================================
-    // US 7: Pipeline de Procesamiento de Datos para IA 
+    // US 7: Pipeline de Procesamiento de Datos para IA
     // ==========================================
 
     @Test
@@ -415,11 +425,12 @@ public class MisTestsCriticos {
         // GIVEN: Un dato crudo con errores de tipeo y unidad en Kilos
         String tipoGranoCrudo = "  sOjA  ";
         double pesoKgCrudo = 50000.0;
-        
-        // WHEN: El script/pipeline procesa y limpia los datos (simulación de estandarización)
+
+        // WHEN: El script/pipeline procesa y limpia los datos (simulación de
+        // estandarización)
         String granoLimpio = tipoGranoCrudo.trim().toUpperCase();
         double pesoEnToneladas = pesoKgCrudo / 1000.0;
-        
+
         // THEN: Validamos que el formato se unifique correctamente borrando errores
         assertEquals("SOJA", granoLimpio, "El pipeline debe limpiar los strings (borrar espacios y capitalizar)");
         assertEquals(50.0, pesoEnToneladas, "El pipeline debe estandarizar las unidades pasando de KG a Toneladas");
@@ -429,37 +440,42 @@ public class MisTestsCriticos {
     public void apiIA_alConsultarPrediccion_debeRetornarJsonConMermas() {
         // GIVEN: Una simulación de la respuesta HTTP del microservicio de Python (IA)
         ResponseEntity<String> respuestaMicroservicioIA = new ResponseEntity<>(
-            "{\"status\": \"success\", \"merma_estimada\": 1.25, \"unidad\": \"TN\"}", 
-            HttpStatus.OK
-        );
-        
+                "{\"status\": \"success\", \"merma_estimada\": 1.25, \"unidad\": \"TN\"}",
+                HttpStatus.OK);
+
         // WHEN: El backend consulta la predicción y recibe la respuesta
         String jsonResult = respuestaMicroservicioIA.getBody();
-        
-        // THEN: Chequeamos que la comunicación final funcione y traiga la merma calculada
-        assertEquals(HttpStatus.OK, respuestaMicroservicioIA.getStatusCode(), "La API de IA debe responder con un 200 OK");
+
+        // THEN: Chequeamos que la comunicación final funcione y traiga la merma
+        // calculada
+        assertEquals(HttpStatus.OK, respuestaMicroservicioIA.getStatusCode(),
+                "La API de IA debe responder con un 200 OK");
         assertNotNull(jsonResult);
-        assertTrue(jsonResult.contains("\"merma_estimada\""), "El JSON devuelto por la IA debe contener el número de la merma");
+        assertTrue(jsonResult.contains("\"merma_estimada\""),
+                "El JSON devuelto por la IA debe contener el número de la merma");
     }
 
     @Test
     public void microservicioIA_conDatosErroneos_debeInformarFalla() {
-        // GIVEN: Un dato corrupto o físicamente imposible (-500 TN) que el pipeline no puede arreglar
+        // GIVEN: Un dato corrupto o físicamente imposible (-500 TN) que el pipeline no
+        // puede arreglar
         double pesoInvalido = -500.0;
-        
-        // WHEN & THEN: Simulamos la validación estricta del sistema antes de llamar a la predicción
+
+        // WHEN & THEN: Simulamos la validación estricta del sistema antes de llamar a
+        // la predicción
         IllegalArgumentException fallaFatal = assertThrows(IllegalArgumentException.class, () -> {
             if (pesoInvalido <= 0) {
                 throw new IllegalArgumentException("Error fatal: El dato de peso es basura, negativo o corrupto");
             }
         });
-        
-        // Validamos que el sistema sea inteligente, aborte y tire el error en lugar de colgarse
+
+        // Validamos que el sistema sea inteligente, aborte y tire el error en lugar de
+        // colgarse
         assertEquals("Error fatal: El dato de peso es basura, negativo o corrupto", fallaFatal.getMessage());
     }
 
     // ==========================================
-    //          (Issue 134) 
+    // (Issue 134)
     // ==========================================
 
     @Test
@@ -473,7 +489,8 @@ public class MisTestsCriticos {
         dtoActualizacion.setPrioridad_ia("ALTA");
         dtoActualizacion.setKg_origen(25000);
 
-        // Simulamos la sesión del usuario (ahora el Controller usa Principal en vez de Authentication)
+        // Simulamos la sesión del usuario (ahora el Controller usa Principal en vez de
+        // Authentication)
         java.security.Principal principalMock = mock(java.security.Principal.class);
         when(principalMock.getName()).thenReturn("supervisor1");
 
@@ -486,22 +503,23 @@ public class MisTestsCriticos {
 
         // Simulamos el comportamiento del NUEVO método del EnvioService
         when(envioService.editarEnvio(eq(idEnvio), any(EnvioRequestDTO.class), eq("supervisor1")))
-            .thenReturn(envioEditado);
+                .thenReturn(envioEditado);
 
-        // WHEN: Llamamos al NUEVO endpoint de edición (editarEnvio en vez de actualizarEnvio)
+        // WHEN: Llamamos al NUEVO endpoint de edición (editarEnvio en vez de
+        // actualizarEnvio)
         ResponseEntity<?> response = envioController.editarEnvio(idEnvio, dtoActualizacion, principalMock);
 
         // THEN: Validamos que devuelva 200 OK y los datos reflejen los cambios
         assertEquals(HttpStatus.OK, response.getStatusCode(), "Debe devolver 200 OK tras editar exitosamente");
         assertNotNull(response.getBody(), "La respuesta no puede estar vacía");
-        
+
         Envio envioModificado = (Envio) response.getBody();
         assertEquals("ALTA", envioModificado.getPrioridad_ia(), "La prioridad debe haberse actualizado a ALTA");
         assertEquals(Tipo_Grano.MAIZ, envioModificado.getTipo_grano(), "El grano debe ser MAIZ");
     }
 
     // ==========================================
-    //          (Issue 112) 
+    // (Issue 112)
     // ==========================================
 
     @Test
@@ -510,16 +528,20 @@ public class MisTestsCriticos {
         String queryVacia = "";
         String estadoVacio = "";
         String fechaVacia = "";
+        String tipoGranoVacio = "";
 
         // ESTO ES LO QUE FALTABA:
-        // Le "enseñamos" al simulador que cuando reciba filtros vacíos, devuelva una página vacía de envíos
+        // Le "enseñamos" al simulador que cuando reciba filtros vacíos, devuelva una
+        // página vacía de envíos
         // en vez de devolver un NULL que rompa todo.
         org.springframework.data.domain.Page<Envio> paginaDePrueba = org.springframework.data.domain.Page.empty();
-        when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(org.springframework.data.domain.Pageable.class)))
-            .thenReturn(paginaDePrueba);
+        when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(),
+                any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(paginaDePrueba);
 
         // WHEN: Llamamos al método del controlador
-        ResponseEntity<?> response = envioController.buscarEnvios(queryVacia, estadoVacio, fechaVacia, 0, 10);
+        ResponseEntity<?> response = envioController.buscarEnvios(queryVacia, estadoVacio, fechaVacia, tipoGranoVacio,
+                0, 10);
 
         // THEN: Validamos que el Backend se banque los nulos y responda 200 OK
         assertEquals(HttpStatus.OK, response.getStatusCode(), "El Backend debería devolver 200 OK");

@@ -94,6 +94,7 @@ public class EnvioController {
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String tipo_grano,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
@@ -119,7 +120,9 @@ public class EnvioController {
 
             String termino = (query != null && !query.isBlank()) ? query.trim() : null;
             Pageable pageable = PageRequest.of(page, size);
-            Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino, pageable);
+            Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
+                    tipo_grano,
+                    pageable);
             return ResponseEntity.ok(envios);
         } catch (DateTimeParseException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
@@ -211,7 +214,7 @@ public class EnvioController {
         }
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
     // Lo siguiente se agregó como recomendación de Gemini para
     // cumplir con las funciones que tiene el front.
 
@@ -283,36 +286,36 @@ public class EnvioController {
      * return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
      * }
      * }
-     * 
-     * @PatchMapping("/{idEnvio}/estado")
-     * 
-     * @PreAuthorize("hasRole('CHOFER')")
-     * public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
-     * 
-     * @PathVariable String idEnvio,
-     * 
-     * @RequestBody EstadoUpdateRequestDTO dto,
-     * Authentication auth) {
-     * 
-     * // Extraemos el username del JWT
-     * String username = auth.getName();
-     * 
-     * // Ejecutamos la lógica
-     * Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio,
-     * dto.getNuevoEstado(), username);
-     * 
-     * // Construimos la respuesta según el contrato
-     * EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
-     * .mensaje("Estado actualizado correctamente")
-     * .estado_actual(envioActualizado.getEstado_actual().name())
-     * .fecha_actualizacion(LocalDateTime.now())
-     * .build();
-     * 
-     * return ResponseEntity.ok(response);
-     * }
      */
+
+    @PatchMapping("/{idEnvio}/estado")
+    @PreAuthorize("hasRole('CHOFER')")
+    public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
+
+            @PathVariable String idEnvio,
+
+            @RequestBody EstadoUpdateRequestDTO dto,
+            Authentication auth) {
+
+        // Extraemos el username del JWT
+        String username = auth.getName();
+
+        // Ejecutamos la lógica
+        Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio,
+                dto.getNuevoEstado(), username);
+
+        // Construimos la respuesta según el contrato
+        EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
+                .mensaje("Estado actualizado correctamente")
+                .estado_actual(envioActualizado.getEstado_actual().name())
+                .fecha_actualizacion(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
     // endopitn cancelar envio
-    // @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')") // Descomentar cuando
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')") // Descomentar cuando
     // actives la seguridad por roles
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<?> cancelarEnvio(@PathVariable String id, Principal principal) {
@@ -326,7 +329,7 @@ public class EnvioController {
     }
 
     // endopiont editar envio
-    // @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
     @PutMapping("/{id}")
     public ResponseEntity<?> editarEnvio(@PathVariable String id, @RequestBody EnvioRequestDTO dto,
             Principal principal) {
@@ -337,5 +340,5 @@ public class EnvioController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-    /////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
 }
