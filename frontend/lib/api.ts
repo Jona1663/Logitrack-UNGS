@@ -13,6 +13,7 @@ import type {
   Chofer,
   Camion,
   MetadatosCatalogo,
+  EnvioChofer,
 } from '@/types';
 
 // Base URL de la API - usar variable de entorno en produccion
@@ -146,8 +147,8 @@ class ApiClient {
     return this.request<RegistroHistorial[]>('/envios/historial-completo');
   }
 
-  async getMisAsignaciones(): Promise<Envio[]> {
-    return this.request<Envio[]>('/envios/mis-asignaciones');
+  async getMisAsignaciones(): Promise<EnvioChofer[]> {
+    return this.request<EnvioChofer[]>('/chofer/envios');
   }
 
   // === CATALOGOS ===

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Envio, EstadoEnvio, IncidenciaDTO } from '@/types';
+import type { EnvioChofer } from '@/types';
 import { api } from '@/lib/api';
 import { FLUJO_LOGISTICO } from '@/lib/constants';
 
 interface UseViajeChoferState {
-  viaje: Envio | null;
+  viaje: EnvioChofer | null;
   isLoading: boolean;
   isUpdating: boolean;
   error: string | null;
@@ -25,14 +25,14 @@ export function useViajeChofer() {
 
     try {
       const asignaciones = await api.getMisAsignaciones();
-      
+
       // Buscar viaje activo (no entregado ni cancelado)
       const viajeActivo = asignaciones.find(
         (e) => e.estado_actual !== 'ENTREGADO' && e.estado_actual !== 'CANCELADO'
-      );
+      ) ?? null;
 
       setState({
-        viaje: viajeActivo || null,
+        viaje: viajeActivo,
         isLoading: false,
         isUpdating: false,
         error: null,
@@ -61,13 +61,17 @@ export function useViajeChofer() {
 
     try {
       const viajeActualizado = await api.cambiarEstadoChofer(
-        state.viaje.id_envio,
+        Number(state.viaje.id_envio),
         flujo.siguiente
       );
 
+      // El endpoint de cambio de estado devuelve Envio completo,
+      // por eso mapeamos solo los campos que necesitamos
       setState((prev) => ({
         ...prev,
-        viaje: viajeActualizado,
+        viaje: prev.viaje
+          ? { ...prev.viaje, estado_actual: viajeActualizado.estado_actual }
+          : null,
         isUpdating: false,
       }));
 
@@ -85,7 +89,7 @@ export function useViajeChofer() {
       setState((prev) => ({ ...prev, isUpdating: true }));
 
       try {
-        await api.reportarIncidencia(state.viaje.id_envio, { descripcion });
+        await api.reportarIncidencia(Number(state.viaje!.id_envio), { descripcion });
         setState((prev) => ({ ...prev, isUpdating: false }));
       } catch (error) {
         setState((prev) => ({ ...prev, isUpdating: false }));

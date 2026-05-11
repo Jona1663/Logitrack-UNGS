@@ -142,3 +142,23 @@ export interface MetadatosCatalogo {
   estados: EstadoEnvio[];
   prioridades: Prioridad[];
 }
+
+// === CHOFER ===
+export interface LugarResumen {
+  nombre_lugar: string;
+  direccion: string;
+}
+
+export interface EnvioChofer {
+  id_envio: string;
+  tracking_ctg: string;
+  cpe: string;
+  estado_actual: EstadoEnvio;
+  tipo_grano: TipoGrano;
+  kg_origen: number;
+  origen: LugarResumen;
+  destino: LugarResumen;
+  patente_camion: string;
+  // nombre_chofer: string;
+  prioridad_ia: Prioridad;   // ← agregar
+}
