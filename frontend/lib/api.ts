@@ -97,7 +97,7 @@ class ApiClient {
     searchParams.append('size', params.size.toString());
 
     return this.request<PaginatedResponse<Envio>>(
-      `/envios/busqueda-avanzada?${searchParams.toString()}`
+      `/envios/search?${searchParams.toString()}`
     );
   }
   async getEnvio(id: string | number): Promise<Envio> {
