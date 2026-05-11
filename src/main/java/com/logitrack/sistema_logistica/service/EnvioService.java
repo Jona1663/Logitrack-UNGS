@@ -1,23 +1,39 @@
 package com.logitrack.sistema_logistica.service;
 
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.*;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
-import com.logitrack.sistema_logistica.repository.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.http.ResponseEntity;
-import java.util.Map;
+import org.springframework.web.client.RestTemplate;
+
+import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.model.Camion;
+import com.logitrack.sistema_logistica.model.Chofer_Detalle;
+import com.logitrack.sistema_logistica.model.Empresa_Cliente;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.repository.CamionRepository;
+import com.logitrack.sistema_logistica.repository.Chofer_DetalleRepository;
+import com.logitrack.sistema_logistica.repository.Empresa_ClienteRepository;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
+import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 
 @Service
 public class EnvioService {
@@ -57,13 +73,13 @@ public class EnvioService {
                                 .orElseThrow(() -> new RuntimeException("Establecimiento de destino no encontrado"));
                 verificarRucaEmpresa(hoy, destino);
 
-                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
-                                .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
-                verificarLicenciaChofer(hoy, chofer);
+                Chofer_Detalle chofer = (dto.getId_chofer() != null)
+                        ? choferDetalleRepository.findById(dto.getId_chofer()).orElse(null)
+                        : null;
 
-                Camion camion = camionRepository.findById(dto.getPatente_camion())
-                                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
-                verificarHabilitacionSenasa(hoy, camion);
+                Camion camion = (dto.getPatente_camion() != null && !dto.getPatente_camion().isBlank())
+                        ? camionRepository.findById(dto.getPatente_camion()).orElse(null)
+                        : null;
 
                 Usuario usuarioCreador = usuarioRepository.findById(dto.getId_usuario_creador())
                                 .orElseThrow(() -> new RuntimeException("Usuario creador no encontrado"));
@@ -372,6 +388,30 @@ public class EnvioService {
                 envioExistente.setKg_origen(dto.getKg_origen());
 
                 return envioRepository.save(envioExistente);
+        }
+        @Transactional
+        public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
+                // 1. Verificar que el envío existe
+                Envio envio = envioRepository.findById(idEnvio)
+                        .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+                // 2. Verificar que no tenga ya transporte asignado
+                if (envio.getChofer() != null || envio.getCamion() != null) {
+                        throw new RuntimeException("El envío ya tiene transporte asignado");
+                }
+
+                // 3. Buscar chofer y camión — ambos obligatorios
+                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
+                        .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+
+                Camion camion = camionRepository.findById(dto.getPatente_camion())
+                        .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+
+                // 4. Asignar y guardar
+                envio.setChofer(chofer);
+                envio.setCamion(camion);
+
+                return envioRepository.save(envio);
         }
 
 }

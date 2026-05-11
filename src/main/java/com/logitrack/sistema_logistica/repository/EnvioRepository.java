@@ -1,15 +1,17 @@
 package com.logitrack.sistema_logistica.repository;
 
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
 
 @Repository
 public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecificationExecutor<Envio> {
@@ -27,7 +29,7 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
     List<Envio> buscarPorEstado(@Param("estado") Estado_Envio estado);
 
     // Búsqueda solo por fecha
-    @Query("SELECT e FROM Envio e "
+        @Query("SELECT e FROM Envio e "
             + "WHERE e.fecha_creacion >= :fechaInicio "
             + "AND e.fecha_creacion < :fechaFin")
     List<Envio> buscarPorFecha(
@@ -43,6 +45,13 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
             @Param("estado") Estado_Envio estado,
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
+
+
+    // Buscar por el nombre exacto de la variable en el modelo
+    @Query(value = "SELECT * FROM envios WHERE tracking_ctg = :tracking", nativeQuery = true)
+        Optional<Envio> buscarPorTracking(@Param("tracking") String tracking);
+    // Devuelve envíos que no tienen chofer NI camión asignado todavía
+    List<Envio> findByCamionIsNullAndChoferIsNull();
 
         //#113
         //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).

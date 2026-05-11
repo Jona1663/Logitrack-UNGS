@@ -101,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       pathname.startsWith('/menu') ||
       pathname.startsWith('/busqueda') ||
       pathname.startsWith('/envios') ||
+      pathname.startsWith('/asignaciones')||
       pathname.startsWith('/auditoria');
 
     // Verificar si hay sesion en sessionStorage (puede que el estado aun no se haya actualizado)

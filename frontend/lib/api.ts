@@ -170,6 +170,22 @@ class ApiClient {
   async getCamiones(): Promise<Camion[]> {
     return this.request<Camion[]>('/catalogos/camiones');
   }
+
+  // Envíos pendientes de asignación (sin chofer ni camión)
+  async getEnviosSinAsignar(): Promise<Envio[]> {
+    return this.request<Envio[]>('/envios/sin-asignar');
+  }
+
+  // Asignar chofer y camión juntos
+  async asignarTransporte(
+    idEnvio: string,
+    data: { id_chofer: number; patente_camion: string }
+  ): Promise<Envio> {
+    return this.request<Envio>(`/envios/${idEnvio}/asignar-transporte`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiClient();
