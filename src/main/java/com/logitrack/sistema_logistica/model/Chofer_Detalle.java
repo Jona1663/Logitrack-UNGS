@@ -17,20 +17,19 @@ import java.time.LocalDate;
 public class Chofer_Detalle {
 
     @Id
-    private Integer id_chofer; 
+    private Integer id_chofer;
 
-   
     @OneToOne(fetch = FetchType.EAGER)
-    @MapsId 
+    @MapsId
     @JoinColumn(name = "id_chofer")
-    private Persona persona_asociada; 
+    private Persona persona_asociada;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "nro_licencia", nullable = false, length = 50)
     private String nro_licencia;
 
-    @Column(nullable = false)
+    @Column(name = "vto_licencia", nullable = false)
     private LocalDate vto_licencia;
 
-    @Column(nullable = false)
+    @Column(name = "vto_linti", nullable = false)
     private LocalDate vto_linti;
 }
