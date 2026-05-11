@@ -61,7 +61,7 @@ export function useViajeChofer() {
 
     try {
       const viajeActualizado = await api.cambiarEstadoChofer(
-        Number(state.viaje.id_envio),
+        state.viaje.id_envio,
         flujo.siguiente
       );
 
@@ -89,7 +89,7 @@ export function useViajeChofer() {
       setState((prev) => ({ ...prev, isUpdating: true }));
 
       try {
-        await api.reportarIncidencia(Number(state.viaje!.id_envio), { descripcion });
+        await api.reportarIncidencia(state.viaje!.id_envio, { descripcion });
         setState((prev) => ({ ...prev, isUpdating: false }));
       } catch (error) {
         setState((prev) => ({ ...prev, isUpdating: false }));
