@@ -2,6 +2,7 @@ package com.logitrack.sistema_logistica;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.util.Optional;
@@ -455,5 +456,73 @@ public class MisTestsCriticos {
         
         // Validamos que el sistema sea inteligente, aborte y tire el error en lugar de colgarse
         assertEquals("Error fatal: El dato de peso es basura, negativo o corrupto", fallaFatal.getMessage());
+    }
+
+    // ==========================================
+    //          (Issue 134) 
+    // ==========================================
+
+    @Test
+    public void edicionEnvio_conDatosModificados_debeReflejarseEnRespuesta_US15() {
+        // GIVEN: Un envío existente y los nuevos datos que mandaría el Frontend
+        String idEnvio = "LT-999";
+        EnvioRequestDTO dtoActualizacion = new EnvioRequestDTO();
+        dtoActualizacion.setId_chofer(15);
+        dtoActualizacion.setPatente_camion("AB123CD");
+        dtoActualizacion.setTipo_grano(Tipo_Grano.MAIZ);
+        dtoActualizacion.setPrioridad_ia("ALTA");
+        dtoActualizacion.setKg_origen(25000);
+
+        // Simulamos la sesión del usuario (ahora el Controller usa Principal en vez de Authentication)
+        java.security.Principal principalMock = mock(java.security.Principal.class);
+        when(principalMock.getName()).thenReturn("supervisor1");
+
+        // Fabricamos el envío tal cual debería quedar DESPUÉS de guardarse en la base
+        Envio envioEditado = new Envio();
+        envioEditado.setId_envio(idEnvio);
+        envioEditado.setEstado_actual(Estado_Envio.PENDIENTE); // Solo se puede editar en PENDIENTE
+        envioEditado.setPrioridad_ia("ALTA");
+        envioEditado.setTipo_grano(Tipo_Grano.MAIZ);
+
+        // Simulamos el comportamiento del NUEVO método del EnvioService
+        when(envioService.editarEnvio(eq(idEnvio), any(EnvioRequestDTO.class), eq("supervisor1")))
+            .thenReturn(envioEditado);
+
+        // WHEN: Llamamos al NUEVO endpoint de edición (editarEnvio en vez de actualizarEnvio)
+        ResponseEntity<?> response = envioController.editarEnvio(idEnvio, dtoActualizacion, principalMock);
+
+        // THEN: Validamos que devuelva 200 OK y los datos reflejen los cambios
+        assertEquals(HttpStatus.OK, response.getStatusCode(), "Debe devolver 200 OK tras editar exitosamente");
+        assertNotNull(response.getBody(), "La respuesta no puede estar vacía");
+        
+        Envio envioModificado = (Envio) response.getBody();
+        assertEquals("ALTA", envioModificado.getPrioridad_ia(), "La prioridad debe haberse actualizado a ALTA");
+        assertEquals(Tipo_Grano.MAIZ, envioModificado.getTipo_grano(), "El grano debe ser MAIZ");
+    }
+
+    // ==========================================
+    //          (Issue 112) 
+    // ==========================================
+
+    @Test
+    public void buscarEnvios_conFiltrosVacios_debeIgnorarlosYDevolverOk_US112() {
+        // GIVEN: Preparamos los filtros vacíos
+        String queryVacia = "";
+        String estadoVacio = "";
+        String fechaVacia = "";
+
+        // ESTO ES LO QUE FALTABA:
+        // Le "enseñamos" al simulador que cuando reciba filtros vacíos, devuelva una página vacía de envíos
+        // en vez de devolver un NULL que rompa todo.
+        org.springframework.data.domain.Page<Envio> paginaDePrueba = org.springframework.data.domain.Page.empty();
+        when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(org.springframework.data.domain.Pageable.class)))
+            .thenReturn(paginaDePrueba);
+
+        // WHEN: Llamamos al método del controlador
+        ResponseEntity<?> response = envioController.buscarEnvios(queryVacia, estadoVacio, fechaVacia, 0, 10);
+
+        // THEN: Validamos que el Backend se banque los nulos y responda 200 OK
+        assertEquals(HttpStatus.OK, response.getStatusCode(), "El Backend debería devolver 200 OK");
+        assertNotNull(response.getBody(), "La respuesta no debe ser nula.");
     }
 }
