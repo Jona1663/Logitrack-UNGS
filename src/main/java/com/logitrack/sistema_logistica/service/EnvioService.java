@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import java.util.stream.Collectors;
-
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.model.*;
@@ -21,15 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.model.Camion;
 import com.logitrack.sistema_logistica.model.Chofer_Detalle;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Establecimiento;
 import com.logitrack.sistema_logistica.model.Historial_Estados;
 import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
 import com.logitrack.sistema_logistica.repository.CamionRepository;
 import com.logitrack.sistema_logistica.repository.Chofer_DetalleRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
@@ -37,32 +32,13 @@ import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.Camion;
-import com.logitrack.sistema_logistica.model.Chofer_Detalle;
+
 import com.logitrack.sistema_logistica.model.Empresa_Cliente;
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.Establecimiento;
-import com.logitrack.sistema_logistica.model.Historial_Estados;
-import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
-import com.logitrack.sistema_logistica.repository.CamionRepository;
-import com.logitrack.sistema_logistica.repository.Chofer_DetalleRepository;
 import com.logitrack.sistema_logistica.repository.Empresa_ClienteRepository;
-import com.logitrack.sistema_logistica.repository.EnvioRepository;
-import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
-import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
-import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 
 @Service
 public class EnvioService {

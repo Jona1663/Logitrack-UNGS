@@ -35,53 +35,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
-import com.logitrack.sistema_logistica.dto.EstadoUpdateRequestDTO;
-import com.logitrack.sistema_logistica.dto.EstadoUpdateResponseDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import com.logitrack.sistema_logistica.service.EnvioService;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
-import com.logitrack.sistema_logistica.repository.EnvioRepository;
-import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import com.logitrack.sistema_logistica.service.EnvioService;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -148,7 +108,8 @@ public class EnvioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (IllegalArgumentException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
-            error.setMessage("Estado inválido. Use uno de los valores permitidos: PENDIENTE, EN_TRANSITO, ENTREGADO, CANCELADO");
+            error.setMessage(
+                    "Estado inválido. Use uno de los valores permitidos: PENDIENTE, EN_TRANSITO, ENTREGADO, CANCELADO");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
@@ -157,7 +118,8 @@ public class EnvioController {
     @GetMapping("/{idEnvio}/historial")
     public ResponseEntity<?> consultarHistorial(@PathVariable String idEnvio) {
         try {
-            // Llamar al servicio que valida el envío y devuelve los eventos ya transformados a DTO
+            // Llamar al servicio que valida el envío y devuelve los eventos ya
+            // transformados a DTO
             List<HistorialResponseDTO> historial = envioService.obtenerHistorialPorEnvio(idEnvio);
             return ResponseEntity.ok(historial);
         } catch (RuntimeException e) {
@@ -213,7 +175,7 @@ public class EnvioController {
         }
     }
 
-    //El Front va a llamar cuando el usuario escriba en la barra de búsqueda.
+    // El Front va a llamar cuando el usuario escriba en la barra de búsqueda.
     @GetMapping("/buscar/{id_envio}")
     public ResponseEntity<?> obtenerEnvioPorTracking(@PathVariable String id_envio) {
         try {
@@ -359,7 +321,7 @@ public class EnvioController {
         }
     }
 
-        // GET — envíos sin chofer ni camión
+    // GET — envíos sin chofer ni camión
     @GetMapping("/sin-asignar")
     public ResponseEntity<List<Envio>> listarSinAsignar() {
         return ResponseEntity.ok(envioRepository.findByCamionIsNullAndChoferIsNull());
