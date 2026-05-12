@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        //.requestMatchers(HttpMethod.PATCH, "/api/envios/**").hasRole("CHOFER")
+                        // .requestMatchers(HttpMethod.PATCH, "/api/envios/**").hasRole("CHOFER")
                         .requestMatchers(HttpMethod.PATCH, "/api/envios/**").permitAll()
                         .requestMatchers("/api/envios/**").permitAll()
                         .requestMatchers("/api/catalogos/**").permitAll()
@@ -86,11 +86,12 @@ public class SecurityConfig {
 
         // 1. Deshabilitamos credenciales si usamos SOLO JWT
         // (Como me confirmaste que usan JWT, esto no afectará tu autenticación)
-        configuration.setAllowCredentials(false);
+        configuration.setAllowCredentials(true);
 
         // 2. Al estar en false, PODEMOS usar el comodín global
-        configuration.setAllowedOrigins(Arrays.asList("*",
-                "https://logritrack-agro-test-develop.netlify.app/"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000",
+                "https://logitrack-m9yq.vercel.app",
+                "https://logitrack-m9yq-ikogy7mnd-logi-track-s-projects.vercel.app"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
