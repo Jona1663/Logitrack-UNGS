@@ -5,6 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import java.util.stream.Collectors;
+
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.model.*;
+import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +19,28 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.model.Camion;
+import com.logitrack.sistema_logistica.model.Chofer_Detalle;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.repository.CamionRepository;
+import com.logitrack.sistema_logistica.repository.Chofer_DetalleRepository;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
+import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -216,10 +245,11 @@ public class EnvioService {
         }
 
         public Page<Envio> buscarEnviosConFiltros(Estado_Envio estado, LocalDateTime fechaInicio,
-                        LocalDateTime fechaFin, String termino, Pageable pageable) {
+                        LocalDateTime fechaFin, String termino, String tipoGrano, Pageable pageable) {
                 Specification<Envio> spec = Specification.where(EnvioSpecifications.tieneEstado(estado))
                                 .and(EnvioSpecifications.fechaCreacionEntre(fechaInicio, fechaFin))
-                                .and(EnvioSpecifications.contieneTermino(termino));
+                                .and(EnvioSpecifications.contieneTermino(termino))
+                                .and(EnvioSpecifications.esDeTipoGrano(tipoGrano));
                 return envioRepository.findAll(spec, pageable);
         }
 
@@ -413,5 +443,56 @@ public class EnvioService {
 
                 return envioRepository.save(envio);
         }
+
+
+     /* #121: Método calcular el ETA (Tiempo Estimado de Llegada) de un envío,
+     * Velocidad promedio fija: 65 km/h
+        */   
+    
+    @Transactional
+    public void asignarChoferCamion (EnvioRequestDTO dto) {
+        Envio envio = envioRepository.findById(dto.getId_envio())
+                .orElseThrow(() -> new RuntimeException("Envío no encontrado"));
+        Camion camion = camionRepository.findById(dto.getPatente_camion())
+                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+        Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
+            .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+
+        
+        LocalDateTime fecha_salida = LocalDateTime.now();
+        
+        envio.setCamion(camion);
+        envio.setFecha_estimada_llegada(calcularETA(envio.getDistancia_km(), fecha_salida));
+        envio.setFecha_salida(fecha_salida);
+        envio.setChofer(chofer);
+        envioRepository.save(envio);
+
+
+    }
+
+    private static final double VELOCIDAD_PROMEDIO_KMH = 65.0;
+    private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime fecha_salida) {
+        if (distanciaKm == null || distanciaKm <= 0) {
+            return null;
+        }
+        long minutosViaje = Math.round((distanciaKm / VELOCIDAD_PROMEDIO_KMH) * 60);
+        return fecha_salida.plusMinutes(minutosViaje);
+        }
+
+    /**
+    *  #122 — OBTENER DETALLE CON ETA
+    *   Usado por el endpoint GET /api/envios/{id}
+    */ 
+
+    
+    @Transactional(readOnly = true)
+    public EnvioDetalleResponseDTO obtenerDetalleConETA(String idEnvio) {
+        Envio envio = envioRepository.findById(idEnvio)
+                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+        LocalDateTime eta = calcularETA(envio.getDistancia_km(), envio.getFecha_salida());
+
+        return EnvioDetalleResponseDTO.fromEntity(envio, eta);
+    }
 
 }
