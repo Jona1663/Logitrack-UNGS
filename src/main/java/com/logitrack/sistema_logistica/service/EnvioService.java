@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.model.*;
+import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +49,10 @@ import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 

@@ -47,7 +47,7 @@ export function IncidenciaDrawer({ onSubmit, isLoading }: IncidenciaDrawerProps)
           Reportar Incidencia
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[50vh]">
+      <SheetContent side="bottom" className="min-h-[50vh] max-h-[85vh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -58,8 +58,8 @@ export function IncidenciaDrawer({ onSubmit, isLoading }: IncidenciaDrawerProps)
           </SheetDescription>
         </SheetHeader>
 
-        <div className="py-6 space-y-4">
-          <div className="space-y-2">
+        <div className="py-1 space-y-1 px-1">
+          <div className="space-y-2 px-1">
             <Label htmlFor="descripcion">Descripcion de la incidencia</Label>
             <Textarea
               id="descripcion"
@@ -71,7 +71,7 @@ export function IncidenciaDrawer({ onSubmit, isLoading }: IncidenciaDrawerProps)
           </div>
         </div>
 
-        <SheetFooter className="flex-col sm:flex-row gap-2">
+        <SheetFooter className="flex-col sm:flex-row gap-2 px-1 pb-2">
           <SheetClose asChild>
             <Button variant="outline" className="w-full sm:w-auto">
               Cancelar

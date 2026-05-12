@@ -1,14 +1,14 @@
 'use client';
 
-import { MapPin, ArrowDown, Wheat, Scale, Truck, FileText } from 'lucide-react';
+import { MapPin, ArrowDown, Wheat, Scale, Truck, FileText, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EstadoBadge } from '@/components/envios/estado-badge';
-import { PrioridadBadge } from '@/components/envios/prioridad-badge';
-import type { Envio } from '@/types';
+import { PrioridadBadge } from '../envios/prioridad-badge';
+import type { EnvioChofer } from '@/types';
 import { normalizarEnum, formatearPeso } from '@/lib/utils';
 
 interface ViajeCardProps {
-  viaje: Envio;
+  viaje: EnvioChofer;
 }
 
 export function ViajeCard({ viaje }: ViajeCardProps) {
@@ -66,7 +66,7 @@ export function ViajeCard({ viaje }: ViajeCardProps) {
           <InfoItem
             icon={<Truck className="h-4 w-4" />}
             label="Camion"
-            value={viaje.camion.patente}
+            value={viaje.patente_camion}
             mono
           />
           <InfoItem
@@ -77,11 +77,21 @@ export function ViajeCard({ viaje }: ViajeCardProps) {
           />
         </div>
 
+        {/* Chofer */}
+        {/* <div className="flex items-center justify-between pt-4 border-t">
+          <span className="text-sm text-muted-foreground">Chofer asignado</span>
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <User className="h-4 w-4 text-muted-foreground" />
+            {viaje.nombre_chofer}
+          </div>
+        </div> */}
+
         {/* Prioridad */}
         <div className="flex items-center justify-between pt-4 border-t">
           <span className="text-sm text-muted-foreground">Prioridad del envio</span>
           <PrioridadBadge prioridad={viaje.prioridad_ia} />
         </div>
+
       </CardContent>
     </Card>
   );
