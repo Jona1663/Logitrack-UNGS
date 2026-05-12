@@ -45,7 +45,7 @@ export function HistorialTable({ historial }: HistorialTableProps) {
           </TableHeader>
           <TableBody>
             {historialOrdenado.map((registro, index) => (
-              <TableRow key={registro.id_reg || `desk-${index}`} className="hover:bg-gray-50/50 transition-colors">
+              <TableRow key={registro.id_historial || `desk-${index}`} className="hover:bg-gray-50/50 transition-colors">
                 <TableCell className="py-3 pl-6">
                   <EventoCell registro={registro} />
                 </TableCell>
@@ -57,7 +57,7 @@ export function HistorialTable({ historial }: HistorialTableProps) {
                 </TableCell>
                 <TableCell className="py-3 pr-6 text-sm text-muted-foreground flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5" />
-                  {registro.usuario?.username || registro.responsable || 'Sistema'}
+                  {registro.username || 'Sistema'}
                 </TableCell>
               </TableRow>
             ))}
@@ -69,7 +69,7 @@ export function HistorialTable({ historial }: HistorialTableProps) {
       <div className="md:hidden space-y-4 p-4">
         {historialOrdenado.map((registro, index) => (
           <div
-            key={registro.id_reg || `mob-${index}`}
+            key={registro.id_historial || `desk-${index}`}
             className="bg-white border rounded-xl shadow-sm p-4 flex flex-col"
           >
             <div className="flex justify-between items-center border-b border-dashed border-gray-100 pb-2 mb-2">
@@ -90,7 +90,7 @@ export function HistorialTable({ historial }: HistorialTableProps) {
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Responsable</span>
               <span className="text-sm text-muted-foreground flex items-center gap-1">
                 <User className="h-3.5 w-3.5" />
-                {registro.usuario?.username || registro.responsable || 'Sistema'}
+                {registro.username || 'Sistema'}
               </span>
             </div>
           </div>

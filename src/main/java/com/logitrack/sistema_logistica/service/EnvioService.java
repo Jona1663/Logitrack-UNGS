@@ -2,6 +2,10 @@ package com.logitrack.sistema_logistica.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -395,30 +399,6 @@ public class EnvioService {
 
                 return envioRepository.save(envioExistente);
         }
-        @Transactional
-        public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
-                // 1. Verificar que el envío existe
-                Envio envio = envioRepository.findById(idEnvio)
-                        .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
-
-                // 2. Verificar que no tenga ya transporte asignado
-                if (envio.getChofer() != null || envio.getCamion() != null) {
-                        throw new RuntimeException("El envío ya tiene transporte asignado");
-                }
-
-                // 3. Buscar chofer y camión — ambos obligatorios
-                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
-                        .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
-
-                Camion camion = camionRepository.findById(dto.getPatente_camion())
-                        .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
-
-                // 4. Asignar y guardar
-                envio.setChofer(chofer);
-                envio.setCamion(camion);
-
-                return envioRepository.save(envio);
-        }
 
 
      /* #121: Método calcular el ETA (Tiempo Estimado de Llegada) de un envío,
@@ -470,5 +450,29 @@ public class EnvioService {
 
         return EnvioDetalleResponseDTO.fromEntity(envio, eta);
     }
+        @Transactional
+        public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
+                // 1. Verificar que el envío existe
+                Envio envio = envioRepository.findById(idEnvio)
+                        .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+                // 2. Verificar que no tenga ya transporte asignado
+                if (envio.getChofer() != null || envio.getCamion() != null) {
+                        throw new RuntimeException("El envío ya tiene transporte asignado");
+                }
+
+                // 3. Buscar chofer y camión — ambos obligatorios
+                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
+                        .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+
+                Camion camion = camionRepository.findById(dto.getPatente_camion())
+                        .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+
+                // 4. Asignar y guardar
+                envio.setChofer(chofer);
+                envio.setCamion(camion);
+
+                return envioRepository.save(envio);
+        }
 
 }

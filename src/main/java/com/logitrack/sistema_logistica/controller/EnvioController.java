@@ -12,6 +12,7 @@ import com.logitrack.sistema_logistica.dto.EstadoUpdateResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Historial_Estados;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
 import com.logitrack.sistema_logistica.service.EnvioService;
@@ -36,10 +37,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 
@@ -133,6 +136,34 @@ public class EnvioController {
             error.setMessage("Error al obtener el historial: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
+    }
+
+    // Endpoint Global de Auditoría
+    @Autowired
+    private Historial_EstadosRepository historialEstadosRepository;
+
+    @GetMapping("/historial-completo")
+    public ResponseEntity<List<HistorialResponseDTO>> obtenerHistorialCompleto() {
+        // Obtenemos todos los registros ordenados por fecha descendente (más reciente
+        // primero)
+        List<Historial_Estados> listaCompleta = historialEstadosRepository.findAll();
+
+        // Mapeamos a nuestro DTO para enviar solo lo necesario y evitar errores de JSON
+        List<HistorialResponseDTO> respuesta = listaCompleta.stream()
+                .map(h -> {
+                    HistorialResponseDTO dto = new HistorialResponseDTO();
+                    dto.setIdHistorial(h.getId_historial());
+                    dto.setIdEnvio(h.getEnvio() != null ? h.getEnvio().getId_envio() : null);
+                    dto.setEstadoAnterior(h.getEstado_anterior() != null ? h.getEstado_anterior().name() : "INICIAL");
+                    dto.setEstadoNuevo(h.getEstado_nuevo() != null ? h.getEstado_nuevo().name() : null);
+                    dto.setFechaHora(h.getFecha_hora());
+                    dto.setUsername(h.getUsuario() != null ? h.getUsuario().getUsername() : null);
+                    return dto;
+                })
+                .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora())) // Ordenar por fecha
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(respuesta);
     }
 
     // // POST para crear
@@ -270,29 +301,51 @@ public class EnvioController {
 
     @PatchMapping("/{idEnvio}/estado")
     @PreAuthorize("hasRole('CHOFER')")
-    public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
-
+    public ResponseEntity<?> actualizarEstadoChofer(
             @PathVariable String idEnvio,
+            @RequestParam String nuevoEstado,
+            Authentication authentication) {
+        try {
+            // Extraemos el username del JWT
+            String username = authentication.getName();
 
-            @RequestBody EstadoUpdateRequestDTO dto,
-            Authentication auth) {
+            // Ejecutamos la lógica
+            Envio envioActualizado = envioService.actualizarEstadoChofer(
+                    idEnvio, nuevoEstado, username);
 
-        // Extraemos el username del JWT
-        String username = auth.getName();
-
-        // Ejecutamos la lógica
-        Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio,
-                dto.getNuevoEstado(), username);
-
-        // Construimos la respuesta según el contrato
-        EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
-                .mensaje("Estado actualizado correctamente")
-                .estado_actual(envioActualizado.getEstado_actual().name())
-                .fecha_actualizacion(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(envioActualizado);
+        } catch (RuntimeException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO();
+            error.setMessage(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
     }
+
+    // @PatchMapping("/{idEnvio}/estado")
+    // @PreAuthorize("hasRole('CHOFER')")
+    // public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
+
+    // @PathVariable String idEnvio,
+
+    // @RequestBody EstadoUpdateRequestDTO dto,
+    // Authentication auth) {
+
+    // // Extraemos el username del JWT
+    // String username = auth.getName();
+
+    // // Ejecutamos la lógica
+    // Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio,
+    // dto.getNuevoEstado(), username);
+
+    // // Construimos la respuesta según el contrato
+    // EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
+    // .mensaje("Estado actualizado correctamente")
+    // .estado_actual(envioActualizado.getEstado_actual().name())
+    // .fecha_actualizacion(LocalDateTime.now())
+    // .build();
+
+    // return ResponseEntity.ok(response);
+    // }
 
     // endopitn cancelar envio
     @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')") // Descomentar cuando
@@ -339,5 +392,5 @@ public class EnvioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    /////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
 }

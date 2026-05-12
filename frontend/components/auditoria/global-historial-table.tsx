@@ -40,13 +40,13 @@ export function GlobalHistorialTable({ historial }: GlobalHistorialTableProps) {
           </TableHeader>
           <TableBody>
             {historialOrdenado.map((registro, index) => (
-              <TableRow key={registro.id_reg || `desk-${index}`} className="hover:bg-gray-50/50 transition-colors">
+              <TableRow key={registro.id_historial || `desk-${index}`} className="hover:bg-gray-50/50 transition-colors">
                 <TableCell className="py-3 pl-6 text-sm font-bold text-muted-foreground">
-                  #{registro.id_reg}
+                  #{registro.id_historial}
                 </TableCell>
                 <TableCell className="py-3">
-                  <Link href={`/envios/${registro.id_rastreo}`} className="text-[#198754] font-bold hover:underline">
-                    {registro.id_rastreo}
+                  <Link href={`/envios/${registro.id_envio}`} className="text-[#198754] font-bold hover:underline">
+                    {registro.id_envio}
                   </Link>
                 </TableCell>
                 <TableCell className="py-3">
@@ -61,7 +61,7 @@ export function GlobalHistorialTable({ historial }: GlobalHistorialTableProps) {
                 <TableCell className="py-3 pr-6 text-sm text-muted-foreground text-right">
                   <span className="inline-flex items-center justify-center gap-1.5 bg-gray-50 border rounded-md px-2.5 py-1">
                     <User className="h-3.5 w-3.5" />
-                    {registro.usuario?.username || registro.responsable || 'Sistema'}
+                    {registro.username || 'Sistema'}
                   </span>
                 </TableCell>
               </TableRow>
@@ -73,15 +73,15 @@ export function GlobalHistorialTable({ historial }: GlobalHistorialTableProps) {
       {/* Vista Mobile - Replicando tu CSS de Tarjetas Apiladas */}
       <div className="md:hidden space-y-4 p-4">
         {historialOrdenado.map((registro, index) => (
-          <div key={registro.id_reg || `mob-${index}`} className="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
+          <div key={registro.id_historial || `desk-${index}`} className="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
             <div className="flex justify-between items-center border-b border-dashed border-gray-100 pb-2 mb-2">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ID Reg.</span>
-              <span className="text-sm font-bold text-muted-foreground">#{registro.id_reg}</span>
+              <span className="text-sm font-bold text-muted-foreground">#{registro.id_historial}</span>
             </div>
             <div className="flex justify-between items-center border-b border-dashed border-gray-100 pb-2 mb-2">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ID Rastreo</span>
-              <Link href={`/envios/${registro.id_rastreo}`} className="text-[#198754] font-bold text-sm">
-                {registro.id_rastreo}
+              <Link href={`/envios/${registro.id_envio}`} className="text-[#198754] font-bold text-sm">
+                {registro.id_envio}
               </Link>
             </div>
             <div className="flex flex-col border-b border-dashed border-gray-100 pb-2 mb-2 gap-1">
@@ -98,7 +98,7 @@ export function GlobalHistorialTable({ historial }: GlobalHistorialTableProps) {
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Responsable</span>
               <span className="text-sm text-muted-foreground flex items-center gap-1 bg-gray-50 border rounded-md px-2 py-0.5">
                 <User className="h-3.5 w-3.5" />
-                {registro.usuario?.username || registro.responsable || 'Sistema'}
+                {registro.username || 'Sistema'}
               </span>
             </div>
           </div>
@@ -124,7 +124,7 @@ function EventoCell({ registro, isMobile = false }: { registro: RegistroHistoria
 
   return (
     <span className="text-sm font-bold text-gray-900">
-       Creación <ArrowRight className="h-4 w-4 text-muted-foreground inline mx-1" /> {estadoNuevo}
+      Creación <ArrowRight className="h-4 w-4 text-muted-foreground inline mx-1" /> {estadoNuevo}
     </span>
   );
 }

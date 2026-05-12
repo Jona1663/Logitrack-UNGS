@@ -88,13 +88,13 @@ export interface Envio {
 }
 
 export interface RegistroHistorial {
-  id_reg: number;
-  id_rastreo: number;
+  id_historial: number;
+  id_envio: string;
+  id_usuario?: number | null;
+  username?: string;
   estado_anterior: string | null;
   estado_nuevo: string;
   fecha_hora: string;
-  usuario?: { username: string };
-  responsable?: string;
 }
 
 // === DTOs ===
