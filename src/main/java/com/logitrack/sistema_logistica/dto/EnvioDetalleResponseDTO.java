@@ -19,6 +19,7 @@ public class EnvioDetalleResponseDTO {
     private Estado_Envio estado_actual;
     private Tipo_Grano tipo_grano;
     private Integer kg_origen;
+    private String prioridad_ia;
 
     // Datos de origen y destino
     private String origen_nombre;
@@ -43,6 +44,7 @@ public class EnvioDetalleResponseDTO {
                 .estado_actual(envio.getEstado_actual())
                 .tipo_grano(envio.getTipo_grano())
                 .kg_origen(envio.getKg_origen())
+                .prioridad_ia(envio.getPrioridad_ia())
                 .origen_nombre(envio.getOrigen().getNombre_lugar())
                 .origen_direccion(envio.getOrigen().getDireccion())
                 .destino_nombre(envio.getDestino().getNombre_lugar())
