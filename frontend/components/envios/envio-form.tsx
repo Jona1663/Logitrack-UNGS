@@ -56,8 +56,6 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
       clienteCuit: cuitInicial,
       id_origen: esEdicion ? envioInicial?.origen?.id_establecimiento ?? 0 : 0,
       id_destino: esEdicion ? envioInicial?.destino?.id_establecimiento ?? 0 : 0,
-      id_chofer: esEdicion ? envioInicial?.chofer?.id_chofer ?? 0 : 0,
-      patente_camion: esEdicion ? envioInicial?.camion?.patente ?? '' : '',
       tipo_grano: esEdicion ? envioInicial?.tipo_grano ?? '' : '',
       kg_origen: esEdicion ? (envioInicial?.kg_origen ?? 0) / 1000 : 0,
       acepta_terminos: false,
@@ -107,8 +105,6 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
         cpe: data.cpe,
         id_origen: data.id_origen,
         id_destino: data.id_destino,
-        id_chofer: data.id_chofer,
-        patente_camion: data.patente_camion,
         tipo_grano: data.tipo_grano as TipoGrano,
         kg_origen: data.kg_origen * 1000, // El form trabaja en Tn, backend en kg
       } as any;
@@ -285,63 +281,6 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                   className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.cpe ? 'ring-2 ring-destructive' : ''}`}
                 />
                 {errors.cpe && <p className="text-xs text-destructive">{errors.cpe.message}</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* Sección: Transporte */}
-          <div className="space-y-5">
-            <h6 className="font-bold text-[#198754] mb-3 border-b border-[#198754]/20 pb-2 flex items-center gap-2">
-              <Truck className="h-5 w-5" /> Asignación de Transporte
-            </h6>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">
-                  Chofer Asignado <span className="text-destructive">*</span>
-                </Label>
-                <Controller
-                  name="id_chofer"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value?.toString() || ''} onValueChange={(v) => field.onChange(parseInt(v, 10))}>
-                      <SelectTrigger className={`w-full bg-muted/30 border-0 shadow-sm h-11 ${errors.id_chofer ? 'ring-2 ring-destructive' : ''}`}>
-                        <SelectValue placeholder="Cargando choferes..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {choferes.map((chofer) => (
-                          <SelectItem key={chofer.id_chofer} value={chofer.id_chofer.toString()}>
-                            {getNombreChofer(chofer)} (Lic: {chofer.nro_licencia})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.id_chofer && <p className="text-xs text-destructive">{errors.id_chofer.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">
-                  Vehículo (Camión) <span className="text-destructive">*</span>
-                </Label>
-                <Controller
-                  name="patente_camion"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className={`w-full bg-muted/30 border-0 shadow-sm h-11 ${errors.patente_camion ? 'ring-2 ring-destructive' : ''}`}>
-                        <SelectValue placeholder="Cargando flota..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {camiones.map((camion) => (
-                          <SelectItem key={camion.patente} value={camion.patente}>
-                            Patente: {camion.patente} (Tara: {camion.tara_vacio_kg}kg)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.patente_camion && <p className="text-xs text-destructive">{errors.patente_camion.message}</p>}
               </div>
             </div>
           </div>

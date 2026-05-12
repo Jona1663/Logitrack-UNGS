@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, PlusCircle, FileText } from 'lucide-react';
+import { Search, PlusCircle, FileText, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
@@ -67,6 +67,13 @@ export default function MenuPage() {
       title: 'Historial Completo',
       description: 'Revisa el registro completo de auditoria',
       show: permisos.verAuditoria,
+    },
+        {
+      href: '/asignaciones',
+      icon: <Truck className="h-8 w-8" />,
+      title: 'Asignar Transporte',
+      description: 'Asigná chofer y camión a los envíos pendientes',
+      show: permisos.asignarTransporte,
     },
   ];
 

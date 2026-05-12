@@ -1,5 +1,7 @@
 package com.logitrack.sistema_logistica.config;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,7 +19,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.logitrack.sistema_logistica.security.JwtAuthFilter;
 
 import lombok.RequiredArgsConstructor;
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +34,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/envios/**").hasRole("CHOFER")
+                        //.requestMatchers(HttpMethod.PATCH, "/api/envios/**").hasRole("CHOFER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/envios/**").permitAll()
                         .requestMatchers("/api/envios/**").permitAll()
                         .requestMatchers("/api/catalogos/**").permitAll()
                         .requestMatchers("/api/mock/**").permitAll()
@@ -90,7 +92,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("*",
                 "https://logritrack-agro-test-develop.netlify.app/"));
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

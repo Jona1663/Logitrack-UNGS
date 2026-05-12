@@ -13,6 +13,7 @@ import type {
   Chofer,
   Camion,
   MetadatosCatalogo,
+  EnvioChofer,
 } from '@/types';
 
 // Base URL de la API - usar variable de entorno en produccion
@@ -97,7 +98,7 @@ class ApiClient {
     searchParams.append('size', params.size.toString());
 
     return this.request<PaginatedResponse<Envio>>(
-      `/envios/busqueda-avanzada?${searchParams.toString()}`
+      `/envios/search?${searchParams.toString()}`
     );
   }
   async getEnvio(id: string | number): Promise<Envio> {
@@ -119,19 +120,18 @@ class ApiClient {
   }
 
   async cancelarEnvio(id: string | number): Promise<Envio> {
-    return this.request<Envio>(`/envios/${id}`, {
+    return this.request<Envio>(`/envios/${id}/cancelar`, {
       method: 'PUT',
-      body: JSON.stringify({ estado: 'CANCELADO' }),
     });
   }
 
-  async cambiarEstadoChofer(id: number, nuevoEstado: string): Promise<Envio> {
+  async cambiarEstadoChofer(id: string | number, nuevoEstado: string): Promise<Envio> {
     return this.request<Envio>(`/envios/${id}/estado?nuevoEstado=${nuevoEstado}`, {
       method: 'PATCH',
     });
   }
 
-  async reportarIncidencia(id: number, incidencia: IncidenciaDTO): Promise<void> {
+  async reportarIncidencia(id: string | number, incidencia: IncidenciaDTO): Promise<void> {
     return this.request<void>(`/envios/${id}/incidencias`, {
       method: 'POST',
       body: JSON.stringify(incidencia),
@@ -146,8 +146,8 @@ class ApiClient {
     return this.request<RegistroHistorial[]>('/envios/historial-completo');
   }
 
-  async getMisAsignaciones(): Promise<Envio[]> {
-    return this.request<Envio[]>('/envios/mis-asignaciones');
+  async getMisAsignaciones(): Promise<EnvioChofer[]> {
+    return this.request<EnvioChofer[]>('/chofer/envios');
   }
 
   // === CATALOGOS ===
@@ -169,6 +169,22 @@ class ApiClient {
 
   async getCamiones(): Promise<Camion[]> {
     return this.request<Camion[]>('/catalogos/camiones');
+  }
+
+  // Envíos pendientes de asignación (sin chofer ni camión)
+  async getEnviosSinAsignar(): Promise<Envio[]> {
+    return this.request<Envio[]>('/envios/sin-asignar');
+  }
+
+  // Asignar chofer y camión juntos
+  async asignarTransporte(
+    idEnvio: string,
+    data: { id_chofer: number; patente_camion: string }
+  ): Promise<Envio> {
+    return this.request<Envio>(`/envios/${idEnvio}/asignar-transporte`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 }
 

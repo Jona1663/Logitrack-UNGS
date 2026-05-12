@@ -3,14 +3,14 @@ import type { EstadoEnvio, Prioridad, RolUsuario } from '@/types';
 // === FLUJO LOGISTICO DEL CHOFER ===
 export const FLUJO_LOGISTICO: Record<
   EstadoEnvio,
-  { siguiente: EstadoEnvio | null; btnText: string; icon: string }
+  { siguiente: EstadoEnvio | null; btnText: string; confirmacionText: string; icon: string }
 > = {
-  PENDIENTE: { siguiente: 'EN_TRANSITO', btnText: 'Iniciar Viaje', icon: 'Truck' },
-  EN_TRANSITO: { siguiente: 'EN_PUNTO_DE_RECOLECCION', btnText: 'Llegue a Carga', icon: 'MapPin' },
-  EN_PUNTO_DE_RECOLECCION: { siguiente: 'EN_REPARTO', btnText: 'Iniciar Reparto', icon: 'Package' },
-  EN_REPARTO: { siguiente: 'ENTREGADO', btnText: 'Confirmar Entrega', icon: 'CheckCircle' },
-  ENTREGADO: { siguiente: null, btnText: 'Viaje Completado', icon: 'Trophy' },
-  CANCELADO: { siguiente: null, btnText: 'Envio Cancelado', icon: 'XCircle' },
+  PENDIENTE: { siguiente: 'EN_TRANSITO', btnText: 'Iniciar Viaje', confirmacionText: 'El viaje comenzará y quedará registrado como en tránsito.', icon: 'Truck' },
+  EN_TRANSITO: { siguiente: 'EN_PUNTO_DE_RECOLECCION', btnText: 'Confirmar llegada a carga', confirmacionText: 'Se registrará tu llegada al punto de recolección.', icon: 'MapPin' },
+  EN_PUNTO_DE_RECOLECCION: { siguiente: 'EN_REPARTO', btnText: 'Iniciar entrega', confirmacionText: 'Se confirmará que la carga está completa y comenzará el reparto hacia el destino.', icon: 'Package' },
+  EN_REPARTO: { siguiente: 'ENTREGADO', btnText: 'Confirmar entrega al destino', confirmacionText: 'Se registrará la entrega exitosa de la mercadería en el destino.', icon: 'CheckCircle' },
+  ENTREGADO: { siguiente: null, btnText: 'Viaje finalizado', confirmacionText: '', icon: 'Trophy' },
+  CANCELADO: { siguiente: null, btnText: 'Envío cancelado', confirmacionText: '', icon: 'XCircle' },
 };
 
 // === CONFIGURACION DE ESTADOS ===
@@ -76,6 +76,7 @@ export const PERMISOS_POR_ROL: Record<
     verAuditoria: boolean;
     panelChofer: boolean;
     verMenu: boolean;
+    asignarTransporte: boolean;
   }
 > = {
   ROLE_OPERADOR: {
@@ -85,6 +86,7 @@ export const PERMISOS_POR_ROL: Record<
     verAuditoria: false,
     panelChofer: false,
     verMenu: true,
+    asignarTransporte: true,
   },
   ROLE_SUPERVISOR: {
     crearEnvio: true,
@@ -93,6 +95,7 @@ export const PERMISOS_POR_ROL: Record<
     verAuditoria: true,
     panelChofer: false,
     verMenu: true,
+    asignarTransporte: true,
   },
   ROLE_ADMIN: {
     crearEnvio: true,
@@ -101,6 +104,7 @@ export const PERMISOS_POR_ROL: Record<
     verAuditoria: true,
     panelChofer: false,
     verMenu: true,
+    asignarTransporte: true,
   },
   ROLE_CHOFER: {
     crearEnvio: false,
@@ -109,6 +113,7 @@ export const PERMISOS_POR_ROL: Record<
     verAuditoria: false,
     panelChofer: true,
     verMenu: false,
+    asignarTransporte: false,
   },
 };
 

@@ -18,12 +18,6 @@ export const envioSchema = z
     id_destino: z
       .number({ invalid_type_error: 'Seleccione un destino' })
       .positive('Seleccione un destino'),
-    id_chofer: z
-      .number({ invalid_type_error: 'Seleccione un chofer' })
-      .positive('Seleccione un chofer'),
-    patente_camion: z
-      .string()
-      .min(1, 'Seleccione un camion'),
     tipo_grano: z
       .string()
       .min(1, 'Seleccione un tipo de grano'),
