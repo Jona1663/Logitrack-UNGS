@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 export const envioSchema = z
   .object({
-    tracking_ctg: z
-      .string()
-      .min(1, 'El CTG es requerido')
-      .regex(/^\d+$/, 'El CTG debe contener solo numeros'),
+    // tracking_ctg: z
+    //   .string()
+    //   .min(1, 'El CTG es requerido')
+    //   .regex(/^\d+$/, 'El CTG debe contener solo numeros'),
     cpe: z
       .string()
       .min(1, 'El CPE es requerido'),

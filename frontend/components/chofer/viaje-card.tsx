@@ -69,10 +69,16 @@ export function ViajeCard({ viaje }: ViajeCardProps) {
             value={viaje.patente_camion}
             mono
           />
-          <InfoItem
+          {/* <InfoItem
             icon={<FileText className="h-4 w-4" />}
             label="CTG"
             value={viaje.tracking_ctg}
+            mono
+          /> */}
+          <InfoItem
+            icon={<FileText className="h-4 w-4" />}
+            label="CPE"
+            value={viaje.cpe}
             mono
           />
         </div>

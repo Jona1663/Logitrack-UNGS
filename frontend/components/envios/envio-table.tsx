@@ -72,7 +72,8 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
                 <TableRow key={envio.id_envio} className="hover:bg-muted/30 transition-colors">
                   <TableCell className="pl-6">
                     <span className="font-bold text-[#198754] block">{envio.id_envio}</span>
-                    <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span>
+                    {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
+                    <span className="text-xs text-muted-foreground">CPE: {envio.cpe}</span>
                   </TableCell>
                   <TableCell>
                     <span className="font-medium text-gray-900 block">{envio.origen?.empresa?.razon_social || 'Sin cliente'}</span>
@@ -153,7 +154,8 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
               <div className="flex justify-between items-center border-b pb-2">
                 <div>
                   <span className="font-bold text-[#198754] block">#{envio.id_envio}</span>
-                  <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span>
+                  {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
+                  <span className="text-xs text-muted-foreground">CPE: {envio.cpe}</span>
                 </div>
                 <EstadoBadge estado={envio.estado_actual} showIcon={false} />
               </div>
