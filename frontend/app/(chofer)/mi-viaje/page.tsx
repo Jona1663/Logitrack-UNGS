@@ -140,10 +140,10 @@ export default function MiViajePage() {
             </AlertDialog>
 
             {/* Boton de incidencia */}
-            <IncidenciaDrawer
+            {/* <IncidenciaDrawer
               onSubmit={handleReportarIncidencia}
               isLoading={isUpdating}
-            />
+            /> */}
           </div>
         )}
 
