@@ -73,19 +73,38 @@ export interface Camion {
 
 export interface Envio {
   id_envio: string | number;
-  tracking_ctg: string;
+  // tracking_ctg: string;
   cpe: string;
   estado_actual: EstadoEnvio;
   prioridad_ia: Prioridad;
   tipo_grano: TipoGrano;
   kg_origen: number;
   fecha_creacion: string;
-  fecha_entrega_estimada?: string;
+  fecha_estimada_llegada?: string;  // fecha_entrega_estimada?: string;
   origen: Establecimiento;
   destino: Establecimiento;
   chofer: Chofer;
   camion: Camion;
 }
+
+// export interface EnvioDetalleResponseDTO {
+//   id_envio: string | number;
+//   cpe: string;
+//   estado_actual: EstadoEnvio;
+//   tipo_grano: TipoGrano;
+//   kg_origen: number;
+//   prioridad_ia: Prioridad;
+
+//   // Datos de origen y destino
+//   origen_nombre: string;
+//   origen_direccion: string;
+//   destino_nombre: string;
+//   destino_direccion: string;
+
+//   // Datos del chofer
+//   chofer_nombre: string;
+//   chofer_apellido: string;
+// }
 
 export interface RegistroHistorial {
   id_historial: number;
@@ -99,7 +118,7 @@ export interface RegistroHistorial {
 
 // === DTOs ===
 export interface EnvioRequestDTO {
-  tracking_ctg: string;
+  // tracking_ctg: string;
   cpe: string;
   id_origen: number;
   id_destino: number;
@@ -112,7 +131,7 @@ export interface EnvioRequestDTO {
 
 export interface EnvioUpdateDTO {
   estado?: EstadoEnvio;
-  prioridad?: Prioridad;
+  prioridad_ia?: Prioridad;
 }
 export interface IncidenciaDTO {
   descripcion: string;
@@ -151,7 +170,7 @@ export interface LugarResumen {
 
 export interface EnvioChofer {
   id_envio: string;
-  tracking_ctg: string;
+  // tracking_ctg: string;
   cpe: string;
   estado_actual: EstadoEnvio;
   tipo_grano: TipoGrano;

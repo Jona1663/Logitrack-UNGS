@@ -101,8 +101,13 @@ class ApiClient {
       `/envios/search?${searchParams.toString()}`
     );
   }
+
   async getEnvio(id: string | number): Promise<Envio> {
     return this.request<Envio>(`/envios/${id}`);
+  }
+
+  async getEnvioCompleto(id: string | number): Promise<Envio> {
+    return this.request<Envio>(`/envios/buscar/${id}`);
   }
 
   async crearEnvio(envio: EnvioRequestDTO): Promise<Envio> {
@@ -112,9 +117,16 @@ class ApiClient {
     });
   }
 
+  // async actualizarEnvio(id: string | number, data: EnvioUpdateDTO): Promise<Envio> {
+  //   return this.request<Envio>(`/envios/${id}`, {
+  //     method: 'PUT',
+  //     body: JSON.stringify(data),
+  //   });
+  // }
+
   async actualizarEnvio(id: string | number, data: EnvioUpdateDTO): Promise<Envio> {
-    return this.request<Envio>(`/envios/${id}`, {
-      method: 'PUT',
+    return this.request<Envio>(`/envios/${id}/operativo`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
@@ -123,6 +135,19 @@ class ApiClient {
     return this.request<Envio>(`/envios/${id}/cancelar`, {
       method: 'PUT',
     });
+  }
+
+  async getHistorialEnvio(id: string | number): Promise<RegistroHistorial[]> {
+    return this.request<RegistroHistorial[]>(`/envios/${id}/historial`);
+  }
+
+  async getHistorialCompleto(): Promise<RegistroHistorial[]> {
+    return this.request<RegistroHistorial[]>('/envios/historial-completo');
+  }
+
+  // === CHOFER ===
+  async getMisAsignaciones(): Promise<EnvioChofer[]> {
+    return this.request<EnvioChofer[]>('/chofer/envios');
   }
 
   async cambiarEstadoChofer(id: string | number, nuevoEstado: string): Promise<Envio> {
@@ -138,17 +163,6 @@ class ApiClient {
     });
   }
 
-  async getHistorialEnvio(id: string | number): Promise<RegistroHistorial[]> {
-    return this.request<RegistroHistorial[]>(`/envios/${id}/historial`);
-  }
-
-  async getHistorialCompleto(): Promise<RegistroHistorial[]> {
-    return this.request<RegistroHistorial[]>('/envios/historial-completo');
-  }
-
-  async getMisAsignaciones(): Promise<EnvioChofer[]> {
-    return this.request<EnvioChofer[]>('/chofer/envios');
-  }
 
   // === CATALOGOS ===
   async getMetadatos(): Promise<MetadatosCatalogo> {

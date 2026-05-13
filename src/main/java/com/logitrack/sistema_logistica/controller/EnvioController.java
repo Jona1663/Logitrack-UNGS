@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
+import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
@@ -206,7 +207,7 @@ public class EnvioController {
         }
     }
 
-    // El Front va a llamar cuando el usuario escriba en la barra de búsqueda.
+    // Se obtiene el envío completo
     @GetMapping("/buscar/{id_envio}")
     public ResponseEntity<?> obtenerEnvioPorTracking(@PathVariable String id_envio) {
         try {
@@ -392,5 +393,20 @@ public class EnvioController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-    ////////////////////////////////////////////////////////////////////////////////////////
+
+    // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de
+    // operador/supervisor
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
+    @PatchMapping("/{id}/operativo")
+    public ResponseEntity<?> actualizarOperativaEnvio(
+            @PathVariable String id,
+            @RequestBody EnvioOperativoDTO dto,
+            Authentication authentication) {
+        try {
+            Envio envioActualizado = envioService.actualizarEstadoOperativo(id, dto, authentication);
+            return ResponseEntity.ok(envioActualizado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

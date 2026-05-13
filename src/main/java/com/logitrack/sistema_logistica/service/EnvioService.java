@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
+import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.model.Camion;
 import com.logitrack.sistema_logistica.model.Chofer_Detalle;
 import com.logitrack.sistema_logistica.model.Envio;
@@ -43,6 +44,8 @@ import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 
 import com.logitrack.sistema_logistica.model.Empresa_Cliente;
 import com.logitrack.sistema_logistica.repository.Empresa_ClienteRepository;
+
+import org.springframework.security.core.Authentication;
 
 @Service
 public class EnvioService {
@@ -83,12 +86,12 @@ public class EnvioService {
                 verificarRucaEmpresa(hoy, destino);
 
                 Chofer_Detalle chofer = (dto.getId_chofer() != null)
-                        ? choferDetalleRepository.findById(dto.getId_chofer()).orElse(null)
-                        : null;
+                                ? choferDetalleRepository.findById(dto.getId_chofer()).orElse(null)
+                                : null;
 
                 Camion camion = (dto.getPatente_camion() != null && !dto.getPatente_camion().isBlank())
-                        ? camionRepository.findById(dto.getPatente_camion()).orElse(null)
-                        : null;
+                                ? camionRepository.findById(dto.getPatente_camion()).orElse(null)
+                                : null;
 
                 Usuario usuarioCreador = usuarioRepository.findById(dto.getId_usuario_creador())
                                 .orElseThrow(() -> new RuntimeException("Usuario creador no encontrado"));
@@ -400,61 +403,67 @@ public class EnvioService {
                 return envioRepository.save(envioExistente);
         }
 
+        /*
+         * #121: Método calcular el ETA (Tiempo Estimado de Llegada) de un envío,
+         * Velocidad promedio fija: 65 km/h
+         */
 
-     /* #121: Método calcular el ETA (Tiempo Estimado de Llegada) de un envío,
-     * Velocidad promedio fija: 65 km/h
-        */   
-    
-    @Transactional
-    public void asignarChoferCamion (EnvioRequestDTO dto) {
-        Envio envio = envioRepository.findById(dto.getId_envio())
-                .orElseThrow(() -> new RuntimeException("Envío no encontrado"));
-        Camion camion = camionRepository.findById(dto.getPatente_camion())
-                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
-        Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
-            .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+        @Transactional
+        public void asignarChoferCamion(EnvioRequestDTO dto) {
+                Envio envio = envioRepository.findById(dto.getId_envio())
+                                .orElseThrow(() -> new RuntimeException("Envío no encontrado"));
+                Camion camion = camionRepository.findById(dto.getPatente_camion())
+                                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
+                                .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
-        
-        LocalDateTime fecha_salida = LocalDateTime.now();
-        
-        envio.setCamion(camion);
-        envio.setFecha_estimada_llegada(calcularETA(envio.getDistancia_km(), fecha_salida));
-        envio.setFecha_salida(fecha_salida);
-        envio.setChofer(chofer);
-        envioRepository.save(envio);
+                LocalDateTime fecha_salida = LocalDateTime.now();
 
+                envio.setCamion(camion);
+                envio.setFecha_estimada_llegada(calcularETA(envio.getDistancia_km(), fecha_salida));
+                envio.setFecha_salida(fecha_salida);
+                envio.setChofer(chofer);
+                envioRepository.save(envio);
 
-    }
-
-    private static final double VELOCIDAD_PROMEDIO_KMH = 65.0;
-    private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime fecha_salida) {
-        if (distanciaKm == null || distanciaKm <= 0) {
-            return null;
-        }
-        long minutosViaje = Math.round((distanciaKm / VELOCIDAD_PROMEDIO_KMH) * 60);
-        return fecha_salida.plusMinutes(minutosViaje);
         }
 
-    /**
-    *  #122 — OBTENER DETALLE CON ETA
-    *   Usado por el endpoint GET /api/envios/{id}
-    */ 
+        private static final double VELOCIDAD_PROMEDIO_KMH = 65.0;
+        // private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime
+        // fecha_salida) {
+        // if (distanciaKm == null || distanciaKm <= 0) {
+        // return null;
+        // }
+        // long minutosViaje = Math.round((distanciaKm / VELOCIDAD_PROMEDIO_KMH) * 60);
+        // return fecha_salida.plusMinutes(minutosViaje);
+        // }
+        private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime fecha_salida) {
+                if (distanciaKm == null || distanciaKm <= 0 || fecha_salida == null) {
+                        return null;
+                }
+                long minutosViaje = Math.round((distanciaKm / VELOCIDAD_PROMEDIO_KMH) * 60);
+                return fecha_salida.plusMinutes(minutosViaje);
+        }
 
-    
-    @Transactional(readOnly = true)
-    public EnvioDetalleResponseDTO obtenerDetalleConETA(String idEnvio) {
-        Envio envio = envioRepository.findById(idEnvio)
-                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+        /**
+         * #122 — OBTENER DETALLE CON ETA
+         * Usado por el endpoint GET /api/envios/{id}
+         */
 
-        LocalDateTime eta = calcularETA(envio.getDistancia_km(), envio.getFecha_salida());
+        @Transactional(readOnly = true)
+        public EnvioDetalleResponseDTO obtenerDetalleConETA(String idEnvio) {
+                Envio envio = envioRepository.findById(idEnvio)
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-        return EnvioDetalleResponseDTO.fromEntity(envio, eta);
-    }
+                LocalDateTime eta = calcularETA(envio.getDistancia_km(), envio.getFecha_salida());
+
+                return EnvioDetalleResponseDTO.fromEntity(envio, eta);
+        }
+
         @Transactional
         public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
                 // 1. Verificar que el envío existe
                 Envio envio = envioRepository.findById(idEnvio)
-                        .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
                 // 2. Verificar que no tenga ya transporte asignado
                 if (envio.getChofer() != null || envio.getCamion() != null) {
@@ -463,16 +472,64 @@ public class EnvioService {
 
                 // 3. Buscar chofer y camión — ambos obligatorios
                 Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
-                        .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+                                .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
                 Camion camion = camionRepository.findById(dto.getPatente_camion())
-                        .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+                                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
 
                 // 4. Asignar y guardar
                 envio.setChofer(chofer);
                 envio.setCamion(camion);
 
                 return envioRepository.save(envio);
+        }
+
+        // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de
+        // operador/supervisor
+        @Transactional
+        public Envio actualizarEstadoOperativo(String idEnvio, EnvioOperativoDTO dto, Authentication auth) {
+                Envio envioExistente = envioRepository.findById(idEnvio)
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+                Estado_Envio estadoAnterior = envioExistente.getEstado_actual();
+                boolean estadoCambiado = false;
+
+                // 1. Actualización de Estado (Permitido para Operador y Supervisor)
+                if (dto.getEstado() != null && dto.getEstado() != estadoAnterior) {
+                        envioExistente.setEstado_actual(dto.getEstado());
+                        estadoCambiado = true;
+                }
+
+                // 2. Actualización de Prioridad (Estrictamente restringido a Supervisor)
+                if (dto.getPrioridad_ia() != null && !dto.getPrioridad_ia().equals(envioExistente.getPrioridad_ia())) {
+                        boolean esSupervisor = auth.getAuthorities().stream()
+                                        .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"));
+
+                        if (!esSupervisor) {
+                                throw new RuntimeException(
+                                                "La prioridad del envío solo puede ser modificada por un supervisor.");
+                        }
+                        envioExistente.setPrioridad_ia(dto.getPrioridad_ia());
+                }
+
+                Envio envioGuardado = envioRepository.save(envioExistente);
+
+                // 3. Generar el historial solo si el estado realmente cambió
+                if (estadoCambiado) {
+                        Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName())
+                                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+                        Historial_Estados historial = Historial_Estados.builder()
+                                        .envio(envioGuardado)
+                                        .usuario(usuarioModificador)
+                                        .estado_anterior(estadoAnterior)
+                                        .estado_nuevo(envioGuardado.getEstado_actual())
+                                        .build();
+
+                        historialEstadosRepository.save(historial);
+                }
+
+                return envioGuardado;
         }
 
 }

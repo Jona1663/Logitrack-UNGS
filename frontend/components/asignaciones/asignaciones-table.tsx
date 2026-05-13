@@ -139,7 +139,8 @@ export function AsignacionesTable() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="py-4 pl-6 font-semibold">ID / CTG</TableHead>
+                    {/* <TableHead className="py-4 pl-6 font-semibold">ID / CTG</TableHead> */}
+                    <TableHead className="py-4 pl-6 font-semibold">ID</TableHead>
                     <TableHead className="py-4 font-semibold">Cliente</TableHead>
                     <TableHead className="py-4 font-semibold">Ruta</TableHead>
                     <TableHead className="py-4 font-semibold">Carga</TableHead>
@@ -154,7 +155,7 @@ export function AsignacionesTable() {
                       <TableRow key={envio.id_envio} className="hover:bg-muted/30 transition-colors">
                         <TableCell className="pl-6">
                           <span className="font-bold text-[#198754] block">{envio.id_envio}</span>
-                          <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span>
+                          {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
                         </TableCell>
                         <TableCell>
                           <span className="font-medium text-gray-900 block">
@@ -210,7 +211,7 @@ export function AsignacionesTable() {
                     <div className="flex justify-between items-center border-b pb-2">
                       <div>
                         <span className="font-bold text-[#198754] block">{envio.id_envio}</span>
-                        <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span>
+                        {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
                       </div>
                       <EstadoBadge estado={envio.estado_actual} showIcon={false} />
                     </div>

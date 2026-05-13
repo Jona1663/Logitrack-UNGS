@@ -31,7 +31,7 @@ export const ESTADO_CONFIG: Record<
     icon: 'Truck',
   },
   EN_PUNTO_DE_RECOLECCION: {
-    label: 'En Punto de Carga',
+    label: 'En Punto de Recolección',
     color: 'text-orange-700',
     bgColor: 'bg-orange-100',
     icon: 'MapPin',

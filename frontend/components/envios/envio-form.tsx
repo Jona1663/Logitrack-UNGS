@@ -51,7 +51,7 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
   } = useForm<EnvioFormData>({
     resolver: zodResolver(envioSchema),
     defaultValues: {
-      tracking_ctg: esEdicion ? envioInicial?.tracking_ctg ?? '' : '',
+      // tracking_ctg: esEdicion ? envioInicial?.tracking_ctg ?? '' : '',
       cpe: esEdicion ? envioInicial?.cpe ?? '' : '',
       clienteCuit: cuitInicial,
       id_origen: esEdicion ? envioInicial?.origen?.id_establecimiento ?? 0 : 0,
@@ -101,7 +101,7 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
   const onSubmit = async (data: EnvioFormData) => {
     try {
       const payload = {
-        tracking_ctg: data.tracking_ctg,
+        // tracking_ctg: data.tracking_ctg,
         cpe: data.cpe,
         id_origen: data.id_origen,
         id_destino: data.id_destino,
@@ -260,17 +260,17 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
               <FileText className="h-5 w-5" /> Documentación Fiscal
             </h6>
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">
+              {/*<div className="space-y-2">
+               <Label className="text-xs font-bold uppercase text-muted-foreground">
                   Código CTG <span className="text-destructive">*</span>
                 </Label>
-                <Input
+                 <Input
                   placeholder="Nro. de Trazabilidad"
                   {...register('tracking_ctg')}
                   className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.tracking_ctg ? 'ring-2 ring-destructive' : ''}`}
                 />
-                {errors.tracking_ctg && <p className="text-xs text-destructive">{errors.tracking_ctg.message}</p>}
-              </div>
+                {errors.tracking_ctg && <p className="text-xs text-destructive">{errors.tracking_ctg.message}</p>} 
+              </div>*/}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-muted-foreground">
                   CPE (Carta de Porte) <span className="text-destructive">*</span>

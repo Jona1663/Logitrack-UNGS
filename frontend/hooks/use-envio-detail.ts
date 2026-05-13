@@ -26,7 +26,7 @@ export function useEnvioDetail(id: string | number) {
 
     try {
       const [envioData, historialData] = await Promise.all([
-        api.getEnvio(id),
+        api.getEnvioCompleto(id),
         api.getHistorialEnvio(id),
       ]);
 
