@@ -84,7 +84,7 @@ export function useCatalogos() {
       const textoLower = texto.toLowerCase();
       return state.empresas.filter(
         (e) =>
-          e.razon_social.toLowerCase().includes(textoLower) ||
+          e.razonSocial.toLowerCase().includes(textoLower) ||
           e.cuit.includes(texto)
       );
     },

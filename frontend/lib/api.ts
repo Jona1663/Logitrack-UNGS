@@ -193,7 +193,7 @@ class ApiClient {
   // Asignar chofer y camión juntos
   async asignarTransporte(
     idEnvio: string,
-    data: { id_chofer: number; patente_camion: string }
+    data: { idChofer: number; patenteCamion: string }
   ): Promise<Envio> {
     return this.request<Envio>(`/envios/${idEnvio}/asignar-transporte`, {
       method: 'PATCH',

@@ -72,11 +72,10 @@ export function formatearFechaHora(fechaISO: string): string {
 /**
  * Obtiene el nombre completo del chofer
  */
-export function getNombreChofer(chofer: { persona_asociada: { nombre: string; apellido: string } }): string {
-  if (!chofer?.persona_asociada) return '-';
-  return `${chofer.persona_asociada.nombre} ${chofer.persona_asociada.apellido}`;
+export function getNombreChofer(chofer: { personaAsociada: { nombre: string; apellido: string } }): string {
+  if (!chofer?.personaAsociada) return '-';
+  return `${chofer.personaAsociada.nombre} ${chofer.personaAsociada.apellido}`;
 }
-
 /**
  * Formatea peso en kg
  */

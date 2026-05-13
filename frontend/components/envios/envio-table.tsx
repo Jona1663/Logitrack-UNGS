@@ -40,8 +40,8 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
     if (!envioAConfirmar) return;
     setCancelando(true);
     try {
-      await onCancelar(envioAConfirmar.id_envio);
-      toast.success(`Envío #${envioAConfirmar.id_envio} cancelado correctamente`);
+      await onCancelar(envioAConfirmar.idEnvio);
+      toast.success(`Envío #${envioAConfirmar.idEnvio} cancelado correctamente`);
     } catch {
       toast.error('No se pudo cancelar el envío', {
         description: 'Intentá nuevamente o contactá al administrador.',
@@ -66,27 +66,27 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {envios.map((envio) => {
-              const pesoTn = envio.kg_origen ? (envio.kg_origen / 1000).toFixed(1) : '0';
+            {envios.map((envio, index) => {
+              const pesoTn = envio.kgOrigen ? (envio.kgOrigen / 1000).toFixed(1) : '0';
               return (
-                <TableRow key={envio.id_envio} className="hover:bg-muted/30 transition-colors">
+                <TableRow key={envio.idEnvio ?? `envio-${index}`} className="hover:bg-muted/30 transition-colors">
                   <TableCell className="pl-6">
-                    <span className="font-bold text-[#198754] block">{envio.id_envio}</span>
-                    {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
+                    <span className="font-bold text-[#198754] block">{envio.idEnvio}</span>
+                    {/* <span className="text-xs text-muted-foreground">CTG: {envio.trackingCtg}</span> */}
                     <span className="text-xs text-muted-foreground">CPE: {envio.cpe}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-medium text-gray-900 block">{envio.origen?.empresa?.razon_social || 'Sin cliente'}</span>
+                    <span className="font-medium text-gray-900 block">{envio.origen?.empresa?.razonSocial || 'Sin cliente'}</span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="h-3 w-3" /> {envio.destino?.nombre_lugar || 'Destino pendiente'}
+                      <MapPin className="h-3 w-3" /> {envio.destino?.nombreLugar || 'Destino pendiente'}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-medium text-gray-900 block">{normalizarEnum(envio.tipo_grano)}</span>
+                    <span className="font-medium text-gray-900 block">{normalizarEnum(envio.tipoGrano)}</span>
                     <span className="text-xs text-muted-foreground">{pesoTn} Tn</span>
                   </TableCell>
                   <TableCell>
-                    <EstadoBadge estado={envio.estado_actual} />
+                    <EstadoBadge estado={envio.estadoActual} />
                   </TableCell>
                   <TableCell className="text-right pr-6">
                     <TooltipProvider>
@@ -95,7 +95,7 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="outline" size="sm" className="text-[#198754] border-[#198754]/30 hover:bg-[#198754]/10 shadow-sm" asChild>
-                              <Link href={`/envios/${envio.id_envio}`}>
+                              <Link href={`/envios/${envio.idEnvio}`}>
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -103,12 +103,12 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
                           <TooltipContent>Ver ficha</TooltipContent>
                         </Tooltip>
 
-                        {envio.estado_actual === 'PENDIENTE' && (
+                        {envio.estadoActual === 'PENDIENTE' && (
                           <>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="outline" size="sm" className="text-amber-600 border-amber-400/40 hover:bg-amber-50 shadow-sm" asChild>
-                                  <Link href={`/envios/${envio.id_envio}/editar`}>
+                                  <Link href={`/envios/${envio.idEnvio}/editar`}>
                                     <Pencil className="h-4 w-4" />
                                   </Link>
                                 </Button>
@@ -147,31 +147,31 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
 
       {/* Vista Mobile - Transformación a Tarjetas (Mobile-First de tu CSS) */}
       <div className="md:hidden p-4 space-y-4">
-        {envios.map((envio) => {
-          const pesoTn = envio.kg_origen ? (envio.kg_origen / 1000).toFixed(1) : '0';
+        {envios.map((envio, index) => {
+          const pesoTn = envio.kgOrigen ? (envio.kgOrigen / 1000).toFixed(1) : '0';
           return (
-            <div key={envio.id_envio} className="bg-white border rounded-xl shadow-sm p-4 flex flex-col gap-3">
+            <div key={envio.idEnvio ?? `envio-${index}`} className="bg-white border rounded-xl shadow-sm p-4 flex flex-col gap-3">
               <div className="flex justify-between items-center border-b pb-2">
                 <div>
-                  <span className="font-bold text-[#198754] block">#{envio.id_envio}</span>
-                  {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
+                  <span className="font-bold text-[#198754] block">#{envio.idEnvio}</span>
+                  {/* <span className="text-xs text-muted-foreground">CTG: {envio.trackingCtg}</span> */}
                   <span className="text-xs text-muted-foreground">CPE: {envio.cpe}</span>
                 </div>
-                <EstadoBadge estado={envio.estado_actual} showIcon={false} />
+                <EstadoBadge estado={envio.estadoActual} showIcon={false} />
               </div>
 
               <div className="flex justify-between items-center border-b pb-2">
                 <span className="text-xs font-semibold text-muted-foreground uppercase">Cliente</span>
                 <div className="text-right">
-                  <span className="font-medium text-gray-900 block">{envio.origen?.empresa?.razon_social || '-'}</span>
-                  <span className="text-xs text-muted-foreground">{envio.destino?.nombre_lugar || '-'}</span>
+                  <span className="font-medium text-gray-900 block">{envio.origen?.empresa?.razonSocial || '-'}</span>
+                  <span className="text-xs text-muted-foreground">{envio.destino?.nombreLugar || '-'}</span>
                 </div>
               </div>
 
               <div className="flex justify-between items-center border-b pb-2">
                 <span className="text-xs font-semibold text-muted-foreground uppercase">Carga</span>
                 <div className="text-right">
-                  <span className="font-medium text-gray-900 block">{normalizarEnum(envio.tipo_grano)}</span>
+                  <span className="font-medium text-gray-900 block">{normalizarEnum(envio.tipoGrano)}</span>
                   <span className="text-xs text-muted-foreground">{pesoTn} Tn</span>
                 </div>
               </div>
@@ -179,16 +179,16 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
 
                 {/* 1. Botón Detalles - siempre visible */}
                 <Button variant="outline" className="w-full text-[#198754] border-[#198754]/30 hover:bg-[#198754]/10" asChild>
-                  <Link href={`/envios/${envio.id_envio}`}>
+                  <Link href={`/envios/${envio.idEnvio}`}>
                     <Eye className="h-4 w-4 mr-2" /> Ver Ficha Completa
                   </Link>
                 </Button>
 
                 {/* 2 y 3. Solo visibles si el envío está PENDIENTE */}
-                {envio.estado_actual === 'PENDIENTE' && (
+                {envio.estadoActual === 'PENDIENTE' && (
                   <>
                     <Button variant="outline" className="w-full text-amber-600 border-amber-400/40 hover:bg-amber-50" asChild>
-                      <Link href={`/envios/${envio.id_envio}/editar`}>
+                      <Link href={`/envios/${envio.idEnvio}/editar`}>
                         <Pencil className="h-4 w-4 mr-2" /> Editar Envío
                       </Link>
                     </Button>
@@ -217,7 +217,7 @@ export function EnvioTable({ envios, onCancelar }: EnvioTableProps) {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Cancelar envío #{envioAConfirmar?.id_envio}
+              Cancelar envío #{envioAConfirmar?.idEnvio}
             </AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción cancelará el envío de forma permanente. El estado cambiará a{' '}

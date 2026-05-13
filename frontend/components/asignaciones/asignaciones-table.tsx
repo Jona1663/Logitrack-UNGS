@@ -75,15 +75,15 @@ export function AsignacionesTable() {
 
     setGuardando(true);
     try {
-      await api.asignarTransporte(String(envioSeleccionado.id_envio), {
-        id_chofer: parseInt(choferSeleccionado, 10),
-        patente_camion: camionSeleccionado,
+      await api.asignarTransporte(String(envioSeleccionado.idEnvio), {
+        idChofer: parseInt(choferSeleccionado, 10),
+        patenteCamion: camionSeleccionado,
       });
 
-      toast.success(`Transporte asignado al envío ${envioSeleccionado.id_envio}`);
+      toast.success(`Transporte asignado al envío ${envioSeleccionado.idEnvio}`);
 
       // Quitar el envío de la lista (ya quedó asignado)
-      setEnvios((prev) => prev.filter((e) => e.id_envio !== envioSeleccionado.id_envio));
+      setEnvios((prev) => prev.filter((e) => e.idEnvio !== envioSeleccionado.idEnvio));
       cerrarModal();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al asignar el transporte';
@@ -150,16 +150,16 @@ export function AsignacionesTable() {
                 </TableHeader>
                 <TableBody>
                   {envios.map((envio) => {
-                    const pesoTn = envio.kg_origen ? (envio.kg_origen / 1000).toFixed(1) : '0';
+                    const pesoTn = envio.kgOrigen ? (envio.kgOrigen / 1000).toFixed(1) : '0';
                     return (
-                      <TableRow key={envio.id_envio} className="hover:bg-muted/30 transition-colors">
+                      <TableRow key={envio.idEnvio} className="hover:bg-muted/30 transition-colors">
                         <TableCell className="pl-6">
-                          <span className="font-bold text-[#198754] block">{envio.id_envio}</span>
-                          {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
+                          <span className="font-bold text-[#198754] block">{envio.idEnvio}</span>
+                          {/* <span className="text-xs text-muted-foreground">CTG: {envio.trackingCtg}</span> */}
                         </TableCell>
                         <TableCell>
                           <span className="font-medium text-gray-900 block">
-                            {envio.origen?.empresa?.razon_social || 'Sin cliente'}
+                            {envio.origen?.empresa?.razonSocial || 'Sin cliente'}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             CPE: {envio.cpe}
@@ -168,20 +168,20 @@ export function AsignacionesTable() {
                         <TableCell>
                           <span className="text-sm text-gray-700 flex items-center gap-1">
                             <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                            {envio.origen?.nombre_lugar || '-'}
+                            {envio.origen?.nombreLugar || '-'}
                           </span>
                           <span className="text-xs text-muted-foreground ml-4">
-                            → {envio.destino?.nombre_lugar || '-'}
+                            → {envio.destino?.nombreLugar || '-'}
                           </span>
                         </TableCell>
                         <TableCell>
                           <span className="font-medium text-gray-900 block">
-                            {normalizarEnum(envio.tipo_grano)}
+                            {normalizarEnum(envio.tipoGrano)}
                           </span>
                           <span className="text-xs text-muted-foreground">{pesoTn} Tn</span>
                         </TableCell>
                         <TableCell>
-                          <EstadoBadge estado={envio.estado_actual} />
+                          <EstadoBadge estado={envio.estadoActual} />
                         </TableCell>
                         <TableCell className="text-right pr-6">
                           <Button
@@ -202,39 +202,39 @@ export function AsignacionesTable() {
             {/* Tarjetas Mobile */}
             <div className="md:hidden p-4 space-y-4">
               {envios.map((envio) => {
-                const pesoTn = envio.kg_origen ? (envio.kg_origen / 1000).toFixed(1) : '0';
+                const pesoTn = envio.kgOrigen ? (envio.kgOrigen / 1000).toFixed(1) : '0';
                 return (
                   <div
-                    key={envio.id_envio}
+                    key={envio.idEnvio}
                     className="bg-white border rounded-xl shadow-sm p-4 flex flex-col gap-3"
                   >
                     <div className="flex justify-between items-center border-b pb-2">
                       <div>
-                        <span className="font-bold text-[#198754] block">{envio.id_envio}</span>
-                        {/* <span className="text-xs text-muted-foreground">CTG: {envio.tracking_ctg}</span> */}
+                        <span className="font-bold text-[#198754] block">{envio.idEnvio}</span>
+                        {/* <span className="text-xs text-muted-foreground">CTG: {envio.trackingCtg}</span> */}
                       </div>
-                      <EstadoBadge estado={envio.estado_actual} showIcon={false} />
+                      <EstadoBadge estado={envio.estadoActual} showIcon={false} />
                     </div>
 
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-semibold text-muted-foreground uppercase">Cliente</span>
                       <span className="font-medium text-gray-900 text-right">
-                        {envio.origen?.empresa?.razon_social || '-'}
+                        {envio.origen?.empresa?.razonSocial || '-'}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-semibold text-muted-foreground uppercase">Ruta</span>
                       <div className="text-right">
-                        <span className="text-sm text-gray-700 block">{envio.origen?.nombre_lugar || '-'}</span>
-                        <span className="text-xs text-muted-foreground">→ {envio.destino?.nombre_lugar || '-'}</span>
+                        <span className="text-sm text-gray-700 block">{envio.origen?.nombreLugar || '-'}</span>
+                        <span className="text-xs text-muted-foreground">→ {envio.destino?.nombreLugar || '-'}</span>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center border-b pb-2">
                       <span className="text-xs font-semibold text-muted-foreground uppercase">Carga</span>
                       <div className="text-right">
-                        <span className="font-medium text-gray-900 block">{normalizarEnum(envio.tipo_grano)}</span>
+                        <span className="font-medium text-gray-900 block">{normalizarEnum(envio.tipoGrano)}</span>
                         <span className="text-xs text-muted-foreground">{pesoTn} Tn</span>
                       </div>
                     </div>
@@ -263,8 +263,8 @@ export function AsignacionesTable() {
             </DialogTitle>
             {envioSeleccionado && (
               <DialogDescription>
-                Envío <span className="font-semibold text-[#198754]">{envioSeleccionado.id_envio}</span>
-                {' '}— {envioSeleccionado.origen?.empresa?.razon_social || ''}
+                Envío <span className="font-semibold text-[#198754]">{envioSeleccionado.idEnvio}</span>
+                {' '}— {envioSeleccionado.origen?.empresa?.razonSocial || ''}
               </DialogDescription>
             )}
           </DialogHeader>
@@ -289,8 +289,8 @@ export function AsignacionesTable() {
                 </SelectTrigger>
                 <SelectContent>
                   {choferes.map((chofer) => (
-                    <SelectItem key={chofer.id_chofer} value={chofer.id_chofer.toString()}>
-                      {getNombreChofer(chofer)} — Lic: {chofer.nro_licencia}
+                    <SelectItem key={chofer.idChofer} value={chofer.idChofer.toString()}>
+                      {getNombreChofer(chofer)} — Lic: {chofer.nroLicencia}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -309,7 +309,7 @@ export function AsignacionesTable() {
                 <SelectContent>
                   {camiones.map((camion) => (
                     <SelectItem key={camion.patente} value={camion.patente}>
-                      Patente: {camion.patente} — Tara: {camion.tara_vacio_kg} kg
+                      Patente: {camion.patente} — Tara: {camion.taraVacioKg} kg
                     </SelectItem>
                   ))}
                 </SelectContent>

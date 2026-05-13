@@ -47,15 +47,38 @@ export function useEnvios() {
       const params: BusquedaEnviosParams = {
         query: filters.query || undefined,
         estado: filters.estado || undefined,
-        fecha: filters.fecha || undefined, // <-- Solo una fecha
+        fecha: filters.fecha || undefined,
         page,
         size: PAGE_SIZE,
       };
+      const response = await api.buscarEnvios(params);
 
-      const response: PaginatedResponse<Envio> = await api.buscarEnvios(params);
+      const capitalizar = (str: string) =>
+        str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : 'Pendiente';
+
+      const enviosNormalizados = response.content.map((raw: any) => ({
+        idEnvio: raw.id ?? raw.idEnvio,
+        cpe: raw.cpe,
+        kgOrigen: (raw.kgOrigen ?? raw.kgOrigen) ?? 0,
+        tipoGrano: raw.tipoGrano ?? raw.tipoGrano ?? '',
+        estadoActual: capitalizar(raw.estadoActual ?? raw.estadoActual ?? 'pendiente'),
+        origen: {
+          empresa: {
+            razonSocial: raw.origen?.empresa?.razonSocial ?? raw.clienteRazonSocial ?? 'Sin cliente'
+          }
+        },
+        destino: {
+          nombreLugar: raw.destino?.nombreLugar ?? raw.destinoNombre ?? 'Destino pendiente'
+        },
+        // Valores por defecto para las propiedades faltantes
+        prioridadIa: raw.prioridadIa ?? false,
+        fechaCreacion: raw.fechaCreacion ?? new Date().toISOString(),
+        chofer: raw.chofer ?? null,
+        camion: raw.camion ?? null,
+      } as Envio));
 
       setState({
-        envios: response.content,
+        envios: enviosNormalizados,
         isLoading: false,
         error: null,
         totalPages: response.totalPages,
