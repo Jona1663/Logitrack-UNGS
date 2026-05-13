@@ -6,16 +6,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
-import com.logitrack.sistema_logistica.dto.EstadoUpdateRequestDTO;
-import com.logitrack.sistema_logistica.dto.EstadoUpdateResponseDTO;
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.Historial_Estados;
-import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
-import com.logitrack.sistema_logistica.service.EnvioService;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,17 +27,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
+import com.logitrack.sistema_logistica.service.EnvioService;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -378,7 +373,7 @@ public class EnvioController {
     // GET — envíos sin chofer ni camión
     @GetMapping("/sin-asignar")
     public ResponseEntity<List<Envio>> listarSinAsignar() {
-        return ResponseEntity.ok(envioRepository.findByCamionIsNullAndChoferIsNull());
+        return ResponseEntity.ok(envioRepository.findEnviosSinAsignar());
     }
 
     // PATCH — asignar chofer y camión juntos

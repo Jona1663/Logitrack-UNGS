@@ -6,5 +6,7 @@ public enum Tipo_Grano {
     TRIGO, 
     MAIZ, 
     GIRASOL,
-    SORGO
+    SORGO, 
+    CEBADA, 
+    AVENA
 }

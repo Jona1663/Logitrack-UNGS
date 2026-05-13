@@ -51,7 +51,11 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
     @Query(value = "SELECT * FROM envios WHERE tracking_ctg = :tracking", nativeQuery = true)
         Optional<Envio> buscarPorTracking(@Param("tracking") String tracking);
     // Devuelve envíos que no tienen chofer NI camión asignado todavía
-    List<Envio> findByCamionIsNullAndChoferIsNull();
+    @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
+        "AND e.estado_actual NOT IN " +
+        "(com.logitrack.sistema_logistica.model.enums.Estado_Envio.CANCELADO, " +
+        "com.logitrack.sistema_logistica.model.enums.Estado_Envio.ENTREGADO)")
+        List<Envio> findEnviosSinAsignar();
 
         //#113
         //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).
