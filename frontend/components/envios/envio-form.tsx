@@ -51,19 +51,19 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
   } = useForm<EnvioFormData>({
     resolver: zodResolver(envioSchema),
     defaultValues: {
-      // trackingCtg: esEdicion ? envioInicial?.trackingCtg ?? '' : '',
+      // tracking_ctg: esEdicion ? envioInicial?.tracking_ctg ?? '' : '',
       cpe: esEdicion ? envioInicial?.cpe ?? '' : '',
       clienteCuit: cuitInicial,
-      idOrigen: esEdicion ? envioInicial?.origen?.idEstablecimiento ?? 0 : 0,
-      idDestino: esEdicion ? envioInicial?.destino?.idEstablecimiento ?? 0 : 0,
-      tipoGrano: esEdicion ? envioInicial?.tipoGrano ?? '' : '',
-      kgOrigen: esEdicion ? (envioInicial?.kgOrigen ?? 0) / 1000 : 0,
-      aceptaTerminos: false,
+      id_origen: esEdicion ? envioInicial?.origen?.id_establecimiento ?? 0 : 0,
+      id_destino: esEdicion ? envioInicial?.destino?.id_establecimiento ?? 0 : 0,
+      tipo_grano: esEdicion ? envioInicial?.tipo_grano ?? '' : '',
+      kg_origen: esEdicion ? (envioInicial?.kg_origen ?? 0) / 1000 : 0,
+      acepta_terminos: false,
     },
   });
 
   const clienteCuit = watch('clienteCuit');
-  const aceptaTerminos = watch('aceptaTerminos'); 
+  const aceptaTerminos = watch('acepta_terminos');
 
   // Cargar establecimientos al montar en modo edición
   useEffect(() => {
@@ -76,15 +76,15 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
   useEffect(() => {
     if (!esEdicion && clienteCuit) {
       cargarEstablecimientos(clienteCuit);
-      setValue('idOrigen', 0);
-      setValue('idDestino', 0);
+      setValue('id_origen', 0);
+      setValue('id_destino', 0);
     }
   }, [clienteCuit, esEdicion, cargarEstablecimientos, setValue]);
 
   const empresaOptions = useMemo(
     () => filteredEmpresas.map((e) => ({
       value: e.cuit,
-      label: e.razonSocial,
+      label: e.razon_social,
       description: `CUIT: ${e.cuit}`,
     })),
     [filteredEmpresas]
@@ -101,12 +101,12 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
   const onSubmit = async (data: EnvioFormData) => {
     try {
       const payload = {
-        // trackingCtg: data.trackingCtg,
+        // tracking_ctg: data.tracking_ctg,
         cpe: data.cpe,
-        idOrigen: data.idOrigen,
-        idDestino: data.idDestino,
-        tipoGrano: data.tipoGrano as TipoGrano,
-        kgOrigen: data.kgOrigen * 1000, // El form trabaja en Tn, backend en kg
+        id_origen: data.id_origen,
+        id_destino: data.id_destino,
+        tipo_grano: data.tipo_grano as TipoGrano,
+        kg_origen: data.kg_origen * 1000, // El form trabaja en Tn, backend en kg
       } as any;
 
       if (esEdicion && envioId) {
@@ -196,7 +196,7 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                   Punto de Carga <span className="text-destructive">*</span>
                 </Label>
                 <Controller
-                  name="idOrigen"
+                  name="id_origen"
                   control={control}
                   render={({ field }) => (
                     <Select
@@ -204,20 +204,20 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                       onValueChange={(v) => field.onChange(parseInt(v, 10))}
                       disabled={!clienteCuit || loadingEstablecimientos}
                     >
-                      <SelectTrigger className={`w-full bg-muted/30 border-0 shadow-sm h-11 ${errors.idOrigen ? 'ring-2 ring-destructive' : ''}`}>
+                      <SelectTrigger className={`w-full bg-muted/30 border-0 shadow-sm h-11 ${errors.id_origen ? 'ring-2 ring-destructive' : ''}`}>
                         <SelectValue placeholder="Seleccione un cliente primero..." />
                       </SelectTrigger>
                       <SelectContent>
                         {establecimientos.map((est) => (
-                          <SelectItem key={est.idEstablecimiento} value={est.idEstablecimiento.toString()}>
-                            {est.nombreLugar} ({est.direccion})
+                          <SelectItem key={est.id_establecimiento} value={est.id_establecimiento.toString()}>
+                            {est.nombre_lugar} ({est.direccion})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   )}
                 />
-                {errors.idOrigen && <p className="text-xs text-destructive">{errors.idOrigen.message}</p>}
+                {errors.id_origen && <p className="text-xs text-destructive">{errors.id_origen.message}</p>}
               </div>
 
               <div className="space-y-2">
@@ -228,7 +228,7 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                   Punto de Descarga <span className="text-destructive">*</span>
                 </Label>
                 <Controller
-                  name="idDestino"
+                  name="id_destino"
                   control={control}
                   render={({ field }) => (
                     <Select
@@ -236,20 +236,20 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                       onValueChange={(v) => field.onChange(parseInt(v, 10))}
                       disabled={!clienteCuit || loadingEstablecimientos}
                     >
-                      <SelectTrigger className={`w-full bg-muted/30 border-0 shadow-sm h-11 ${errors.idDestino ? 'ring-2 ring-destructive' : ''}`}>
+                      <SelectTrigger className={`w-full bg-muted/30 border-0 shadow-sm h-11 ${errors.id_destino ? 'ring-2 ring-destructive' : ''}`}>
                         <SelectValue placeholder="Seleccione un cliente primero..." />
                       </SelectTrigger>
                       <SelectContent>
                         {establecimientos.map((est) => (
-                          <SelectItem key={est.idEstablecimiento} value={est.idEstablecimiento.toString()}>
-                            {est.nombreLugar} ({est.direccion})
+                          <SelectItem key={est.id_establecimiento} value={est.id_establecimiento.toString()}>
+                            {est.nombre_lugar} ({est.direccion})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   )}
                 />
-                {errors.idDestino && <p className="text-xs text-destructive">{errors.idDestino.message}</p>}
+                {errors.id_destino && <p className="text-xs text-destructive">{errors.id_destino.message}</p>}
               </div>
             </div>
           </div>
@@ -266,10 +266,10 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                 </Label>
                  <Input
                   placeholder="Nro. de Trazabilidad"
-                  {...register('trackingCtg')}
-                  className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.trackingCtg ? 'ring-2 ring-destructive' : ''}`}
+                  {...register('tracking_ctg')}
+                  className={`bg-muted/30 border-0 shadow-sm h-11 ${errors.tracking_ctg ? 'ring-2 ring-destructive' : ''}`}
                 />
-                {errors.trackingCtg && <p className="text-xs text-destructive">{errors.trackingCtg.message}</p>} 
+                {errors.tracking_ctg && <p className="text-xs text-destructive">{errors.tracking_ctg.message}</p>} 
               </div>*/}
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-muted-foreground">
@@ -301,22 +301,22 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                     min="0.1"
                     step="0.1"
                     placeholder="Ej. 30.5"
-                    className={`bg-muted/30 border-0 shadow-sm h-11 pr-12 ${errors.kgOrigen ? 'ring-2 ring-destructive' : ''}`}
+                    className={`bg-muted/30 border-0 shadow-sm h-11 pr-12 ${errors.kg_origen ? 'ring-2 ring-destructive' : ''}`}
                     onKeyDown={(e) => {
                       if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
                     }}
-                    {...register('kgOrigen', { valueAsNumber: true })}
+                    {...register('kg_origen', { valueAsNumber: true })}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">Tn</span>
                 </div>
-                {errors.kgOrigen && <p className="text-xs text-destructive">{errors.kgOrigen.message}</p>}
+                {errors.kg_origen && <p className="text-xs text-destructive">{errors.kg_origen.message}</p>}
               </div>
               <div className="col-span-12 md:col-span-8 space-y-2">
                 <Label className="text-xs font-bold uppercase text-muted-foreground">
                   Tipo de Grano <span className="text-destructive">*</span>
                 </Label>
                 <Controller
-                  name="tipoGrano"
+                  name="tipo_grano"
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
@@ -325,7 +325,7 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                       value={field.value}
                       onChange={(value) => field.onChange(value)}
                       onSearch={(query) => setFilteredGranos(buscarGranos(query))}
-                      error={errors.tipoGrano?.message}
+                      error={errors.tipo_grano?.message}
                       className="bg-muted/30"
                     />
                   )}
@@ -337,18 +337,18 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
           {/* Checkbox Legal (Réplica exacta de tu HTML) */}
           <div className="bg-[#198754]/10 p-4 rounded-lg border border-[#198754]/25">
             <Controller
-              name="aceptaTerminos"
+              name="acepta_terminos"
               control={control}
               render={({ field }) => (
                 <div className="flex items-center space-x-3">
                   <Checkbox
-                    id="aceptaTerminos"
+                    id="acepta_terminos"
                     checked={field.value}
                     onCheckedChange={field.onChange}
                     className="data-[state=checked]:bg-[#198754] data-[state=checked]:border-[#198754]"
                   />
                   <label
-                    htmlFor="aceptaTerminos"
+                    htmlFor="acepta_terminos"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                   >
                     Acepta el tratamiento de los datos según la Ley 25.326.
@@ -356,7 +356,7 @@ export function EnvioForm({ modo = 'crear', envioInicial, envioId }: EnvioFormPr
                 </div>
               )}
             />
-            {errors.aceptaTerminos && <p className="text-xs text-destructive mt-2">{errors.aceptaTerminos.message}</p>}
+            {errors.acepta_terminos && <p className="text-xs text-destructive mt-2">{errors.acepta_terminos.message}</p>}
           </div>
 
           {/* Solo el botón de submit cambia el texto */}

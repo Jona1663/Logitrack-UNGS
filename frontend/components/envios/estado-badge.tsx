@@ -4,7 +4,6 @@ import {
   MapPin,
   Package,
   CheckCircle,
-  AlertCircle,
   XCircle,
 } from 'lucide-react';
 import type { EstadoEnvio } from '@/types';
@@ -23,17 +22,13 @@ const iconMap = {
   MapPin,
   Package,
   CheckCircle,
-  AlertCircle,
   XCircle,
 };
 
 export function EstadoBadge({ estado, showIcon = true, className }: EstadoBadgeProps) {
-    const config = ESTADO_CONFIG[estado] ?? {
-    label: estado || 'Desconocido',
-    variant: 'secondary',
-    icon: 'AlertCircle'
-  };
-   const IconComponent = iconMap[config.icon as keyof typeof iconMap] ?? iconMap.AlertCircle;
+  const config = ESTADO_CONFIG[estado];
+  const IconComponent = iconMap[config.icon as keyof typeof iconMap];
+
   return (
     <span
       className={cn(
@@ -47,5 +42,4 @@ export function EstadoBadge({ estado, showIcon = true, className }: EstadoBadgeP
       {config.label}
     </span>
   );
-  
 }

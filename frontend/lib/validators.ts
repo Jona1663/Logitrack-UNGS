@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const envioSchema = z
   .object({
-    // trackingCtg: z
+    // tracking_ctg: z
     //   .string()
     //   .min(1, 'El CTG es requerido')
     //   .regex(/^\d+$/, 'El CTG debe contener solo numeros'),
@@ -12,26 +12,26 @@ export const envioSchema = z
     clienteCuit: z
       .string()
       .min(1, 'Seleccione un cliente'),
-    idOrigen: z
+    id_origen: z
       .number({ invalid_type_error: 'Seleccione un origen' })
       .positive('Seleccione un origen'),
-    idDestino: z
+    id_destino: z
       .number({ invalid_type_error: 'Seleccione un destino' })
       .positive('Seleccione un destino'),
-    tipoGrano: z
+    tipo_grano: z
       .string()
       .min(1, 'Seleccione un tipo de grano'),
-    kgOrigen: z
+    kg_origen: z
       .number({ invalid_type_error: 'Ingrese el peso' })
       .positive('El peso debe ser mayor a 0'),
     // NUEVO CAMPO: Validación estricta para el término legal
-    aceptaTerminos: z.boolean().refine((val) => val === true, {
+    acepta_terminos: z.boolean().refine((val) => val === true, {
       message: 'Debe aceptar el tratamiento de datos para continuar',
     }),
   })
-  .refine((data) => data.idOrigen !== data.idDestino, {
+  .refine((data) => data.id_origen !== data.id_destino, {
     message: 'El origen y destino deben ser diferentes',
-    path: ['idDestino'],
+    path: ['id_destino'],
   });
 
 export type EnvioFormData = z.infer<typeof envioSchema>;

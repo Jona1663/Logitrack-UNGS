@@ -35,7 +35,7 @@ export default function MiViajePage() {
   const handleAvanzarEstado = async () => {
     try {
       await avanzarEstado();
-      const flujo = viaje ? FLUJO_LOGISTICO[viaje.estadoActual] : null;
+      const flujo = viaje ? FLUJO_LOGISTICO[viaje.estado_actual] : null;
       toast.success(flujo?.siguiente ? 'Estado actualizado' : 'Viaje completado');
     } catch (err) {
       toast.error('Error al actualizar el estado');
@@ -97,7 +97,7 @@ export default function MiViajePage() {
     );
   }
 
-  const flujo = FLUJO_LOGISTICO[viaje.estadoActual];
+  const flujo = FLUJO_LOGISTICO[viaje.estado_actual];
   const isCompleted = !flujo.siguiente;
 
   return (
@@ -114,7 +114,7 @@ export default function MiViajePage() {
               <AlertDialogTrigger asChild>
                 <div>
                   <ActionButton
-                    estadoActual={viaje.estadoActual}
+                    estadoActual={viaje.estado_actual}
                     onClick={() => { }}
                     isLoading={isUpdating}
                   />

@@ -44,13 +44,13 @@ export interface LoginResponse {
 // === ENTIDADES ===
 export interface Empresa {
   cuit: string;
-  razonSocial: string;
-  tipoEmpresa: string;
+  razon_social: string;
+  tipo_empresa: string;
 }
 
 export interface Establecimiento {
-  idEstablecimiento: number;
-  nombreLugar: string;
+  id_establecimiento: number;
+  nombre_lugar: string;
   direccion: string;
   empresa: Empresa;
 }
@@ -61,58 +61,77 @@ export interface PersonaAsociada {
 }
 
 export interface Chofer {
-  idChofer: number;
-  nroLicencia: string;
-  personaAsociada: PersonaAsociada;
+  id_chofer: number;
+  nro_licencia: string;
+  persona_asociada: PersonaAsociada;
 }
 
 export interface Camion {
   patente: string;
-  taraVacioKg: number;
+  tara_vacio_kg: number;
 }
 
 export interface Envio {
-  idEnvio: string | number;
-  // trackingCtg: string;
+  id_envio: string | number;
+  // tracking_ctg: string;
   cpe: string;
-  estadoActual: EstadoEnvio;
-  prioridadIa: Prioridad;
-  tipoGrano: TipoGrano;
-  kgOrigen: number;
-  fechaCreacion: string;
-  fechaEstimadaLlegada?: string;
+  estado_actual: EstadoEnvio;
+  prioridad_ia: Prioridad;
+  tipo_grano: TipoGrano;
+  kg_origen: number;
+  fecha_creacion: string;
+  fecha_estimada_llegada?: string;  // fecha_entrega_estimada?: string;
   origen: Establecimiento;
   destino: Establecimiento;
   chofer: Chofer;
   camion: Camion;
 }
 
+// export interface EnvioDetalleResponseDTO {
+//   id_envio: string | number;
+//   cpe: string;
+//   estado_actual: EstadoEnvio;
+//   tipo_grano: TipoGrano;
+//   kg_origen: number;
+//   prioridad_ia: Prioridad;
+
+//   // Datos de origen y destino
+//   origen_nombre: string;
+//   origen_direccion: string;
+//   destino_nombre: string;
+//   destino_direccion: string;
+
+//   // Datos del chofer
+//   chofer_nombre: string;
+//   chofer_apellido: string;
+// }
+
 export interface RegistroHistorial {
-  idHistorial: number;
-  idEnvio: string;
-  idUsuario?: number | null;
+  id_historial: number;
+  id_envio: string;
+  id_usuario?: number | null;
   username?: string;
-  estadoAnterior: string | null;
-  estadoNuevo: string;
-  fechaHora: string;
+  estado_anterior: string | null;
+  estado_nuevo: string;
+  fecha_hora: string;
 }
 
 // === DTOs ===
 export interface EnvioRequestDTO {
-  // trackingCtg: string;
+  // tracking_ctg: string;
   cpe: string;
-  idOrigen: number;
-  idDestino: number;
-  idChofer: number;
-  patenteCamion: string;
-  tipoGrano: TipoGrano;
-  prioridadIa?: Prioridad; // Ahora es opcional
-  kgOrigen: number;
+  id_origen: number;
+  id_destino: number;
+  id_chofer: number;
+  patente_camion: string;
+  tipo_grano: TipoGrano;
+  prioridad_ia?: Prioridad; // Ahora es opcional
+  kg_origen: number;
 }
 
 export interface EnvioUpdateDTO {
   estado?: EstadoEnvio;
-  prioridadIa?: Prioridad;
+  prioridad_ia?: Prioridad;
 }
 export interface IncidenciaDTO {
   descripcion: string;
@@ -145,20 +164,20 @@ export interface MetadatosCatalogo {
 
 // === CHOFER ===
 export interface LugarResumen {
-  nombreLugar: string;
+  nombre_lugar: string;
   direccion: string;
 }
 
 export interface EnvioChofer {
-  idEnvio: string;
-  // trackingCtg: string;
+  id_envio: string;
+  // tracking_ctg: string;
   cpe: string;
-  estadoActual: EstadoEnvio;
-  tipoGrano: TipoGrano;
-  kgOrigen: number;
+  estado_actual: EstadoEnvio;
+  tipo_grano: TipoGrano;
+  kg_origen: number;
   origen: LugarResumen;
   destino: LugarResumen;
-  patenteCamion: string;
-  // nombreChofer: string;
-  prioridadIa: Prioridad;   // ← agregar
+  patente_camion: string;
+  // nombre_chofer: string;
+  prioridad_ia: Prioridad;   // ← agregar
 }
