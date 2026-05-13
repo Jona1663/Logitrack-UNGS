@@ -244,8 +244,7 @@ export default function DetalleEnvioPage({
                   <Select
                     value={nuevaPrioridad}
                     onValueChange={(v) => setNuevaPrioridad(v as Prioridad)}
-                    disabled={!permisos?.editarPrioridad || isUpdating}
-                  >
+                    disabled={!permisos?.editarPrioridad || isUpdating || envio.estado_actual !== 'PENDIENTE'}                  >
                     <SelectTrigger className="w-full h-11 bg-white border-0 shadow-sm focus:ring-amber-500">
                       <SelectValue placeholder="Seleccionar prioridad" />
                     </SelectTrigger>
