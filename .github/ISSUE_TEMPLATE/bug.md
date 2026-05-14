@@ -1,6 +1,6 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: Bug
+about: reporte de bugs
 title: Bug
 labels: Backend, Frontend
 assignees: ''
