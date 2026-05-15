@@ -56,12 +56,39 @@ export function useEnvios() {
       const capitalizar = (str: string) =>
         str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : 'Pendiente';
 
+      // const enviosNormalizados = response.content.map((raw: any) => ({
+      //   idEnvio: raw.id ?? raw.idEnvio,
+      //   cpe: raw.cpe,
+      //   kgOrigen: (raw.kgOrigen ?? raw.kgOrigen) ?? 0,
+      //   tipoGrano: raw.tipoGrano ?? raw.tipoGrano ?? '',
+      //   estadoActual: capitalizar(raw.estadoActual ?? raw.estadoActual ?? 'pendiente'),
+      //   origen: {
+      //     empresa: {
+      //       razonSocial: raw.origen?.empresa?.razonSocial ?? raw.clienteRazonSocial ?? 'Sin cliente'
+      //     }
+      //   },
+      //   destino: {
+      //     nombreLugar: raw.destino?.nombreLugar ?? raw.destinoNombre ?? 'Destino pendiente'
+      //   },
+      //   // Valores por defecto para las propiedades faltantes
+      //   prioridadIa: raw.prioridadIa ?? false,
+      //   fechaCreacion: raw.fechaCreacion ?? new Date().toISOString(),
+      //   chofer: raw.chofer ?? null,
+      //   camion: raw.camion ?? null,
+      // } as Envio));
+
+      // Elimina o ignora la función capitalizar para el estadoActual
       const enviosNormalizados = response.content.map((raw: any) => ({
         idEnvio: raw.id ?? raw.idEnvio,
         cpe: raw.cpe,
-        kgOrigen: (raw.kgOrigen ?? raw.kgOrigen) ?? 0,
-        tipoGrano: raw.tipoGrano ?? raw.tipoGrano ?? '',
-        estadoActual: capitalizar(raw.estadoActual ?? raw.estadoActual ?? 'pendiente'),
+        kgOrigen: raw.kgOrigen ?? 0,
+        tipoGrano: raw.tipoGrano ?? '',
+
+        // 1. Tomamos el valor directo del backend. 
+        // 2. Si no viene, asignamos 'PENDIENTE' en mayúsculas como fallback seguro.
+        // 3. Forzamos el tipado correcto de TypeScript as EstadoEnvio.
+        estadoActual: (raw.estadoActual || 'PENDIENTE') as EstadoEnvio,
+
         origen: {
           empresa: {
             razonSocial: raw.origen?.empresa?.razonSocial ?? raw.clienteRazonSocial ?? 'Sin cliente'
@@ -70,7 +97,6 @@ export function useEnvios() {
         destino: {
           nombreLugar: raw.destino?.nombreLugar ?? raw.destinoNombre ?? 'Destino pendiente'
         },
-        // Valores por defecto para las propiedades faltantes
         prioridadIa: raw.prioridadIa ?? false,
         fechaCreacion: raw.fechaCreacion ?? new Date().toISOString(),
         chofer: raw.chofer ?? null,
