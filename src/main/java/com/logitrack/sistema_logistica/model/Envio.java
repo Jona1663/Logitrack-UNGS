@@ -1,7 +1,7 @@
 package com.logitrack.sistema_logistica.model;
 
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
-import com.logitrack.sistema_logistica.model.enums.Tipo_Grano;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.model.enums.TipoGrano;
 import java.util.UUID;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -12,7 +12,7 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Envios")
+@Table(name = "envios")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,34 +20,34 @@ import java.time.LocalDateTime;
 public class Envio {
 
     @Id
-    @Column(name = "id_envio", length = 20)
-    private String id_envio;
+    @Column(name = "id_Envio", length = 20)
+    private String idEnvio;
 
     /*
      * @Column(name = "tracking_ctg", unique = true, nullable = false, length = 50)
-     * private String tracking_ctg;
+     * private String trackingCtg;
      */ // BORRAR COLUMNA DE LA BASE DE DATOS MANUALMENTE
 
     @Column(name = "cpe", unique = true, length = 50)
     private String cpe;
 
     @Column(name = "autorizacion_ARCA", length = 50)
-    private String autorizacion_ARCA;
+    private String autorizacionARCA;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_origen", referencedColumnName = "id_establecimiento")
+    @JoinColumn(name = "id_origen")
     private Establecimiento origen;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_destino", referencedColumnName = "id_establecimiento")
+    @JoinColumn(name = "id_destino")
     private Establecimiento destino;
 
     @Column(name = "distancia_km")
-    private Double distancia_km;
+    private Double distanciaKm;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_chofer", referencedColumnName = "id_chofer")
-    private Chofer_Detalle chofer;
+    private ChoferDetalle chofer;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "patente_camion", referencedColumnName = "patente")
@@ -55,38 +55,38 @@ public class Envio {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_grano", nullable = false)
-    private Tipo_Grano tipo_grano;
+    private TipoGrano tipoGrano;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_actual", nullable = false)
-    private Estado_Envio estado_actual;
+    private EstadoEnvio estadoActual;
 
     @Column(name = "prioridad_ia", length = 20)
-    private String prioridad_ia;
+    private String prioridadIa;
 
-    private Integer kg_origen;
+    private Integer kgOrigen;
 
-    private Integer kg_destino;
+    private Integer kgDestino;
 
     @Column(name = "fecha_creacion", updatable = false)
-    private LocalDateTime fecha_creacion;
+    private LocalDateTime fechaCreacion;
 
-    private LocalDateTime fecha_salida;
+    private LocalDateTime fechaSalida;
 
-    private LocalDateTime fecha_llegada;
+    private LocalDateTime fechaLlegada;
 
-    private LocalDateTime fecha_estimada_llegada;
+    private LocalDateTime fechaEstimadaLlegada;
 
     @Column(columnDefinition = "TEXT")
     private String comentarios;
 
     @PrePersist
     protected void onCreate() {
-        this.fecha_creacion = LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now();
 
-        if (this.id_envio == null) {
+        if (this.idEnvio == null) {
             String randomParte = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
-            this.id_envio = "LT-" + randomParte;
+            this.idEnvio = "LT-" + randomParte;
         }
     }
 }

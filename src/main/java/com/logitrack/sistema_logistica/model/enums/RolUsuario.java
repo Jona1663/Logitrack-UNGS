@@ -1,6 +1,6 @@
 package com.logitrack.sistema_logistica.model.enums;
 
-public enum Rol_Usuario {
+public enum RolUsuario {
     ADMINISTRADOR,
     SUPERVISOR,
     OPERADOR,

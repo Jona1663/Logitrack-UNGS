@@ -7,22 +7,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Entity
-@Table(name = "Plantillas_Notificacion")
+@Table(name = "plantillas_notificacion")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Plantilla_Notificacion {
+public class PlantillaNotificacion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id_plantilla;
+    private Integer idPlantilla;
 
     @Column(unique = true, nullable = false, length = 50)
-    private String codigo_evento;
+    private String codigoEvento;
 
     @Column(nullable = false, length = 150)
     private String asunto;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String cuerpo_mensaje;
+    private String cuerpoMensaje;
 }

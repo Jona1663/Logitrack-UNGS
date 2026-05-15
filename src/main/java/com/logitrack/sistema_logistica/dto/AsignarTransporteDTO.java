@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class AsignarTransporteDTO {
-    private Integer id_chofer;
-    private String patente_camion;
+    private Integer idChofer;
+    private String patenteCamion;
 }

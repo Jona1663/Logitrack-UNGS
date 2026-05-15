@@ -1,6 +1,6 @@
 package com.logitrack.sistema_logistica.dto;
 
-import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
 import java.time.LocalDateTime;
 
 public class HistorialResponseDTO {
@@ -69,15 +69,15 @@ public class HistorialResponseDTO {
         this.fechaHora = fechaHora;
     }
 
-    public static HistorialResponseDTO fromEntity(Historial_Estados entidad) {
+    public static HistorialResponseDTO fromEntity(HistorialEstados entidad) {
         HistorialResponseDTO dto = new HistorialResponseDTO();
-        dto.setIdHistorial(entidad.getId_historial());
-        dto.setIdEnvio(entidad.getEnvio() != null ? entidad.getEnvio().getId_envio() : null);
-        dto.setIdUsuario(entidad.getUsuario() != null ? entidad.getUsuario().getId_usuario() : null);
+        dto.setIdHistorial(entidad.getIdHistorial());
+        dto.setIdEnvio(entidad.getEnvio() != null ? entidad.getEnvio().getIdEnvio() : null);
+        dto.setIdUsuario(entidad.getUsuario() != null ? entidad.getUsuario().getIdUsuario() : null);
         dto.setUsername(entidad.getUsuario() != null ? entidad.getUsuario().getUsername() : null);
-        dto.setEstadoAnterior(entidad.getEstado_anterior() != null ? entidad.getEstado_anterior().name() : null);
-        dto.setEstadoNuevo(entidad.getEstado_nuevo() != null ? entidad.getEstado_nuevo().name() : null);
-        dto.setFechaHora(entidad.getFecha_hora());
+        dto.setEstadoAnterior(entidad.getEstadoAnterior() != null ? entidad.getEstadoAnterior().name() : null);
+        dto.setEstadoNuevo(entidad.getEstadoNuevo() != null ? entidad.getEstadoNuevo().name() : null);
+        dto.setFechaHora(entidad.getFechaHora());
         return dto;
     }
 }

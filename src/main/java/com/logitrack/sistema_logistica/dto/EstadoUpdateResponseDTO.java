@@ -8,6 +8,6 @@ import java.time.LocalDateTime;
 @Builder
 public class EstadoUpdateResponseDTO {
     private String mensaje;
-    private String estado_actual;
-    private LocalDateTime fecha_actualizacion;
+    private String estadoActual;
+    private LocalDateTime fechaActualizacion;
 }

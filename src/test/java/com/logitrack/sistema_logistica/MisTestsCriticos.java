@@ -18,24 +18,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.logitrack.sistema_logistica.controller.EnvioController;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.service.EnvioService;
 import com.logitrack.sistema_logistica.controller.AuthController;
 import com.logitrack.sistema_logistica.dto.LoginRequestDTO;
 import com.logitrack.sistema_logistica.dto.LoginResponseDTO;
 import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Rol_Usuario;
+import com.logitrack.sistema_logistica.model.enums.RolUsuario;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import com.logitrack.sistema_logistica.security.JwtService;
 import org.springframework.security.core.Authentication;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.model.enums.Tipo_Grano;
+import com.logitrack.sistema_logistica.model.enums.TipoGrano;
 
 public class MisTestsCriticos {
 
@@ -80,9 +80,9 @@ public class MisTestsCriticos {
 
         Usuario usuarioMock = new Usuario();
         usuarioMock.setUsername("operador1");
-        usuarioMock.setPassword_hash("hash_secreto");
+        usuarioMock.setPasswordHash("hash_secreto");
         usuarioMock.setActivo(true);
-        usuarioMock.setRol(Rol_Usuario.OPERADOR);
+        usuarioMock.setRol(RolUsuario.OPERADOR);
 
         // Simulamos el comportamiento esperado de la BD y las utilidades
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
@@ -107,7 +107,7 @@ public class MisTestsCriticos {
 
         Usuario usuarioMock = new Usuario();
         usuarioMock.setUsername("operador1");
-        usuarioMock.setPassword_hash("hash_secreto");
+        usuarioMock.setPasswordHash("hash_secreto");
         usuarioMock.setActivo(true);
 
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
@@ -141,23 +141,23 @@ public class MisTestsCriticos {
     @Test
     public void crearEnvio_conDatosValidos_debeRetornarEstado201YObjetoGuardado() {
         EnvioRequestDTO request = new EnvioRequestDTO();
-        request.setId_origen(1);
-        request.setId_destino(2);
-        request.setId_chofer(15);
-        request.setPatente_camion("AC321XX");
-        request.setKg_origen(30000);
-        request.setTipo_grano(Tipo_Grano.SOJA);
+        request.setIdOrigen(1);
+        request.setIdDestino(2);
+        request.setIdChofer(15);
+        request.setPatenteCamion("AC321XX");
+        request.setKgOrigen(30000);
+        request.setTipoGrano(TipoGrano.SOJA);
 
         Authentication authenticationMock = mock(Authentication.class);
         when(authenticationMock.getName()).thenReturn("operador1");
 
         Usuario usuarioMock = new Usuario();
-        usuarioMock.setId_usuario(100);
+        usuarioMock.setIdUsuario(100);
         usuarioMock.setUsername("operador1");
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
 
         Envio envioSimulado = new Envio();
-        envioSimulado.setEstado_actual(Estado_Envio.PENDIENTE);
+        envioSimulado.setEstadoActual(EstadoEnvio.PENDIENTE);
 
         when(envioService.crearNuevoEnvio(any(EnvioRequestDTO.class))).thenReturn(envioSimulado);
 
@@ -171,21 +171,21 @@ public class MisTestsCriticos {
     @Test
     public void crearEnvio_debeAsignarTrackingIDUnicoYAutomatico() {
         EnvioRequestDTO request = new EnvioRequestDTO();
-        request.setId_origen(1);
-        request.setId_destino(2);
-        request.setKg_origen(30000);
-        request.setId_envio(null);
+        request.setIdOrigen(1);
+        request.setIdDestino(2);
+        request.setKgOrigen(30000);
+        request.setIdEnvio(null);
 
         Authentication authenticationMock = mock(Authentication.class);
         when(authenticationMock.getName()).thenReturn("operador1");
 
         Usuario usuarioMock = new Usuario();
-        usuarioMock.setId_usuario(100);
+        usuarioMock.setIdUsuario(100);
         usuarioMock.setUsername("operador1");
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
 
         Envio envioSimulado = new Envio();
-        envioSimulado.setId_envio("LT-ABC-123");
+        envioSimulado.setIdEnvio("LT-ABC-123");
 
         when(envioService.crearNuevoEnvio(any(EnvioRequestDTO.class))).thenReturn(envioSimulado);
 
@@ -193,21 +193,21 @@ public class MisTestsCriticos {
 
         Envio envioCreado = (Envio) response.getBody();
         assertNotNull(envioCreado);
-        assertNotNull(envioCreado.getId_envio(), "El Tracking ID debe generarse automáticamente");
-        assertEquals("LT-ABC-123", envioCreado.getId_envio());
+        assertNotNull(envioCreado.getIdEnvio(), "El Tracking ID debe generarse automáticamente");
+        assertEquals("LT-ABC-123", envioCreado.getIdEnvio());
     }
 
     @Test
     public void crearEnvio_conCamposObligatoriosFaltantes_debeRetornarError400() {
         EnvioRequestDTO request = new EnvioRequestDTO();
-        request.setId_origen(null);
-        request.setId_destino(null);
+        request.setIdOrigen(null);
+        request.setIdDestino(null);
 
         Authentication authenticationMock = mock(Authentication.class);
         when(authenticationMock.getName()).thenReturn("operador1");
 
         Usuario usuarioMock = new Usuario();
-        usuarioMock.setId_usuario(100);
+        usuarioMock.setIdUsuario(100);
         usuarioMock.setUsername("operador1");
         when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
 
@@ -228,13 +228,13 @@ public class MisTestsCriticos {
     public void listarEnvios_conRegistros_debeMostrarTablaConDatosCompletos() {
         // GIVEN: Creamos los envíos usando el patrón Builder y los ESTADOS REALES
         Envio envio1 = Envio.builder()
-                .id_envio("LT-1000")
-                .estado_actual(Estado_Envio.PENDIENTE)
+                .idEnvio("LT-1000")
+                .estadoActual(EstadoEnvio.PENDIENTE)
                 .build();
 
         Envio envio2 = Envio.builder()
-                .id_envio("LT-1001")
-                .estado_actual(Estado_Envio.EN_TRANSITO)
+                .idEnvio("LT-1001")
+                .estadoActual(EstadoEnvio.EN_TRANSITO)
                 .build();
 
         // Simulamos que el repositorio devuelve nuestra lista
@@ -246,7 +246,7 @@ public class MisTestsCriticos {
         // THEN: Validamos la respuesta
         assertNotNull(resultado, "La lista no debe ser nula");
         assertEquals(2, resultado.size(), "Debe retornar exactamente 2 envíos");
-        assertEquals("LT-1000", resultado.get(0).getId_envio(), "El ID del primer envío debe coincidir");
+        assertEquals("LT-1000", resultado.get(0).getIdEnvio(), "El ID del primer envío debe coincidir");
     }
 
     @Test
@@ -270,8 +270,8 @@ public class MisTestsCriticos {
     public void consultarTracking_conIdExistente_debeMostrarEstadoYUltimaActualizacion() {
         // GIVEN: Un envío registrado con el ID "TRK-123" y estado "En Camino"
         Envio envioMock = Envio.builder()
-                .id_envio("TRK-123")
-                .estado_actual(Estado_Envio.EN_TRANSITO)
+                .idEnvio("TRK-123")
+                .estadoActual(EstadoEnvio.EN_TRANSITO)
                 .build();
 
         // Simulamos que el SERVICIO encuentra el envío
@@ -286,8 +286,8 @@ public class MisTestsCriticos {
         assertTrue(response.getBody() instanceof Envio, "Debe retornar un objeto Envio");
 
         Envio envioDevuelto = (Envio) response.getBody();
-        assertEquals("TRK-123", envioDevuelto.getId_envio(), "El ID debe coincidir");
-        assertEquals(Estado_Envio.EN_TRANSITO, envioDevuelto.getEstado_actual(), "El estado debe ser EN_TRANSITO");
+        assertEquals("TRK-123", envioDevuelto.getIdEnvio(), "El ID debe coincidir");
+        assertEquals(EstadoEnvio.EN_TRANSITO, envioDevuelto.getEstadoActual(), "El estado debe ser EN_TRANSITO");
     }
 
     @Test
@@ -312,15 +312,15 @@ public class MisTestsCriticos {
     @Test
     public void seguimiento_debeMostrarHistorialDeEstados_US4() {
         // GIVEN: Un envío que tiene historial de cambios de estado
-        Historial_Estados historial1 = Historial_Estados.builder()
-                .id_historial(1)
-                .estado_nuevo(Estado_Envio.PENDIENTE)
+        HistorialEstados historial1 = HistorialEstados.builder()
+                .idHistorial(1)
+                .estadoNuevo(EstadoEnvio.PENDIENTE)
                 .build();
 
-        Historial_Estados historial2 = Historial_Estados.builder()
-                .id_historial(2)
-                .estado_anterior(Estado_Envio.PENDIENTE)
-                .estado_nuevo(Estado_Envio.EN_TRANSITO)
+        HistorialEstados historial2 = HistorialEstados.builder()
+                .idHistorial(2)
+                .estadoAnterior(EstadoEnvio.PENDIENTE)
+                .estadoNuevo(EstadoEnvio.EN_TRANSITO)
                 .build();
 
         // 1. TRANSFORMAMOS A DTO (Para adaptarnos al código nuevo de tu compañero)
@@ -403,16 +403,16 @@ public class MisTestsCriticos {
     @Test
     public void contratoApi_debeCoincidirEntreFrontYBack() {
         // GIVEN: El contrato JSON acordado (El Frontend espera que el peso se llame
-        // "kg_origen" y no "kilos")
+        // "kgOrigen" y no "kilos")
         // WHEN: Verificamos los atributos de la clase que usa el Backend
         // (EnvioRequestDTO)
 
         // THEN: Validamos que los campos existan con el nombre exacto usando Reflection
         // para que no explote la conexión
         assertDoesNotThrow(() -> {
-            EnvioRequestDTO.class.getDeclaredField("kg_origen");
-            EnvioRequestDTO.class.getDeclaredField("id_origen");
-            EnvioRequestDTO.class.getDeclaredField("id_destino");
+            EnvioRequestDTO.class.getDeclaredField("kgOrigen");
+            EnvioRequestDTO.class.getDeclaredField("idOrigen");
+            EnvioRequestDTO.class.getDeclaredField("idDestino");
         }, "Los campos del Backend deben coincidir exactamente con el contrato JSON que espera el Frontend");
     }
 
@@ -483,11 +483,11 @@ public class MisTestsCriticos {
         // GIVEN: Un envío existente y los nuevos datos que mandaría el Frontend
         String idEnvio = "LT-999";
         EnvioRequestDTO dtoActualizacion = new EnvioRequestDTO();
-        dtoActualizacion.setId_chofer(15);
-        dtoActualizacion.setPatente_camion("AB123CD");
-        dtoActualizacion.setTipo_grano(Tipo_Grano.MAIZ);
-        dtoActualizacion.setPrioridad_ia("ALTA");
-        dtoActualizacion.setKg_origen(25000);
+        dtoActualizacion.setIdChofer(15);
+        dtoActualizacion.setPatenteCamion("AB123CD");
+        dtoActualizacion.setTipoGrano(TipoGrano.MAIZ);
+        dtoActualizacion.setPrioridadIa("ALTA");
+        dtoActualizacion.setKgOrigen(25000);
 
         // Simulamos la sesión del usuario (ahora el Controller usa Principal en vez de
         // Authentication)
@@ -496,10 +496,10 @@ public class MisTestsCriticos {
 
         // Fabricamos el envío tal cual debería quedar DESPUÉS de guardarse en la base
         Envio envioEditado = new Envio();
-        envioEditado.setId_envio(idEnvio);
-        envioEditado.setEstado_actual(Estado_Envio.PENDIENTE); // Solo se puede editar en PENDIENTE
-        envioEditado.setPrioridad_ia("ALTA");
-        envioEditado.setTipo_grano(Tipo_Grano.MAIZ);
+        envioEditado.setIdEnvio(idEnvio);
+        envioEditado.setEstadoActual(EstadoEnvio.PENDIENTE); // Solo se puede editar en PENDIENTE
+        envioEditado.setPrioridadIa("ALTA");
+        envioEditado.setTipoGrano(TipoGrano.MAIZ);
 
         // Simulamos el comportamiento del NUEVO método del EnvioService
         when(envioService.editarEnvio(eq(idEnvio), any(EnvioRequestDTO.class), eq("supervisor1")))
@@ -514,8 +514,8 @@ public class MisTestsCriticos {
         assertNotNull(response.getBody(), "La respuesta no puede estar vacía");
 
         Envio envioModificado = (Envio) response.getBody();
-        assertEquals("ALTA", envioModificado.getPrioridad_ia(), "La prioridad debe haberse actualizado a ALTA");
-        assertEquals(Tipo_Grano.MAIZ, envioModificado.getTipo_grano(), "El grano debe ser MAIZ");
+        assertEquals("ALTA", envioModificado.getPrioridadIa(), "La prioridad debe haberse actualizado a ALTA");
+        assertEquals(TipoGrano.MAIZ, envioModificado.getTipoGrano(), "El grano debe ser MAIZ");
     }
 
     // ==========================================

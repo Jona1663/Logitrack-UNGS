@@ -34,7 +34,7 @@ public class ChoferController {//Define la clase ChoferController, que es el con
         // Obtenemos las entidades del servicio
         List<Envio> misEnvios = envioService.obtenerEnviosPorChofer(username);
         
-        // Las transformamos a DTOs (esto oculta automáticamente la prioridad_ia)
+        // Las transformamos a DTOs (esto oculta automáticamente la prioridadIa)
         List<EnvioResumenDTO> resumen = misEnvios.stream()
                 .map(EnvioResumenDTO::fromEntity)
                 .collect(Collectors.toList());

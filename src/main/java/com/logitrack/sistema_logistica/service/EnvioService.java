@@ -4,16 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.*;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
-import com.logitrack.sistema_logistica.repository.*;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,25 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.model.Camion;
-import com.logitrack.sistema_logistica.model.Chofer_Detalle;
+import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Establecimiento;
-import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.repository.CamionRepository;
-import com.logitrack.sistema_logistica.repository.Chofer_DetalleRepository;
+import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
+import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 
-import com.logitrack.sistema_logistica.model.Empresa_Cliente;
-import com.logitrack.sistema_logistica.repository.Empresa_ClienteRepository;
+import com.logitrack.sistema_logistica.model.EmpresaCliente;
+import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
 
 import org.springframework.security.core.Authentication;
 
@@ -51,21 +46,21 @@ import org.springframework.security.core.Authentication;
 public class EnvioService {
 
         @Autowired
-        private Historial_EstadosRepository historialRepository;
+        private HistorialEstadosRepository historialRepository;
         @Autowired
         private EnvioRepository envioRepository;
         @Autowired
         private EstablecimientoRepository establecimientoRepository;
         @Autowired
-        private Chofer_DetalleRepository choferDetalleRepository;
+        private ChoferDetalleRepository choferDetalleRepository;
         @Autowired
         private CamionRepository camionRepository;
         @Autowired
-        private Historial_EstadosRepository historialEstadosRepository;
+        private HistorialEstadosRepository historialEstadosRepository;
         @Autowired
         private UsuarioRepository usuarioRepository;
         @Autowired
-        private Empresa_ClienteRepository empresaClienteRepository;
+        private EmpresaClienteRepository empresaClienteRepository;
 
         @Autowired
         private RestTemplate restTemplate;
@@ -77,49 +72,49 @@ public class EnvioService {
                 String nroAutorizacionArca = getNroAutorizacionArca(dto);
 
                 // 1. Buscar todas las relaciones en la Base de Datos
-                Establecimiento origen = establecimientoRepository.findById(dto.getId_origen())
+                Establecimiento origen = establecimientoRepository.findById(dto.getIdOrigen())
                                 .orElseThrow(() -> new RuntimeException("Establecimiento de origen no encontrado"));
                 verificarRucaEmpresa(hoy, origen);
 
-                Establecimiento destino = establecimientoRepository.findById(dto.getId_destino())
+                Establecimiento destino = establecimientoRepository.findById(dto.getIdDestino())
                                 .orElseThrow(() -> new RuntimeException("Establecimiento de destino no encontrado"));
                 verificarRucaEmpresa(hoy, destino);
 
-                Chofer_Detalle chofer = (dto.getId_chofer() != null)
-                                ? choferDetalleRepository.findById(dto.getId_chofer()).orElse(null)
+                ChoferDetalle chofer = (dto.getIdChofer() != null)
+                                ? choferDetalleRepository.findById(dto.getIdChofer()).orElse(null)
                                 : null;
 
-                Camion camion = (dto.getPatente_camion() != null && !dto.getPatente_camion().isBlank())
-                                ? camionRepository.findById(dto.getPatente_camion()).orElse(null)
+                Camion camion = (dto.getPatenteCamion() != null && !dto.getPatenteCamion().isBlank())
+                                ? camionRepository.findById(dto.getPatenteCamion()).orElse(null)
                                 : null;
 
-                Usuario usuarioCreador = usuarioRepository.findById(dto.getId_usuario_creador())
+                Usuario usuarioCreador = usuarioRepository.findById(dto.getIdUsuarioCreador())
                                 .orElseThrow(() -> new RuntimeException("Usuario creador no encontrado"));
 
                 // 2. Construir el objeto Envio
                 Envio nuevoEnvio = Envio.builder()
-                                .id_envio(dto.getId_envio())
+                                .idEnvio(dto.getIdEnvio())
                                 .cpe(dto.getCpe())
-                                .autorizacion_ARCA(nroAutorizacionArca)
+                                .autorizacionARCA(nroAutorizacionArca)
                                 .origen(origen)
                                 .destino(destino)
                                 .chofer(chofer)
                                 .camion(camion)
-                                .tipo_grano(dto.getTipo_grano())
-                                .prioridad_ia(dto.getPrioridad_ia())
-                                .kg_origen(dto.getKg_origen())
-                                .estado_actual(Estado_Envio.PENDIENTE) // Todo envío nace como PENDIENTE
+                                .tipoGrano(dto.getTipoGrano())
+                                .prioridadIa(dto.getPrioridadIa())
+                                .kgOrigen(dto.getKgOrigen())
+                                .estadoActual(EstadoEnvio.PENDIENTE) // Todo envío nace como PENDIENTE
                                 .build();
 
                 // 3. Guardar el Envío (Acá se autogenera el id "LT-XXXXXX" y la fecha)
                 nuevoEnvio = envioRepository.save(nuevoEnvio);
 
                 // 4. Crear y guardar el Historial inicial
-                Historial_Estados historial = Historial_Estados.builder()
+                HistorialEstados historial = HistorialEstados.builder()
                                 .envio(nuevoEnvio)
                                 .usuario(usuarioCreador)
-                                .estado_nuevo(Estado_Envio.PENDIENTE)
-                                // estado_anterior queda en null porque es el primer estado
+                                .estadoNuevo(EstadoEnvio.PENDIENTE)
+                                // estadoAnterior queda en null porque es el primer estado
                                 .build();
 
                 historialEstadosRepository.save(historial);
@@ -129,7 +124,7 @@ public class EnvioService {
         }
 
         private void verificarHabilitacionSenasa(java.time.LocalDate hoy, Camion camion) {
-                if (camion.getVto_senasa() != null && camion.getVto_senasa().isBefore(hoy)) {
+                if (camion.getVtoSenasa() != null && camion.getVtoSenasa().isBefore(hoy)) {
                         try {
                                 String senasaUrl = "http://localhost:8080/api/mock/senasa/validar-camion/"
                                                 + camion.getPatente();
@@ -138,9 +133,9 @@ public class EnvioService {
                                 if (responseSenasa.getStatusCode().is2xxSuccessful()
                                                 && responseSenasa.getBody() != null) {
                                         String vtoSenasaStr = (String) responseSenasa.getBody()
-                                                        .get("vencimiento_habilitacion");
+                                                        .get("vencimientoHabilitacion");
 
-                                        camion.setVto_senasa(java.time.LocalDate.parse(vtoSenasaStr));
+                                        camion.setVtoSenasa(java.time.LocalDate.parse(vtoSenasaStr));
                                         camionRepository.save(camion);
                                 }
                         } catch (HttpClientErrorException e) {
@@ -153,19 +148,19 @@ public class EnvioService {
         }
 
         private void verificarRucaEmpresa(java.time.LocalDate hoy, Establecimiento origen) {
-                Empresa_Cliente empresa = origen.getEmpresa();
+                EmpresaCliente empresa = origen.getEmpresa();
 
-                if (empresa != null && empresa.getVto_ruca() != null && empresa.getVto_ruca().isBefore(hoy)) {
+                if (empresa != null && empresa.getVtoRuca() != null && empresa.getVtoRuca().isBefore(hoy)) {
                         try {
                                 String rucaUrl = "http://localhost:8080/api/mock/ruca/validar-empresa/"
-                                                + empresa.getRuca_nro();
+                                                + empresa.getRucaNro();
                                 ResponseEntity<Map> responseRuca = restTemplate.getForEntity(rucaUrl, Map.class);
 
                                 if (responseRuca.getStatusCode().is2xxSuccessful() && responseRuca.getBody() != null) {
-                                        String vtoRucaStr = (String) responseRuca.getBody().get("vto_ruca_nuevo");
+                                        String vtoRucaStr = (String) responseRuca.getBody().get("vtoRucaNuevo");
 
-                                        empresa.setVto_ruca(java.time.LocalDate.parse(vtoRucaStr));
-                                        empresa.setVto_ruca(java.time.LocalDate.parse(vtoRucaStr));
+                                        empresa.setVtoRuca(java.time.LocalDate.parse(vtoRucaStr));
+                                        empresa.setVtoRuca(java.time.LocalDate.parse(vtoRucaStr));
                                         empresaClienteRepository.save(empresa);
                                 }
                         } catch (HttpClientErrorException e) {
@@ -177,21 +172,21 @@ public class EnvioService {
                 }
         }
 
-        private void verificarLicenciaChofer(java.time.LocalDate hoy, Chofer_Detalle chofer) {
-                if (chofer.getVto_licencia().isBefore(hoy) || chofer.getVto_linti().isBefore(hoy)) {
+        private void verificarLicenciaChofer(java.time.LocalDate hoy, ChoferDetalle chofer) {
+                if (chofer.getVtoLicencia().isBefore(hoy) || chofer.getVtoLinti().isBefore(hoy)) {
                         try {
                                 String cnrtUrl = "http://localhost:8080/api/mock/cnrt/validar-chofer/"
-                                                + chofer.getNro_licencia();
+                                                + chofer.getNroLicencia();
                                 ResponseEntity<Map> responseCnrt = restTemplate.getForEntity(cnrtUrl, Map.class);
 
                                 if (responseCnrt.getStatusCode().is2xxSuccessful() && responseCnrt.getBody() != null) {
                                         String vtoLicenciaStr = (String) responseCnrt.getBody()
-                                                        .get("vto_licencia_nuevo");
-                                        String vtoLintiStr = (String) responseCnrt.getBody().get("vto_linti_nuevo");
+                                                        .get("vtoLicenciaNuevo");
+                                        String vtoLintiStr = (String) responseCnrt.getBody().get("vtoLintiNuevo");
 
                                         // Actualizamos nuestra base de datos local
-                                        chofer.setVto_licencia(java.time.LocalDate.parse(vtoLicenciaStr));
-                                        chofer.setVto_linti(java.time.LocalDate.parse(vtoLintiStr));
+                                        chofer.setVtoLicencia(java.time.LocalDate.parse(vtoLicenciaStr));
+                                        chofer.setVtoLinti(java.time.LocalDate.parse(vtoLintiStr));
                                         choferDetalleRepository.save(chofer);
                                 }
                         } catch (HttpClientErrorException e) {
@@ -210,7 +205,7 @@ public class EnvioService {
                         ResponseEntity<Map> response = restTemplate.getForEntity(arcaUrl, Map.class);
 
                         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                                nroAutorizacionArca = (String) response.getBody().get("nro_autorizacion");
+                                nroAutorizacionArca = (String) response.getBody().get("nroAutorizacion");
                         }
                 } catch (HttpClientErrorException e) {
                         throw new RuntimeException("Validación ARCA rechazada: El CPE es inválido o está inactivo.");
@@ -221,13 +216,13 @@ public class EnvioService {
         }
 
         // que pasa si el envío existe o si no se encuentra.
-        public Envio buscarPorId(String id_envio) {
-                return envioRepository.buscarPorId(id_envio)
+        public Envio buscarPorId(String idEnvio) {
+                return envioRepository.buscarPorId(idEnvio)
                                 .orElseThrow(() -> new RuntimeException(
-                                                "No se encontró el envío con el id_envio: " + id_envio));
+                                                "No se encontró el envío con el idEnvio: " + idEnvio));
         }
 
-        public Page<Envio> buscarEnviosConFiltros(Estado_Envio estado, LocalDateTime fechaInicio,
+        public Page<Envio> buscarEnviosConFiltros(EstadoEnvio estado, LocalDateTime fechaInicio,
                         LocalDateTime fechaFin, String termino, String tipoGrano, Pageable pageable) {
                 Specification<Envio> spec = Specification.where(EnvioSpecifications.tieneEstado(estado))
                                 .and(EnvioSpecifications.fechaCreacionEntre(fechaInicio, fechaFin))
@@ -251,14 +246,14 @@ public class EnvioService {
                                 .orElseThrow(() -> new RuntimeException("Envío no encontrado"));
 
                 // 2. Validación de Identidad: ¿Es su envío asignado?
-                String usernameAsignado = envio.getChofer().getPersona_asociada().getId_usuario().getUsername();
+                String usernameAsignado = envio.getChofer().getPersonaAsociada().getIdUsuario().getUsername();
                 if (!usernameAsignado.equals(username)) {
                         throw new RuntimeException("Acceso denegado: Este envío no te pertenece");
                 }
 
                 // 3. Máquina de Estados: Validar flujo lógico [cite: 49, 111]
-                Estado_Envio actual = envio.getEstado_actual();
-                Estado_Envio siguiente = Estado_Envio.valueOf(nuevoEstadoStr);
+                EstadoEnvio actual = envio.getEstadoActual();
+                EstadoEnvio siguiente = EstadoEnvio.valueOf(nuevoEstadoStr);
 
                 // NUEVO: Si el estado es el mismo, no hacemos nada y devolvemos el envío tal
                 // cual
@@ -273,7 +268,7 @@ public class EnvioService {
 
                 // 4. Actualizar (Manteniendo la prioridad intacta)
                 Usuario usuario = usuarioRepository.findByUsername(username).get();
-                return actualizarEstadoYPrioridad(idEnvio, nuevoEstadoStr, envio.getPrioridad_ia(), usuario);
+                return actualizarEstadoYPrioridad(idEnvio, nuevoEstadoStr, envio.getPrioridadIa(), usuario);
         }
 
         /**
@@ -286,7 +281,7 @@ public class EnvioService {
         public List<HistorialResponseDTO> obtenerHistorialPorEnvio(String idEnvio) {
                 // Validar existencia del envío antes de consultar el historial
                 if (!envioRepository.existsById(idEnvio)) {
-                        throw new RuntimeException("No se encontró el envío con id_envio: " + idEnvio);
+                        throw new RuntimeException("No se encontró el envío con idEnvio: " + idEnvio);
                 }
 
                 // Buscar los registros de historial ordenados por fecha descendente
@@ -301,12 +296,12 @@ public class EnvioService {
          * Método de apoyo: Valida que el chofer siga el flujo lógico
          * sin saltarse pasos ni retroceder.
          */
-        private boolean esTransicionValida(Estado_Envio actual, Estado_Envio siguiente) {
+        private boolean esTransicionValida(EstadoEnvio actual, EstadoEnvio siguiente) {
                 return switch (actual) {
-                        case PENDIENTE -> siguiente == Estado_Envio.EN_TRANSITO;
-                        case EN_TRANSITO -> siguiente == Estado_Envio.EN_PUNTO_DE_RECOLECCION;
-                        case EN_PUNTO_DE_RECOLECCION -> siguiente == Estado_Envio.EN_REPARTO;
-                        case EN_REPARTO -> siguiente == Estado_Envio.ENTREGADO;
+                        case PENDIENTE -> siguiente == EstadoEnvio.EN_TRANSITO;
+                        case EN_TRANSITO -> siguiente == EstadoEnvio.EN_PUNTO_DE_RECOLECCION;
+                        case EN_PUNTO_DE_RECOLECCION -> siguiente == EstadoEnvio.EN_REPARTO;
+                        case EN_REPARTO -> siguiente == EstadoEnvio.ENTREGADO;
                         default -> false; // El chofer no puede cancelar ni modificar estados finales
                 };
         }
@@ -325,22 +320,22 @@ public class EnvioService {
                 Envio envio = envioRepository.findById(idEnvio)
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-                Estado_Envio estadoAnterior = envio.getEstado_actual();
-                Estado_Envio estadoNuevo = Estado_Envio.valueOf(nuevoEstadoStr);
+                EstadoEnvio estadoAnterior = envio.getEstadoActual();
+                EstadoEnvio estadoNuevo = EstadoEnvio.valueOf(nuevoEstadoStr);
 
                 // 2. Actualizamos los campos en la entidad
-                envio.setEstado_actual(estadoNuevo);
-                envio.setPrioridad_ia(nuevaPrioridad); // Aquí el chofer mantiene la que ya tenía
+                envio.setEstadoActual(estadoNuevo);
+                envio.setPrioridadIa(nuevaPrioridad); // Aquí el chofer mantiene la que ya tenía
 
                 // 3. Guardamos el envío
                 Envio envioGuardado = envioRepository.save(envio);
 
                 // 4. GENERAMOS EL HISTORIAL (Auditoría)
-                Historial_Estados historial = Historial_Estados.builder()
+                HistorialEstados historial = HistorialEstados.builder()
                                 .envio(envioGuardado)
                                 .usuario(usuarioModificador)
-                                .estado_anterior(estadoAnterior)
-                                .estado_nuevo(estadoNuevo)
+                                .estadoAnterior(estadoAnterior)
+                                .estadoNuevo(estadoNuevo)
                                 .build();
 
                 historialEstadosRepository.save(historial);
@@ -356,18 +351,18 @@ public class EnvioService {
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
                 // Regla de negocio: Solo cancelar si está pendiente
-                if (envio.getEstado_actual() != Estado_Envio.PENDIENTE) {
+                if (envio.getEstadoActual() != EstadoEnvio.PENDIENTE) {
                         throw new RuntimeException(
                                         "Validación fallida: No se puede cancelar un envío que ya está en ruta (Estado: "
-                                                        + envio.getEstado_actual() + ").");
+                                                        + envio.getEstadoActual() + ").");
                 }
 
                 Usuario usuarioModificador = usuarioRepository.findByUsername(username)
                                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
                 // Reutilizamos tu método centralizado para cambiar el estado a CANCELADO
-                // Nota: Asegurate de tener CANCELADO en tu Enum Estado_Envio
-                return actualizarEstadoYPrioridad(idEnvio, "CANCELADO", envio.getPrioridad_ia(), usuarioModificador);
+                // Nota: Asegurate de tener CANCELADO en tu Enum EstadoEnvio
+                return actualizarEstadoYPrioridad(idEnvio, "CANCELADO", envio.getPrioridadIa(), usuarioModificador);
         }
 
         @Transactional
@@ -379,26 +374,26 @@ public class EnvioService {
                 Envio envioExistente = envioRepository.findById(idEnvio)
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-                if (envioExistente.getEstado_actual() != Estado_Envio.PENDIENTE) {
+                if (envioExistente.getEstadoActual() != EstadoEnvio.PENDIENTE) {
                         throw new RuntimeException(
                                         "Validación fallida: No se pueden modificar los datos de un viaje que ya comenzó.");
                 }
 
                 java.time.LocalDate hoy = java.time.LocalDate.now();
 
-                Chofer_Detalle nuevoChofer = choferDetalleRepository.findById(dto.getId_chofer())
+                ChoferDetalle nuevoChofer = choferDetalleRepository.findById(dto.getIdChofer())
                                 .orElseThrow(() -> new RuntimeException("Nuevo chofer no encontrado"));
                 verificarLicenciaChofer(hoy, nuevoChofer);
 
-                Camion nuevoCamion = camionRepository.findById(dto.getPatente_camion())
+                Camion nuevoCamion = camionRepository.findById(dto.getPatenteCamion())
                                 .orElseThrow(() -> new RuntimeException("Nuevo camión no encontrado"));
                 verificarHabilitacionSenasa(hoy, nuevoCamion);
 
                 envioExistente.setChofer(nuevoChofer);
                 envioExistente.setCamion(nuevoCamion);
-                envioExistente.setTipo_grano(dto.getTipo_grano());
-                envioExistente.setPrioridad_ia(dto.getPrioridad_ia());
-                envioExistente.setKg_origen(dto.getKg_origen());
+                envioExistente.setTipoGrano(dto.getTipoGrano());
+                envioExistente.setPrioridadIa(dto.getPrioridadIa());
+                envioExistente.setKgOrigen(dto.getKgOrigen());
 
                 return envioRepository.save(envioExistente);
         }
@@ -410,38 +405,39 @@ public class EnvioService {
 
         @Transactional
         public void asignarChoferCamion(EnvioRequestDTO dto) {
-                Envio envio = envioRepository.findById(dto.getId_envio())
+                Envio envio = envioRepository.findById(dto.getIdEnvio())
                                 .orElseThrow(() -> new RuntimeException("Envío no encontrado"));
-                Camion camion = camionRepository.findById(dto.getPatente_camion())
+                Camion camion = camionRepository.findById(dto.getPatenteCamion())
                                 .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
-                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
+                ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
                                 .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
-                LocalDateTime fecha_salida = LocalDateTime.now();
+                LocalDateTime fechaSalida = LocalDateTime.now();
 
                 envio.setCamion(camion);
-                envio.setFecha_estimada_llegada(calcularETA(envio.getDistancia_km(), fecha_salida));
-                envio.setFecha_salida(fecha_salida);
+                envio.setFechaEstimadaLlegada(calcularETA(envio.getDistanciaKm(), fechaSalida));
+                envio.setFechaSalida(fechaSalida);
                 envio.setChofer(chofer);
                 envioRepository.save(envio);
 
         }
 
         private static final double VELOCIDAD_PROMEDIO_KMH = 65.0;
+
         // private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime
         // fecha_salida) {
         // if (distanciaKm == null || distanciaKm <= 0) {
         // return null;
         // }
         // long minutosViaje = Math.round((distanciaKm / VELOCIDAD_PROMEDIO_KMH) * 60);
-        // return fecha_salida.plusMinutes(minutosViaje);
+        // return fechaSalida.plusMinutes(minutosViaje);
         // }
-        private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime fecha_salida) {
-                if (distanciaKm == null || distanciaKm <= 0 || fecha_salida == null) {
+        private LocalDateTime calcularETA(Double distanciaKm, LocalDateTime fechaSalida) {
+                if (distanciaKm == null || distanciaKm <= 0 || fechaSalida == null) {
                         return null;
                 }
                 long minutosViaje = Math.round((distanciaKm / VELOCIDAD_PROMEDIO_KMH) * 60);
-                return fecha_salida.plusMinutes(minutosViaje);
+                return fechaSalida.plusMinutes(minutosViaje);
         }
 
         /**
@@ -454,7 +450,7 @@ public class EnvioService {
                 Envio envio = envioRepository.findById(idEnvio)
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-                LocalDateTime eta = calcularETA(envio.getDistancia_km(), envio.getFecha_salida());
+                LocalDateTime eta = calcularETA(envio.getDistanciaKm(), envio.getFechaSalida());
 
                 return EnvioDetalleResponseDTO.fromEntity(envio, eta);
         }
@@ -471,10 +467,10 @@ public class EnvioService {
                 }
 
                 // 3. Buscar chofer y camión — ambos obligatorios
-                Chofer_Detalle chofer = choferDetalleRepository.findById(dto.getId_chofer())
+                ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
                                 .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
-                Camion camion = camionRepository.findById(dto.getPatente_camion())
+                Camion camion = camionRepository.findById(dto.getPatenteCamion())
                                 .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
 
                 // 4. Asignar y guardar
@@ -491,17 +487,17 @@ public class EnvioService {
                 Envio envioExistente = envioRepository.findById(idEnvio)
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-                Estado_Envio estadoAnterior = envioExistente.getEstado_actual();
+                EstadoEnvio estadoAnterior = envioExistente.getEstadoActual();
                 boolean estadoCambiado = false;
 
                 // 1. Actualización de Estado (Permitido para Operador y Supervisor)
                 if (dto.getEstado() != null && dto.getEstado() != estadoAnterior) {
-                        envioExistente.setEstado_actual(dto.getEstado());
+                        envioExistente.setEstadoActual(dto.getEstado());
                         estadoCambiado = true;
                 }
 
                 // 2. Actualización de Prioridad (Estrictamente restringido a Supervisor)
-                if (dto.getPrioridad_ia() != null && !dto.getPrioridad_ia().equals(envioExistente.getPrioridad_ia())) {
+                if (dto.getPrioridadIa() != null && !dto.getPrioridadIa().equals(envioExistente.getPrioridadIa())) {
                         boolean esSupervisor = auth.getAuthorities().stream()
                                         .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"));
 
@@ -509,7 +505,7 @@ public class EnvioService {
                                 throw new RuntimeException(
                                                 "La prioridad del envío solo puede ser modificada por un supervisor.");
                         }
-                        envioExistente.setPrioridad_ia(dto.getPrioridad_ia());
+                        envioExistente.setPrioridadIa(dto.getPrioridadIa());
                 }
 
                 Envio envioGuardado = envioRepository.save(envioExistente);
@@ -519,11 +515,11 @@ public class EnvioService {
                         Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName())
                                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-                        Historial_Estados historial = Historial_Estados.builder()
+                        HistorialEstados historial = HistorialEstados.builder()
                                         .envio(envioGuardado)
                                         .usuario(usuarioModificador)
-                                        .estado_anterior(estadoAnterior)
-                                        .estado_nuevo(envioGuardado.getEstado_actual())
+                                        .estadoAnterior(estadoAnterior)
+                                        .estadoNuevo(envioGuardado.getEstadoActual())
                                         .build();
 
                         historialEstadosRepository.save(historial);

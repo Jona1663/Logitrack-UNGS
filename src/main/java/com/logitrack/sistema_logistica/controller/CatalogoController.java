@@ -15,14 +15,14 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/catalogos")
 public class CatalogoController {
 
-    @Autowired private Empresa_ClienteRepository empresaRepository;
+    @Autowired private EmpresaClienteRepository empresaRepository;
     @Autowired private EstablecimientoRepository establecimientoRepository;
-    @Autowired private Chofer_DetalleRepository choferRepository;
+    @Autowired private ChoferDetalleRepository choferRepository;
     @Autowired private CamionRepository camionRepository;
 
     // 1. Empresas Clientes
     @GetMapping("/empresas")
-    public List<Empresa_Cliente> getEmpresas() {
+    public List<EmpresaCliente> getEmpresas() {
         return empresaRepository.findAll();
     }
 
@@ -34,7 +34,7 @@ public class CatalogoController {
 
     // 3. Choferes
     @GetMapping("/choferes")
-    public List<Chofer_Detalle> getChoferes() {
+    public List<ChoferDetalle> getChoferes() {
         return choferRepository.findAll();
     }
 
@@ -50,10 +50,10 @@ public class CatalogoController {
     public MetadatosDTO getMetadatos() {
         return MetadatosDTO.builder()
                 .categorias(Arrays.stream(Categoria.values()).map(Enum::name).collect(Collectors.toList()))
-                .estadosEnvio(Arrays.stream(Estado_Envio.values()).map(Enum::name).collect(Collectors.toList()))
-                .rolesUsuario(Arrays.stream(Rol_Usuario.values()).map(Enum::name).collect(Collectors.toList()))
-                .tiposEmpresa(Arrays.stream(Tipo_Empresa.values()).map(Enum::name).collect(Collectors.toList()))
-                .tiposGrano(Arrays.stream(Tipo_Grano.values()).map(Enum::name).collect(Collectors.toList()))
+                .estadosEnvio(Arrays.stream(EstadoEnvio.values()).map(Enum::name).collect(Collectors.toList()))
+                .rolesUsuario(Arrays.stream(RolUsuario.values()).map(Enum::name).collect(Collectors.toList()))
+                .tiposEmpresa(Arrays.stream(TipoEmpresa.values()).map(Enum::name).collect(Collectors.toList()))
+                .tiposGrano(Arrays.stream(TipoGrano.values()).map(Enum::name).collect(Collectors.toList()))
                 .build();
     }
 }

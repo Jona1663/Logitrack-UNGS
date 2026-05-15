@@ -1,9 +1,10 @@
 package com.logitrack.sistema_logistica.repository;
 
-import com.logitrack.sistema_logistica.model.Plantilla_Notificacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.logitrack.sistema_logistica.model.PlantillaNotificacion;
+
 @Repository
-public interface Plantilla_NotificacionRepository extends JpaRepository<Plantilla_Notificacion, Integer> {
+public interface PlantillaNotificacionRepository extends JpaRepository<PlantillaNotificacion, Integer> {
 }

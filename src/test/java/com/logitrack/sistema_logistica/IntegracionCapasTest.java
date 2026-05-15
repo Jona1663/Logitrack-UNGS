@@ -15,7 +15,7 @@ public class IntegracionCapasTest {
     private ApplicationContext applicationContext;
 
     @Test
-    public void validarComunicacionDeCapas_elContextoDebeCargarSinErrores() {
+    public void validarComunicacionDeCapasElContextoDebeCargarSinErrores() {
         // GIVEN: El framework Spring Boot intenta levantar la aplicación completa
         
         // WHEN: Revisamos las dependencias internas del sistema

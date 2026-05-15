@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 
 @Entity
-@Table(name = "Notificaciones")
+@Table(name = "notificaciones")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,30 +16,30 @@ import lombok.Builder;
 public class Notificacion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id_notificacion;
+    private Integer idNotificacion;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_envio", referencedColumnName = "id_envio")
     private Envio envio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", referencedColumnName = "id_usuario")
+    @JoinColumn(name = "id_usuario")
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_plantilla", referencedColumnName = "id_plantilla")
-    private Plantilla_Notificacion plantilla;
+    @JoinColumn(name = "id_plantilla")
+    private PlantillaNotificacion plantilla;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String mensaje_generado;
+    private String mensajeGenerado;
 
-    private LocalDateTime fecha_creacion;
+    private LocalDateTime fechaCreacion;
 
     @Builder.Default
-    private Boolean estado_leida = false;
+    private Boolean estadoLeida = false;
 
     @PrePersist
     protected void onCreate() {
-        this.fecha_creacion = LocalDateTime.now();
+        this.fechaCreacion = LocalDateTime.now();
     }
 }
