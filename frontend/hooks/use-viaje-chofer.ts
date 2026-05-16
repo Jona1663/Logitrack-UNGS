@@ -28,7 +28,7 @@ export function useViajeChofer() {
 
       // Buscar viaje activo (no entregado ni cancelado)
       const viajeActivo = asignaciones.find(
-        (e) => e.estado_actual !== 'ENTREGADO' && e.estado_actual !== 'CANCELADO'
+        (e) => e.estadoActual !== 'ENTREGADO' && e.estadoActual !== 'CANCELADO'
       ) ?? null;
 
       setState({
@@ -54,14 +54,14 @@ export function useViajeChofer() {
   const avanzarEstado = useCallback(async () => {
     if (!state.viaje) return;
 
-    const flujo = FLUJO_LOGISTICO[state.viaje.estado_actual];
+    const flujo = FLUJO_LOGISTICO[state.viaje.estadoActual];
     if (!flujo.siguiente) return;
 
     setState((prev) => ({ ...prev, isUpdating: true }));
 
     try {
       const viajeActualizado = await api.cambiarEstadoChofer(
-        state.viaje.id_envio,
+        state.viaje.idEnvio,
         flujo.siguiente
       );
 
@@ -70,7 +70,7 @@ export function useViajeChofer() {
       setState((prev) => ({
         ...prev,
         viaje: prev.viaje
-          ? { ...prev.viaje, estado_actual: viajeActualizado.estado_actual }
+          ? { ...prev.viaje, estadoActual: viajeActualizado.estadoActual }
           : null,
         isUpdating: false,
       }));
@@ -89,7 +89,7 @@ export function useViajeChofer() {
       setState((prev) => ({ ...prev, isUpdating: true }));
 
       try {
-        await api.reportarIncidencia(state.viaje!.id_envio, { descripcion });
+        await api.reportarIncidencia(state.viaje!.idEnvio, { descripcion });
         setState((prev) => ({ ...prev, isUpdating: false }));
       } catch (error) {
         setState((prev) => ({ ...prev, isUpdating: false }));
@@ -101,7 +101,7 @@ export function useViajeChofer() {
 
   const getSiguienteAccion = useCallback(() => {
     if (!state.viaje) return null;
-    return FLUJO_LOGISTICO[state.viaje.estado_actual];
+    return FLUJO_LOGISTICO[state.viaje.estadoActual];
   }, [state.viaje]);
 
   return {

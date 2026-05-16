@@ -1,6 +1,6 @@
 package com.logitrack.sistema_logistica.model;
 
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,38 +9,38 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 
 @Entity
-@Table(name = "Historial_Estados")
+@Table(name = "historial_Estados")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Historial_Estados {
+public class HistorialEstados {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id_historial;
+    private Integer idHistorial;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_envio", referencedColumnName = "id_envio")
     private Envio envio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", referencedColumnName = "id_usuario")
+    @JoinColumn(name = "id_usuario")
     private Usuario usuario;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_anterior", length = 50)
-    private Estado_Envio estado_anterior;
+    private EstadoEnvio estadoAnterior;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_nuevo", nullable = false, length = 50)
-    private Estado_Envio estado_nuevo;
+    private EstadoEnvio estadoNuevo;
 
     @Column(name = "fecha_hora", updatable = false)
-    private LocalDateTime fecha_hora;
+    private LocalDateTime fechaHora;
 
     @PrePersist
     protected void onCreate() {
-        this.fecha_hora = LocalDateTime.now();
+        this.fechaHora = LocalDateTime.now();
     }
 }

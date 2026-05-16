@@ -34,11 +34,11 @@ import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.Historial_Estados;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.model.enums.Estado_Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
-import com.logitrack.sistema_logistica.repository.Historial_EstadosRepository;
+import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import com.logitrack.sistema_logistica.service.EnvioService;
 
@@ -71,12 +71,12 @@ public class EnvioController {
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String fecha,
-            @RequestParam(required = false) String tipo_grano,
+            @RequestParam(required = false) String tipoGrano,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             LocalDate fechaFiltro = null;
-            Estado_Envio estadoFiltro = null;
+            EstadoEnvio estadoFiltro = null;
 
             // Parsear los parámetros
             if (fecha != null && !fecha.isBlank()) {
@@ -85,7 +85,7 @@ public class EnvioController {
             }
 
             if (estado != null && !estado.isBlank()) {
-                estadoFiltro = Estado_Envio.valueOf(estado.toUpperCase());
+                estadoFiltro = EstadoEnvio.valueOf(estado.toUpperCase());
             }
 
             LocalDateTime fechaInicio = null;
@@ -98,7 +98,7 @@ public class EnvioController {
             String termino = (query != null && !query.isBlank()) ? query.trim() : null;
             Pageable pageable = PageRequest.of(page, size);
             Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
-                    tipo_grano,
+                    tipoGrano,
                     pageable);
             return ResponseEntity.ok(envios);
         } catch (DateTimeParseException e) {
@@ -136,23 +136,23 @@ public class EnvioController {
 
     // Endpoint Global de Auditoría
     @Autowired
-    private Historial_EstadosRepository historialEstadosRepository;
+    private HistorialEstadosRepository historialEstadosRepository;
 
     @GetMapping("/historial-completo")
     public ResponseEntity<List<HistorialResponseDTO>> obtenerHistorialCompleto() {
         // Obtenemos todos los registros ordenados por fecha descendente (más reciente
         // primero)
-        List<Historial_Estados> listaCompleta = historialEstadosRepository.findAll();
+        List<HistorialEstados> listaCompleta = historialEstadosRepository.findAll();
 
         // Mapeamos a nuestro DTO para enviar solo lo necesario y evitar errores de JSON
         List<HistorialResponseDTO> respuesta = listaCompleta.stream()
                 .map(h -> {
                     HistorialResponseDTO dto = new HistorialResponseDTO();
-                    dto.setIdHistorial(h.getId_historial());
-                    dto.setIdEnvio(h.getEnvio() != null ? h.getEnvio().getId_envio() : null);
-                    dto.setEstadoAnterior(h.getEstado_anterior() != null ? h.getEstado_anterior().name() : "INICIAL");
-                    dto.setEstadoNuevo(h.getEstado_nuevo() != null ? h.getEstado_nuevo().name() : null);
-                    dto.setFechaHora(h.getFecha_hora());
+                    dto.setIdHistorial(h.getIdHistorial());
+                    dto.setIdEnvio(h.getEnvio() != null ? h.getEnvio().getIdEnvio() : null);
+                    dto.setEstadoAnterior(h.getEstadoAnterior() != null ? h.getEstadoAnterior().name() : "INICIAL");
+                    dto.setEstadoNuevo(h.getEstadoNuevo() != null ? h.getEstadoNuevo().name() : null);
+                    dto.setFechaHora(h.getFechaHora());
                     dto.setUsername(h.getUsuario() != null ? h.getUsuario().getUsername() : null);
                     return dto;
                 })
@@ -193,7 +193,7 @@ public class EnvioController {
                     .orElseThrow(() -> new RuntimeException("Usuario autenticado no existe en el sistema"));
 
             // Asignarlo al DTO de forma segura antes de guardarlo
-            dto.setId_usuario_creador(usuario.getId_usuario());
+            dto.setIdUsuarioCreador(usuario.getIdUsuario());
 
             Envio envioCreado = envioService.crearNuevoEnvio(dto);
             return new ResponseEntity<>(envioCreado, HttpStatus.CREATED);
@@ -203,10 +203,10 @@ public class EnvioController {
     }
 
     // Se obtiene el envío completo
-    @GetMapping("/buscar/{id_envio}")
-    public ResponseEntity<?> obtenerEnvioPorTracking(@PathVariable String id_envio) {
+    @GetMapping("/buscar/{idEnvio}")
+    public ResponseEntity<?> obtenerEnvioPorTracking(@PathVariable String idEnvio) {
         try {
-            Envio envio = envioService.buscarPorId(id_envio);
+            Envio envio = envioService.buscarPorId(idEnvio);
             return ResponseEntity.ok(envio);
         } catch (RuntimeException e) {
 
@@ -281,7 +281,7 @@ public class EnvioController {
      * // NOTA PARA TI: En tu EnvioService.java deberás crear este método.
      * // Ese método debe buscar el envío, comparar los estados, crear el registro
      * en
-     * // Historial_Estados con el 'usuario' capturado y guardar los cambios.
+     * // HistorialEstados con el 'usuario' capturado y guardar los cambios.
      * Envio envioActualizado = envioService.actualizarEstadoYPrioridad(
      * idEnvio,
      * dto.getEstado(),
@@ -336,8 +336,8 @@ public class EnvioController {
     // // Construimos la respuesta según el contrato
     // EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
     // .mensaje("Estado actualizado correctamente")
-    // .estado_actual(envioActualizado.getEstado_actual().name())
-    // .fecha_actualizacion(LocalDateTime.now())
+    // .estadoActual(envioActualizado.getEstadoActual().name())
+    // .fechaActualizacion(LocalDateTime.now())
     // .build();
 
     // return ResponseEntity.ok(response);

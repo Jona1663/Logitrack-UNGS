@@ -9,27 +9,27 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "Choferes_Detalle")
+@Table(name = "choferes_Detalle")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Chofer_Detalle {
+public class ChoferDetalle {
 
     @Id
-    private Integer id_chofer;
+    private Integer idChofer;
 
     @OneToOne(fetch = FetchType.EAGER)
     @MapsId
     @JoinColumn(name = "id_chofer")
-    private Persona persona_asociada;
+    private Persona personaAsociada;
 
     @Column(name = "nro_licencia", nullable = false, length = 50)
-    private String nro_licencia;
+    private String nroLicencia;
 
     @Column(name = "vto_licencia", nullable = false)
-    private LocalDate vto_licencia;
+    private LocalDate vtoLicencia;
 
     @Column(name = "vto_linti", nullable = false)
-    private LocalDate vto_linti;
+    private LocalDate vtoLinti;
 }

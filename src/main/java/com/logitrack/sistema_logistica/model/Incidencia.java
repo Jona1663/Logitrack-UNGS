@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Entity
-@Table(name = "Incidencias")
+@Table(name = "incidencias")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,7 +17,7 @@ public class Incidencia {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id_incidencia;
+    private Integer idIncidencia;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_envio", referencedColumnName = "id_envio")
@@ -31,5 +31,5 @@ public class Incidencia {
     private String descripcion;
 
     @Column(columnDefinition = "TEXT")
-    private String lugar_incidencia;
+    private String lugarIncidencia;
 }

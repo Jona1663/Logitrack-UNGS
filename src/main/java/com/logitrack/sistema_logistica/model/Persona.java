@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Entity
-@Table(name = "Personas")
+@Table(name = "personas")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,12 +16,12 @@ public class Persona {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id_persona;
+    private Integer idPersona;
 
     // Relación 1 a 1 con Usuario
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_usuario", referencedColumnName = "id_usuario")
-    private Usuario id_usuario; 
+    @JoinColumn(name = "id_usuario")
+    private Usuario idUsuario; 
 
     @Column(unique = true, nullable = false, length = 20)
     private String cuil;

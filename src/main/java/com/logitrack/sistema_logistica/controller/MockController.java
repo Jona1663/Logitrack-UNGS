@@ -18,7 +18,7 @@ public class MockController {
     public ResponseEntity<Map<String, Object>> validarCpe(@PathVariable String nroCpe) {
         Map<String, Object> response = new HashMap<>();
         
-        response.put("nro_cpe_consultado", nroCpe);
+        response.put("nroCpeConsultado", nroCpe);
         
         if (nroCpe != null && nroCpe.endsWith("999")) {
             response.put("estado", "RECHAZADO");
@@ -27,7 +27,7 @@ public class MockController {
         }
 
         response.put("estado", "ACTIVO");
-        response.put("nro_autorizacion", "AUTH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        response.put("nroAutorizacion", "AUTH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         return ResponseEntity.ok(response);
     }
     
@@ -37,7 +37,7 @@ public class MockController {
     public ResponseEntity<Map<String, Object>> validarCnrt(@PathVariable String nroLicencia) {
         Map<String, Object> response = new HashMap<>();
         
-        response.put("nro_licencia", nroLicencia);
+        response.put("nroLicencia", nroLicencia);
         
         if (nroLicencia != null && nroLicencia.contains("999")) {
             response.put("estado", "INHABILITADO");
@@ -49,8 +49,8 @@ public class MockController {
         String nuevoVencimiento = java.time.LocalDate.now().plusYears(1).toString();
         
         response.put("estado", "HABILITADO");
-        response.put("vto_licencia_nuevo", nuevoVencimiento);
-        response.put("vto_linti_nuevo", nuevoVencimiento);
+        response.put("vtoLicenciaNuevo", nuevoVencimiento);
+        response.put("vtoLintiNuevo", nuevoVencimiento);
         
         return ResponseEntity.ok(response);
     }
@@ -62,7 +62,7 @@ public class MockController {
     public ResponseEntity<Map<String, Object>> validarRuca(@PathVariable String nroRuca) {
         Map<String, Object> response = new HashMap<>();
         
-        response.put("ruca_consultado", nroRuca);
+        response.put("rucaConsultado", nroRuca);
 
         if (nroRuca != null && nroRuca.contains("999")) {
             response.put("estado", "SUSPENDIDO");
@@ -73,7 +73,7 @@ public class MockController {
         String nuevoVencimiento = java.time.LocalDate.now().plusYears(1).toString();
 
         response.put("estado", "ACTIVO");
-        response.put("vto_ruca_nuevo", nuevoVencimiento);
+        response.put("vtoRucaNuevo", nuevoVencimiento);
         
         return ResponseEntity.ok(response);
     }
@@ -91,7 +91,7 @@ public class MockController {
         String nuevoVencimiento = java.time.LocalDate.now().plusYears(1).toString();
 
         response.put("habilitado", true);
-        response.put("vencimiento_habilitacion", nuevoVencimiento);
+        response.put("vencimientoHabilitacion", nuevoVencimiento);
         return ResponseEntity.ok(response);
     }
 

@@ -1,6 +1,6 @@
 package com.logitrack.sistema_logistica.model.enums;
 
-public enum Tipo_Empresa {
+public enum TipoEmpresa {
     ACOPIO, 
     PUERTO, 
     PRODUCTOR

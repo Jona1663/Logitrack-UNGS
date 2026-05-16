@@ -9,7 +9,7 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "Camiones")
+@Table(name = "camiones")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,11 +21,11 @@ public class Camion {
     private String patente;
 
     @Column(name = "ruta_nro", length = 50)
-    private String ruta_nro;
+    private String rutaNro;
 
     @Column(name = "vto_senasa", nullable = false)
-    private LocalDate vto_senasa;
+    private LocalDate vtoSenasa;
 
     @Column(name = "tara_vacio_kg", nullable = false)
-    private Integer tara_vacio_kg;
+    private Integer taraVacioKg;
 }

@@ -46,13 +46,13 @@ export default function DetalleEnvioPage({
   // Sincronizar el estado local cuando se carga el envío
   useEffect(() => {
     if (envio) {
-      setNuevoEstado(envio.estado_actual);
-      setNuevaPrioridad(envio.prioridad_ia);
+      setNuevoEstado(envio.estadoActual);
+      setNuevaPrioridad(envio.prioridadIa);
     }
   }, [envio]);
 
   // Verificar si hay cambios reales para habilitar el botón de guardado
-  const hayCambios = envio && (nuevoEstado !== envio.estado_actual || nuevaPrioridad !== envio.prioridad_ia);
+  const hayCambios = envio && (nuevoEstado !== envio.estadoActual || nuevaPrioridad !== envio.prioridadIa);
 
   const handleGuardarCambios = async () => {
     if (!nuevoEstado || !nuevaPrioridad) return;
@@ -61,7 +61,7 @@ export default function DetalleEnvioPage({
       // Usamos los nombres que espera el DTO de Java
       await actualizarEnvio({
         estado: nuevoEstado,
-        prioridad_ia: nuevaPrioridad
+        prioridadIa: nuevaPrioridad
       });
       // IMPORTANTE: Recargamos la página igual que en detalleEnvio.js para actualizar el historial
       toast.success('Operación actualizada con éxito');
@@ -88,7 +88,7 @@ export default function DetalleEnvioPage({
     );
   }
 
-  const pesoTn = envio.kg_origen ? (envio.kg_origen / 1000).toFixed(1) : '0';
+  const pesoTn = envio.kgOrigen ? (envio.kgOrigen / 1000).toFixed(1) : '0';
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-6 lg:py-8">
@@ -116,7 +116,7 @@ export default function DetalleEnvioPage({
                 ID Rastreo
               </span>
               <span className="font-extrabold text-2xl text-blue-600 leading-none">
-                {envio.id_envio}
+                {envio.idEnvio}
               </span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function DetalleEnvioPage({
                 type="text"
                 disabled
                 className="w-full bg-transparent border-b border-dashed border-gray-300 pb-2 text-gray-700 font-medium outline-none"
-                value={envio.origen?.empresa?.razon_social || "No especificado"}
+                value={envio.origen?.empresa?.razonSocial || "No especificado"}
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function DetalleEnvioPage({
               <input
                 disabled
                 className="w-full bg-transparent border-b border-dashed border-gray-300 pb-2 text-gray-700 font-medium outline-none"
-                value={envio.origen?.nombre_lugar || "No especificado"}
+                value={envio.origen?.nombreLugar || "No especificado"}
               />
             </div>
             <div>
@@ -164,7 +164,7 @@ export default function DetalleEnvioPage({
               <input
                 disabled
                 className="w-full bg-transparent border-b border-dashed border-gray-300 pb-2 text-gray-700 font-medium outline-none"
-                value={envio.destino?.nombre_lugar || "No especificado"}
+                value={envio.destino?.nombreLugar || "No especificado"}
               />
             </div>
           </div>
@@ -191,7 +191,7 @@ export default function DetalleEnvioPage({
               <input
                 disabled
                 className="w-full bg-transparent border-b border-dashed border-gray-300 pb-2 text-gray-700 font-medium outline-none"
-                value={normalizarEnum(envio.tipo_grano) || "General"}
+                value={normalizarEnum(envio.tipoGrano) || "General"}
               />
             </div>
           </div>
@@ -201,10 +201,10 @@ export default function DetalleEnvioPage({
             Estado del Recorrido
           </h6>
           <div className="mb-12">
-            <EstadoTimeline estadoActual={envio.estado_actual} />
+            <EstadoTimeline estadoActual={envio.estadoActual} />
 
             <div className="mt-6">
-              <TruckStepper estadoActual={envio.estado_actual} />
+              <TruckStepper estadoActual={envio.estadoActual} />
             </div>
           </div>
 
@@ -244,7 +244,7 @@ export default function DetalleEnvioPage({
                   <Select
                     value={nuevaPrioridad}
                     onValueChange={(v) => setNuevaPrioridad(v as Prioridad)}
-                    disabled={!permisos?.editarPrioridad || isUpdating || envio.estado_actual !== 'PENDIENTE'}                  >
+                    disabled={!permisos?.editarPrioridad || isUpdating || envio.estadoActual !== 'PENDIENTE'}                  >
                     <SelectTrigger className="w-full h-11 bg-white border-0 shadow-sm focus:ring-amber-500">
                       <SelectValue placeholder="Seleccionar prioridad" />
                     </SelectTrigger>

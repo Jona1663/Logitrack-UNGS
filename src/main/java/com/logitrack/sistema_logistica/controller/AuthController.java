@@ -39,7 +39,7 @@ public class AuthController {
         }
 
         // Comparar la password ingresada con el hash guardado en BD
-        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword_hash())) {
+        if (!passwordEncoder.matches(request.getPassword(), usuario.getPasswordHash())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Credenciales incorrectas");
         }

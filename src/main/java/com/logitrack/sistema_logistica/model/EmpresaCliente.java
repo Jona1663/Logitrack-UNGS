@@ -1,6 +1,6 @@
 package com.logitrack.sistema_logistica.model;
 
-import com.logitrack.sistema_logistica.model.enums.Tipo_Empresa;
+import com.logitrack.sistema_logistica.model.enums.TipoEmpresa;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,27 +9,27 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "Empresas_Clientes")
+@Table(name = "empresas_Clientes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Empresa_Cliente {
+public class EmpresaCliente {
 
     @Id
     @Column(name = "cuit", length = 20)
     private String cuit;
 
     @Column(name = "razon_social", nullable = false, length = 150)
-    private String razon_social;
+    private String razonSocial;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_empresa", nullable = false, length = 50)
-    private Tipo_Empresa tipo_empresa;
+    private TipoEmpresa tipoEmpresa;
 
     @Column(name = "ruca_nro", length = 50)
-    private String ruca_nro;
+    private String rucaNro;
 
     @Column(name = "vto_ruca")
-    private LocalDate vto_ruca;
+    private LocalDate vtoRuca;
 }
