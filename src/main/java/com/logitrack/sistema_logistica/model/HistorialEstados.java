@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import lombok.Builder;
+import com.logitrack.sistema_logistica.model.enums.TipoEvento;
 
 @Entity
 @Table(name = "historial_Estados")
@@ -27,6 +28,11 @@ public class HistorialEstados {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_evento") // , nullable = false) habria que agregarle el nullable false cuando terminemos
+                                  // las pruebas, o modifiquemos el data seed
+    private TipoEvento tipoEvento;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_anterior", length = 50)
