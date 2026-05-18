@@ -200,6 +200,20 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  async buscarEnviosAsignadosAvanzado(params: BusquedaEnviosParams): Promise<PaginatedResponse<Envio>> {
+    const searchParams = new URLSearchParams();
+    if (params.query) searchParams.append('query', params.query);
+    if (params.estado) searchParams.append('estado', params.estado);
+    if (params.fecha) searchParams.append('fecha', params.fecha);
+    searchParams.append('page', params.page.toString());
+    searchParams.append('size', params.size.toString());
+    searchParams.append('asignado', 'true');   // filtro para solo asignados
+
+    return this.request<PaginatedResponse<Envio>>(
+      `/envios/search?${searchParams.toString()}`
+    );
+  }
 }
 
 export const api = new ApiClient();

@@ -2,45 +2,41 @@ package com.logitrack.sistema_logistica.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import java.util.Map;
-
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
+import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.model.Camion;
 import com.logitrack.sistema_logistica.model.ChoferDetalle;
+import com.logitrack.sistema_logistica.model.EmpresaCliente;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Establecimiento;
 import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.repository.CamionRepository;
 import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
+import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.HttpClientErrorException;
-
-import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
-
-import com.logitrack.sistema_logistica.model.EmpresaCliente;
-import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
-
-import org.springframework.security.core.Authentication;
 
 @Service
 public class EnvioService {
@@ -461,19 +457,14 @@ public class EnvioService {
                 Envio envio = envioRepository.findById(idEnvio)
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-                // 2. Verificar que no tenga ya transporte asignado
-                if (envio.getChofer() != null || envio.getCamion() != null) {
-                        throw new RuntimeException("El envío ya tiene transporte asignado");
-                }
-
-                // 3. Buscar chofer y camión — ambos obligatorios
+                // 2. Buscar chofer y camión — ambos obligatorios
                 ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
                                 .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
                 Camion camion = camionRepository.findById(dto.getPatenteCamion())
                                 .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
 
-                // 4. Asignar y guardar
+                // 3. Asignar y guardar
                 envio.setChofer(chofer);
                 envio.setCamion(camion);
 
