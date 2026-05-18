@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
@@ -64,6 +65,18 @@ public class EnvioController {
     public List<Envio> listarEnvios() {
         return envioRepository.findAll();
     }
+    /*
+     * @GetMapping
+     * public ResponseEntity<List<EnvioResumenDTO>> listarEnvios() {
+     * List<Envio> envios = envioRepository.findAll();
+     * 
+     * List<EnvioResumenDTO> resumen = envios.stream()
+     * .map(EnvioResumenDTO::fromEntity)
+     * .collect(Collectors.toList());
+     * 
+     * return ResponseEntity.ok(resumen);
+     * }
+     */
 
     // GET para buscar envíos con filtros opcionales por fecha, estado y paginación
     @GetMapping("/search")
@@ -156,7 +169,9 @@ public class EnvioController {
                     dto.setUsername(h.getUsuario() != null ? h.getUsuario().getUsername() : null);
                     return dto;
                 })
-                .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora())) // Ordenar por fecha
+                // .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora())) // Ordenar
+                // por fecha// ya no es necesario se ordena en el repository
+                // consume menos memoria
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(respuesta);
@@ -202,7 +217,8 @@ public class EnvioController {
         }
     }
 
-    // Se obtiene el envío completo
+    // Se obtiene el envío completo esto habria que borrarlo a menos que se este
+    // usando para algo
     @GetMapping("/buscar/{idEnvio}")
     public ResponseEntity<?> obtenerEnvioPorTracking(@PathVariable String idEnvio) {
         try {
@@ -402,6 +418,37 @@ public class EnvioController {
             return ResponseEntity.ok(envioActualizado);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Endpoint para obtener la ubicación simulada del envío en tiempo real.
+
+    @GetMapping("/{idEnvio}/tracking")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR', 'CHOFER')")
+    public ResponseEntity<?> obtenerTrackingTiempoReal(@PathVariable String idEnvio) {
+        try {
+            Map<String, Object> trackingData = envioService.obtenerUbicacionActual(idEnvio);
+            return ResponseEntity.ok(trackingData);
+        } catch (RuntimeException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO();
+            error.setMessage(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
+
+    // endpoint de la ruta que va a seguir el camion
+    @GetMapping("/{idEnvio}/ruta-completa")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR', 'CHOFER')")
+    public ResponseEntity<?> obtenerRutaCompleta(@PathVariable String idEnvio) {
+        try {
+            JsonNode rutaJson = envioService.obtenerGeometriaRuta(idEnvio);
+            return ResponseEntity.ok(Map.of(
+                    "idEnvio", idEnvio,
+                    "coordinates", rutaJson));
+        } catch (RuntimeException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO();
+            error.setMessage(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
     }
 }

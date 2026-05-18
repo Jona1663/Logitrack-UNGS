@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 
@@ -80,6 +81,11 @@ public class Envio {
     @Column(columnDefinition = "TEXT")
     private String comentarios;
 
+    // para que cuando se elimine un envio, tambien se elimine su ruta
+    @JsonIgnore
+    @OneToOne(mappedBy = "envio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private RutaEnvio rutaEnvio;
+
     @PrePersist
     protected void onCreate() {
         this.fechaCreacion = LocalDateTime.now();
@@ -89,4 +95,5 @@ public class Envio {
             this.idEnvio = "LT-" + randomParte;
         }
     }
+
 }

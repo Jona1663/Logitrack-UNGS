@@ -8,7 +8,7 @@ import java.util.Map;
 
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.model.enums.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,21 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
-import com.logitrack.sistema_logistica.model.Camion;
-import com.logitrack.sistema_logistica.model.ChoferDetalle;
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.Establecimiento;
-import com.logitrack.sistema_logistica.model.HistorialEstados;
-import com.logitrack.sistema_logistica.model.Usuario;
-import com.logitrack.sistema_logistica.repository.CamionRepository;
-import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
-import com.logitrack.sistema_logistica.repository.EnvioRepository;
-import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
-import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
-import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import com.logitrack.sistema_logistica.model.*;
+import com.logitrack.sistema_logistica.repository.*;
+import com.logitrack.sistema_logistica.service.GraphHopperService;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 
@@ -41,6 +32,18 @@ import com.logitrack.sistema_logistica.model.EmpresaCliente;
 import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
 
 import org.springframework.security.core.Authentication;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.HashMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.linearref.LengthIndexedLine;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class EnvioService {
@@ -64,6 +67,14 @@ public class EnvioService {
 
         @Autowired
         private RestTemplate restTemplate;
+
+        @Autowired
+        private GraphHopperService graphHopperService;
+        @Autowired
+        private RutaEnvioRepository rutaEnvioRepository;
+
+        @Value("${api.mock.base-url}")
+        private String mockBaseUrl;
 
         @Transactional // Si algo falla, no se guarda ni el envío ni el historial
         public Envio crearNuevoEnvio(EnvioRequestDTO dto) {
@@ -113,6 +124,7 @@ public class EnvioService {
                 HistorialEstados historial = HistorialEstados.builder()
                                 .envio(nuevoEnvio)
                                 .usuario(usuarioCreador)
+                                .tipoEvento(TipoEvento.CREACION)
                                 .estadoNuevo(EstadoEnvio.PENDIENTE)
                                 // estadoAnterior queda en null porque es el primer estado
                                 .build();
@@ -126,7 +138,7 @@ public class EnvioService {
         private void verificarHabilitacionSenasa(java.time.LocalDate hoy, Camion camion) {
                 if (camion.getVtoSenasa() != null && camion.getVtoSenasa().isBefore(hoy)) {
                         try {
-                                String senasaUrl = "http://localhost:8080/api/mock/senasa/validar-camion/"
+                                String senasaUrl = mockBaseUrl + "/senasa/validar-camion/"
                                                 + camion.getPatente();
                                 ResponseEntity<Map> responseSenasa = restTemplate.getForEntity(senasaUrl, Map.class);
 
@@ -152,14 +164,13 @@ public class EnvioService {
 
                 if (empresa != null && empresa.getVtoRuca() != null && empresa.getVtoRuca().isBefore(hoy)) {
                         try {
-                                String rucaUrl = "http://localhost:8080/api/mock/ruca/validar-empresa/"
+                                String rucaUrl = mockBaseUrl + "/ruca/validar-empresa/"
                                                 + empresa.getRucaNro();
                                 ResponseEntity<Map> responseRuca = restTemplate.getForEntity(rucaUrl, Map.class);
 
                                 if (responseRuca.getStatusCode().is2xxSuccessful() && responseRuca.getBody() != null) {
                                         String vtoRucaStr = (String) responseRuca.getBody().get("vtoRucaNuevo");
 
-                                        empresa.setVtoRuca(java.time.LocalDate.parse(vtoRucaStr));
                                         empresa.setVtoRuca(java.time.LocalDate.parse(vtoRucaStr));
                                         empresaClienteRepository.save(empresa);
                                 }
@@ -175,7 +186,7 @@ public class EnvioService {
         private void verificarLicenciaChofer(java.time.LocalDate hoy, ChoferDetalle chofer) {
                 if (chofer.getVtoLicencia().isBefore(hoy) || chofer.getVtoLinti().isBefore(hoy)) {
                         try {
-                                String cnrtUrl = "http://localhost:8080/api/mock/cnrt/validar-chofer/"
+                                String cnrtUrl = mockBaseUrl + "/cnrt/validar-chofer/"
                                                 + chofer.getNroLicencia();
                                 ResponseEntity<Map> responseCnrt = restTemplate.getForEntity(cnrtUrl, Map.class);
 
@@ -201,7 +212,7 @@ public class EnvioService {
         private String getNroAutorizacionArca(EnvioRequestDTO dto) {
                 String nroAutorizacionArca = "";
                 try {
-                        String arcaUrl = "http://localhost:8080/api/mock/arca/validar-cpe/" + dto.getCpe();
+                        String arcaUrl = mockBaseUrl + "/arca/validar-cpe/" + dto.getCpe();
                         ResponseEntity<Map> response = restTemplate.getForEntity(arcaUrl, Map.class);
 
                         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
@@ -268,7 +279,8 @@ public class EnvioService {
 
                 // 4. Actualizar (Manteniendo la prioridad intacta)
                 Usuario usuario = usuarioRepository.findByUsername(username).get();
-                return actualizarEstadoYPrioridad(idEnvio, nuevoEstadoStr, envio.getPrioridadIa(), usuario);
+                return actualizarEstadoYPrioridad(idEnvio, nuevoEstadoStr, envio.getPrioridadIa(), usuario,
+                                TipoEvento.CAMBIO_ESTADO);
         }
 
         /**
@@ -314,7 +326,7 @@ public class EnvioService {
          */
         @Transactional
         public Envio actualizarEstadoYPrioridad(String idEnvio, String nuevoEstadoStr, String nuevaPrioridad,
-                        Usuario usuarioModificador) {
+                        Usuario usuarioModificador, TipoEvento eventoRealizado) {
 
                 // 1. Buscamos el envío nuevamente para asegurar consistencia
                 Envio envio = envioRepository.findById(idEnvio)
@@ -322,6 +334,53 @@ public class EnvioService {
 
                 EstadoEnvio estadoAnterior = envio.getEstadoActual();
                 EstadoEnvio estadoNuevo = EstadoEnvio.valueOf(nuevoEstadoStr);
+
+                // logica de ruteo
+                // Si el estado cambia a En transito o Enreparto , pedimos la ruta
+                if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_REPARTO) {
+
+                        Double latInicio;
+                        Double lonInicio;
+                        Double latFin;
+                        Double lonFin;
+
+                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO) {
+                                // TRAMO 1: UNGS -> Origen
+                                latInicio = -34.522881; // Coordenada UNGS
+                                lonInicio = -58.700085; // Coordenada UNGS
+                                latFin = envio.getOrigen().getLatitud();
+                                lonFin = envio.getOrigen().getLongitud();
+                        } else {
+                                // TRAMO 2: Origen -> Destino (Yendo a entregar)
+                                latInicio = envio.getOrigen().getLatitud();
+                                lonInicio = envio.getOrigen().getLongitud();
+                                latFin = envio.getDestino().getLatitud();
+                                lonFin = envio.getDestino().getLongitud();
+                        }
+
+                        // 1. Le pedimos el JSON a GraphHopper con las coordenadas que correspondan
+                        JsonNode pathData = graphHopperService.obtenerRuta(latInicio, lonInicio, latFin, lonFin);
+
+                        // 2. Extraemos la info
+                        Double distanciaKm = pathData.path("distance").asDouble() / 1000.0;
+                        Long tiempoSegundos = pathData.path("time").asLong() / 1000L;
+                        String polylineJson = pathData.path("points").path("coordinates").toString();
+
+                        // 3. Guardamos/Actualizamos la ruta en la base de datos
+                        // Nota: Si ya existía una ruta del Tramo 1, acá la pisamos con la del Tramo 2.
+                        RutaEnvio nuevaRuta = RutaEnvio.builder()
+                                        .envio(envio)
+                                        .polylineJson(polylineJson)
+                                        .distanciaTotalKm(distanciaKm)
+                                        .duracionTotalSegundos(tiempoSegundos)
+                                        .build();
+                        rutaEnvioRepository.save(nuevaRuta);
+                        envio.setRutaEnvio(nuevaRuta);
+
+                        // 4. Reiniciamos el reloj para el tramo actual
+                        envio.setFechaSalida(LocalDateTime.now());
+                        envio.setFechaEstimadaLlegada(LocalDateTime.now().plusSeconds(tiempoSegundos));
+                }
 
                 // 2. Actualizamos los campos en la entidad
                 envio.setEstadoActual(estadoNuevo);
@@ -334,6 +393,7 @@ public class EnvioService {
                 HistorialEstados historial = HistorialEstados.builder()
                                 .envio(envioGuardado)
                                 .usuario(usuarioModificador)
+                                .tipoEvento(eventoRealizado)
                                 .estadoAnterior(estadoAnterior)
                                 .estadoNuevo(estadoNuevo)
                                 .build();
@@ -362,7 +422,8 @@ public class EnvioService {
 
                 // Reutilizamos tu método centralizado para cambiar el estado a CANCELADO
                 // Nota: Asegurate de tener CANCELADO en tu Enum EstadoEnvio
-                return actualizarEstadoYPrioridad(idEnvio, "CANCELADO", envio.getPrioridadIa(), usuarioModificador);
+                return actualizarEstadoYPrioridad(idEnvio, "CANCELADO", envio.getPrioridadIa(), usuarioModificador,
+                                TipoEvento.CANCELACION);
         }
 
         @Transactional
@@ -395,7 +456,26 @@ public class EnvioService {
                 envioExistente.setPrioridadIa(dto.getPrioridadIa());
                 envioExistente.setKgOrigen(dto.getKgOrigen());
 
-                return envioRepository.save(envioExistente);
+                EstadoEnvio estadoActual = envioExistente.getEstadoActual();
+
+                Envio envioGuardado = envioRepository.save(envioExistente);
+
+                // Buscamos el usuario operador/supervisor que edita el envio
+                Usuario usuarioModificador = usuarioRepository.findByUsername(username)
+                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado para auditoría"));
+
+                // construimos el historial
+                HistorialEstados historial = HistorialEstados.builder()
+                                .envio(envioGuardado)
+                                .usuario(usuarioModificador)
+                                .tipoEvento(TipoEvento.DATOS_ACTUALIZADOS)
+                                .estadoAnterior(estadoActual)
+                                .estadoNuevo(estadoActual)
+                                .build();
+
+                historialEstadosRepository.save(historial);
+
+                return envioGuardado;
         }
 
         /*
@@ -515,17 +595,135 @@ public class EnvioService {
                         Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName())
                                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-                        HistorialEstados historial = HistorialEstados.builder()
+                        /*
+                         * HistorialEstados historial = HistorialEstados.builder()
+                         * .envio(envioGuardado)
+                         * .usuario(usuarioModificador)
+                         * .estadoAnterior(estadoAnterior)
+                         * .estadoNuevo(envioGuardado.getEstadoActual())
+                         * .build();
+                         * 
+                         * historialEstadosRepository.save(historial);
+                         */
+                        return actualizarEstadoYPrioridad(
+                                        idEnvio,
+                                        dto.getEstado().name(),
+                                        envioExistente.getPrioridadIa(),
+                                        usuarioModificador,
+                                        TipoEvento.CAMBIO_ESTADO);
+                }
+
+                // ... (lógica anterior de actualizarEstadoOperativo)
+
+                // Si el estado no cambió, verificamos si AL MENOS cambió la prioridad para
+                // auditarlo
+                if (!estadoCambiado && dto.getPrioridadIa() != null
+                                && !dto.getPrioridadIa().equals(estadoAnterior.name())) {
+                        Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName()).get();
+
+                        HistorialEstados historialPrioridad = HistorialEstados.builder()
                                         .envio(envioGuardado)
                                         .usuario(usuarioModificador)
+                                        .tipoEvento(TipoEvento.CAMBIO_PRIORIDAD)
                                         .estadoAnterior(estadoAnterior)
-                                        .estadoNuevo(envioGuardado.getEstadoActual())
+                                        .estadoNuevo(estadoAnterior)
                                         .build();
-
-                        historialEstadosRepository.save(historial);
+                        historialEstadosRepository.save(historialPrioridad);
                 }
 
                 return envioGuardado;
+        }
+
+        // Calcula y devuelve la ubicación exacta del camión en base al tiempo
+        // transcurrido
+        // y la ruta generada por GraphHopper.
+
+        @Transactional(readOnly = true)
+        public Map<String, Object> obtenerUbicacionActual(String idEnvio) {
+                Envio envio = envioRepository.findById(idEnvio)
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+                // solo se calcula si el camion esta en mopvimiento
+                if (envio.getEstadoActual() != EstadoEnvio.EN_TRANSITO
+                                && envio.getEstadoActual() != EstadoEnvio.EN_REPARTO) {
+                        throw new RuntimeException("El envío no se encuentra en un estado activo de transporte.");
+                }
+
+                RutaEnvio ruta = envio.getRutaEnvio();
+                if (ruta == null || ruta.getPolylineJson() == null || ruta.getPolylineJson().isBlank()) {
+                        throw new RuntimeException("No se encontraron datos de ruta registrados para este envío.");
+                }
+
+                try {
+                        // porcentaje de ruta completado segun el tiempo transcurrido
+                        LocalDateTime ahora = LocalDateTime.now();
+                        LocalDateTime salida = envio.getFechaSalida();
+                        Long duracionTotal = ruta.getDuracionTotalSegundos();
+
+                        long segundosTranscurridos = Duration.between(salida, ahora).getSeconds();
+
+                        // Evitamos que el porcentaje supere el 100% si hubo demoras
+                        if (segundosTranscurridos > duracionTotal) {
+                                segundosTranscurridos = duracionTotal;
+                        }
+
+                        double porcentaje = (double) segundosTranscurridos / duracionTotal;
+
+                        // parsea el json de coordenadas a un array para poder usarlo con JTS
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode arrayCoordenadas = mapper.readTree(ruta.getPolylineJson());
+
+                        Coordinate[] coords = new Coordinate[arrayCoordenadas.size()];
+                        for (int i = 0; i < arrayCoordenadas.size(); i++) {
+                                JsonNode punto = arrayCoordenadas.get(i);
+                                // devuelve formato [longitud, latitud]
+                                coords[i] = new Coordinate(punto.get(0).asDouble(), punto.get(1).asDouble());
+                        }
+
+                        // Construir la geometría con JTS
+                        GeometryFactory gf = new GeometryFactory();
+                        LineString lineaRuta = gf.createLineString(coords);
+
+                        // obtiene la coordenada exacta en base al porcentaje de ruta completado
+                        LengthIndexedLine indexedLine = new LengthIndexedLine(lineaRuta);
+                        double distanciaObjetivo = lineaRuta.getLength() * porcentaje;
+                        Coordinate puntoActual = indexedLine.extractPoint(distanciaObjetivo);
+
+                        // 6. retorna la ubicación actual junto con el porcentaje de ruta completado y
+                        // el estado actual del envío
+                        Map<String, Object> response = new HashMap<>();
+                        response.put("idEnvio", envio.getIdEnvio());
+                        response.put("estadoActual", envio.getEstadoActual().name());
+                        response.put("porcentajeCompletado", porcentaje * 100.0);
+                        response.put("latitudActual", puntoActual.y);
+                        response.put("longitudActual", puntoActual.x);
+
+                        return response;
+
+                } catch (Exception e) {
+                        throw new RuntimeException(
+                                        "Error en el procesamiento geométrico del tracking: " + e.getMessage());
+                }
+        }
+
+        // devuelve la linea entera de la ruta del camion
+        @Transactional(readOnly = true)
+        public JsonNode obtenerGeometriaRuta(String idEnvio) {
+                Envio envio = envioRepository.findById(idEnvio)
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+                RutaEnvio ruta = envio.getRutaEnvio();
+                if (ruta == null || ruta.getPolylineJson() == null || ruta.getPolylineJson().isBlank()) {
+                        throw new RuntimeException("El envío no tiene una ruta generada aún.");
+                }
+
+                try {
+                        ObjectMapper mapper = new ObjectMapper();
+
+                        return mapper.readTree(ruta.getPolylineJson());
+                } catch (Exception e) {
+                        throw new RuntimeException("Error al procesar los datos geográficos de la ruta.");
+                }
         }
 
 }
