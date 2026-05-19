@@ -1,49 +1,54 @@
 package com.logitrack.sistema_logistica.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import java.util.Map;
-
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.model.enums.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
-import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
-import com.logitrack.sistema_logistica.model.*;
-import com.logitrack.sistema_logistica.repository.*;
-import com.logitrack.sistema_logistica.service.GraphHopperService;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.HttpClientErrorException;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
-
-import com.logitrack.sistema_logistica.model.EmpresaCliente;
-import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
-
-import org.springframework.security.core.Authentication;
-
 import java.time.Duration;
-import java.util.Map;
+import java.time.LocalDateTime;
 import java.util.HashMap;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.linearref.LengthIndexedLine;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
+import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
+import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.model.Camion;
+import com.logitrack.sistema_logistica.model.ChoferDetalle;
+import com.logitrack.sistema_logistica.model.EmpresaCliente;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
+import com.logitrack.sistema_logistica.model.RutaEnvio;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.model.enums.TipoEvento;
+import com.logitrack.sistema_logistica.repository.CamionRepository;
+import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
+import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
+import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
+import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 
 @Service
 public class EnvioService {
@@ -552,8 +557,12 @@ public class EnvioService {
 
                 Camion camion = camionRepository.findById(dto.getPatenteCamion())
                                 .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+                // 4. Verificar licenias
+                java.time.LocalDate hoy = java.time.LocalDate.now();
+                verificarLicenciaChofer(hoy, chofer);
+                verificarHabilitacionSenasa(hoy, camion);
 
-                // 4. Asignar y guardar
+                // 5. Asignar y guardar
                 envio.setChofer(chofer);
                 envio.setCamion(camion);
 
