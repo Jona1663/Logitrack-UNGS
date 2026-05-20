@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AdminService {
 
-    
     private final UsuarioRepository usuarioRepository;
     private final PersonaRepository personaRepository;
     private final ChoferDetalleRepository choferDetalleRepository;
@@ -30,20 +29,19 @@ public class AdminService {
 
     @Transactional
     public UsuarioResponseDTO crearUsuario(UsuarioRequestDTO request) {
-        
-     
+
         if (usuarioRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Error: El nombre de usuario (email) ya está en uso.");
         }
 
-        //guardamos usuario
+        // guardamos usuario
         Usuario nuevoUsuario = Usuario.builder()
                 .username(request.getUsername())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .rol(request.getRol())
                 .activo(true) // Por default lo creamos activo
                 .build();
-        
+
         Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
 
         // guardamos persona
@@ -54,12 +52,12 @@ public class AdminService {
                 .apellido(request.getApellido())
                 .telefono(request.getTelefono())
                 .build();
-                
+
         Persona personaGuardada = personaRepository.save(nuevaPersona);
 
         // si rol == chofer guardamos chofer
         if (request.getRol() == RolUsuario.CHOFER) {
-            
+
             // Validamos que nos hayan mandado los datos del chofer
             if (request.getNroLicencia() == null || request.getVtoLicencia() == null || request.getVtoLinti() == null) {
                 throw new RuntimeException("Error: Faltan datos de la licencia para dar de alta al Chofer.");
@@ -71,7 +69,7 @@ public class AdminService {
                     .vtoLicencia(request.getVtoLicencia())
                     .vtoLinti(request.getVtoLinti())
                     .build();
-                    
+
             choferDetalleRepository.save(nuevoChofer);
         }
 
@@ -91,7 +89,7 @@ public class AdminService {
 
     public List<UsuarioResponseDTO> listarUsuarios() {
         return usuarioRepository.findAll().stream()
-                .filter(Usuario::getActivo) 
+                .filter(Usuario::getActivo)
                 .map(u -> {
                     Persona p = personaRepository.findById(u.getIdUsuario()).orElse(new Persona());
                     return UsuarioResponseDTO.builder()
@@ -113,16 +111,16 @@ public class AdminService {
     public void deshabilitarUsuario(Integer id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
-        usuario.setActivo(false); 
+
+        usuario.setActivo(false);
         usuarioRepository.save(usuario);
     }
 
-@Transactional
+    @Transactional
     public UsuarioResponseDTO actualizarUsuario(Integer id, UsuarioRequestDTO request) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         Persona persona = personaRepository.findByIdUsuario(usuario)
                 .orElseThrow(() -> new RuntimeException("Datos personales no encontrados"));
 
@@ -149,6 +147,13 @@ public class AdminService {
                 .build();
     }
 
+    @Transactional
+    public void resetearPassword(Integer id, String nuevaPassword) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        usuario.setPasswordHash(passwordEncoder.encode(nuevaPassword));
+        usuarioRepository.save(usuario);
+    }
 
 }
