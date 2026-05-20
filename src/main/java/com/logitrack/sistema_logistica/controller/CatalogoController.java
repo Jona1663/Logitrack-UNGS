@@ -1,15 +1,28 @@
 package com.logitrack.sistema_logistica.controller;
 
-import com.logitrack.sistema_logistica.dto.MetadatosDTO;
-import com.logitrack.sistema_logistica.model.*;
-import com.logitrack.sistema_logistica.model.enums.*;
-import com.logitrack.sistema_logistica.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.logitrack.sistema_logistica.dto.MetadatosDTO;
+import com.logitrack.sistema_logistica.model.Camion;
+import com.logitrack.sistema_logistica.model.ChoferDetalle;
+import com.logitrack.sistema_logistica.model.EmpresaCliente;
+import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.enums.Categoria;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.model.enums.RolUsuario;
+import com.logitrack.sistema_logistica.model.enums.TipoEmpresa;
+import com.logitrack.sistema_logistica.model.enums.TipoGrano;
+import com.logitrack.sistema_logistica.repository.CamionRepository;
+import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
+import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
+import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 
 @RestController
 @RequestMapping("/api/catalogos")
@@ -42,6 +55,27 @@ public class CatalogoController {
     @GetMapping("/camiones")
     public List<Camion> getCamiones() {
         return camionRepository.findAll();
+    }
+    // Choferes disponibles (sin viaje activo)
+    @GetMapping("/choferes/disponibles")
+    public List<ChoferDetalle> getChoferesDisponibles() {
+        List<EstadoEnvio> estadosActivos = Arrays.asList(
+            EstadoEnvio.EN_TRANSITO,
+            EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
+            EstadoEnvio.EN_REPARTO
+        );
+        return choferRepository.findChoferesDisponibles(estadosActivos);
+}
+
+    // Camiones disponibles (sin viaje activo)
+    @GetMapping("/camiones/disponibles")
+    public List<Camion> getCamionesDisponibles() {
+        List<EstadoEnvio> estadosActivos = Arrays.asList(
+            EstadoEnvio.EN_TRANSITO,
+            EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
+            EstadoEnvio.EN_REPARTO
+        );
+        return camionRepository.findCamionesDisponibles(estadosActivos);
     }
 
     // 5. ENUMS (Metadatos dinámicos)
