@@ -1,7 +1,9 @@
 package com.logitrack.sistema_logistica.service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -542,25 +544,48 @@ public class EnvioService {
 
         @Transactional
         public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
-                // 1. Verificar que el envío existe
-                Envio envio = envioRepository.findById(idEnvio)
-                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+    
+        List<EstadoEnvio> estadosActivos = Arrays.asList(
+                EstadoEnvio.EN_TRANSITO,
+                EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
+                EstadoEnvio.EN_REPARTO
+        );
 
-                // 2. Verificar que no tenga ya transporte asignado
-                if (envio.getChofer() != null || envio.getCamion() != null) {
-                        throw new RuntimeException("El envío ya tiene transporte asignado");
-                }
+        // 1. Verificar que el envío existe
+        Envio envio = envioRepository.findById(idEnvio)
+                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-                // 3. Buscar chofer y camión — ambos obligatorios
-                ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
-                                .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+        // 2. Verificar que no tenga ya transporte asignado
+        if (envio.getChofer() != null || envio.getCamion() != null) {
+                throw new RuntimeException("El envío ya tiene transporte asignado");
+        }
 
-                Camion camion = camionRepository.findById(dto.getPatenteCamion())
-                                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+        // 3. Buscar chofer y camión
+        ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
+                .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
-                // 4. Asignar y guardar
-                envio.setChofer(chofer);
-                envio.setCamion(camion);
+        Camion camion = camionRepository.findById(dto.getPatenteCamion())
+                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+
+        // 4. Validar licencia y SENASA
+        LocalDate hoy = LocalDate.now();
+        verificarLicenciaChofer(hoy, chofer);
+        verificarHabilitacionSenasa(hoy, camion);
+
+        // 5. Validar disponibilidad concurrente (#213)
+        boolean choferOcupado = envioRepository.existsByChoferAndEstadoActualIn(chofer, estadosActivos);
+        if (choferOcupado) {
+                throw new RuntimeException("El chofer acaba de ser asignado a otro viaje y ya no está disponible.");
+        }
+
+        boolean camionOcupado = envioRepository.existsByCamionAndEstadoActualIn(camion, estadosActivos);
+        if (camionOcupado) {
+                throw new RuntimeException("El camión acaba de ser asignado a otro viaje y ya no está disponible.");
+        }
+
+        // 6. Asignar y guardar
+        envio.setChofer(chofer);
+        envio.setCamion(camion);
 
                 return envioRepository.save(envio);
         }
