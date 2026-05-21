@@ -1,32 +1,54 @@
 package com.logitrack.sistema_logistica.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
-import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-import com.logitrack.sistema_logistica.model.*;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
-import com.logitrack.sistema_logistica.model.enums.TipoEvento;
-import com.logitrack.sistema_logistica.repository.*;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Map;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
+import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+import com.logitrack.sistema_logistica.model.Camion;
+import com.logitrack.sistema_logistica.model.ChoferDetalle;
+import com.logitrack.sistema_logistica.model.EmpresaCliente;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
+import com.logitrack.sistema_logistica.model.Persona;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.model.enums.TipoEvento;
+import com.logitrack.sistema_logistica.repository.CamionRepository;
+import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
+import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
+import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class EnvioServiceTest {
@@ -41,6 +63,7 @@ public class EnvioServiceTest {
     @Mock private RestTemplate restTemplate;
     @Mock private GraphHopperService graphHopperService;
     @Mock private RutaEnvioRepository rutaEnvioRepository;
+    @Mock private HistorialEstadosRepository historialRepository;
 
     @InjectMocks
     private EnvioService envioService;
@@ -172,18 +195,32 @@ public class EnvioServiceTest {
     }
 
 
-   /* @Test
+    @Test
     public void obtenerDetalleConETA_DeberiaCalcularElTiempoCorrectamente() {
         // Arrange
         String idEnvio = "LT-123";
         // Supongamos que el camión salió a las 10:00 AM
         java.time.LocalDateTime fechaSalida = java.time.LocalDateTime.of(2026, 5, 20, 10, 0); 
-        
+        Establecimiento origen = new Establecimiento();
+        origen.setNombreLugar("Origen Test");
+        Establecimiento destino = new Establecimiento();
+        destino.setNombreLugar("destino test");
+        Persona persona = new Persona();
+        persona.setIdPersona(1);
+        ChoferDetalle chofer = new ChoferDetalle();
+        chofer.setIdChofer(1);
+        chofer.setPersonaAsociada(persona);
+        Camion camion = new Camion();
+        camion.setPatente("lic-123");
         // Si la distancia es exactamente 65.0 km, a 65 km/h debería tardar exactamente 60 minutos.
         Envio envio = Envio.builder()
                 .idEnvio(idEnvio)
                 .distanciaKm(65.0)
                 .fechaSalida(fechaSalida)
+                .origen(origen)
+                .destino(destino)
+                .chofer(chofer)
+                .camion(camion)
                 .build();
 
         when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envio));
@@ -194,11 +231,13 @@ public class EnvioServiceTest {
 
         // Assert
         assertNotNull(detalle);
+        System.out.print(detalle);
+        System.out.println("ETA en el DTO: " + detalle.getFechaEstimadaLlegada());
         // Validamos que el ETA calculado sea exactamente a las 11:00 AM (10:00 + 60 mins)
         assertEquals(java.time.LocalDateTime.of(2026, 5, 20, 11, 0), detalle.getFechaEstimadaLlegada());
-    }*/
+    }
 
-/*
+
 @Test
     public void obtenerHistorialPorEnvio_DeberiaRetornarListaDeDTOs() {
         // Arrange
@@ -215,7 +254,7 @@ public class EnvioServiceTest {
                 .usuario(new Usuario()) // Evitar NullPointerException en fromEntity si lo requiere
                 .build();
                 
-        when(historialEstadosRepository.buscarHistorialPorEnvio(idEnvio))
+        when(historialRepository.buscarHistorialPorEnvio(idEnvio))
                 .thenReturn(java.util.List.of(historialFalso));
 
         // Act
@@ -229,7 +268,7 @@ public class EnvioServiceTest {
         // Verificamos que el mapeo interno conservó el estado
         assertEquals(EstadoEnvio.PENDIENTE.name(), resultado.get(0).getEstadoNuevo());
     }
-*/
+
 @Test
     public void obtenerGeometriaRuta_DeberiaLanzarExcepcionSiNoHayRuta() {
         // Arrange
@@ -252,11 +291,27 @@ public class EnvioServiceTest {
     public void actualizarEstadoOperativo_NoDeberiaCrearHistorialSiEstadoEsElMismo() {
         // Arrange
         String idEnvio = "LT-456";
-        
+        Establecimiento origen = new Establecimiento();
+        origen.setNombreLugar("Origen Test");
+        Establecimiento destino = new Establecimiento();
+        destino.setNombreLugar("destino test");
+        Persona persona = new Persona();
+        persona.setIdPersona(1);
+        ChoferDetalle chofer = new ChoferDetalle();
+        chofer.setIdChofer(1);
+        chofer.setPersonaAsociada(persona);
+        Camion camion = new Camion();
+        camion.setPatente("lic-123");
         // El envío en BD está PENDIENTE y con Prioridad ALTA
         Envio envioExistente = Envio.builder()
                 .estadoActual(EstadoEnvio.PENDIENTE)
                 .prioridadIa("ALTA")
+                .distanciaKm(65.0)
+                //.fechaSalida(fechaSalida)
+                .origen(origen)
+                .destino(destino)
+                .chofer(chofer)
+                .camion(camion)
                 .build();
                 
         when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envioExistente));
@@ -271,6 +326,15 @@ public class EnvioServiceTest {
         
         when(envioRepository.save(any(Envio.class))).thenReturn(envioExistente);
 
+        // 1. Mockea el Auth para que devuelva un username
+        when(authMock.getName()).thenReturn("operador1");
+
+        // 2. Mockea el repositorio para que encuentre el usuario cuando lo busca
+        Usuario usuarioMock = new Usuario(); 
+        when(usuarioRepository.findByUsername("operador1")).thenReturn(Optional.of(usuarioMock));
+
+
+
         // Act
         Envio resultado = envioService.actualizarEstadoOperativo(idEnvio, dto, authMock);
 
@@ -279,7 +343,98 @@ public class EnvioServiceTest {
         
         // LA CLAVE: Verificamos que el repositorio de historial NUNCA fue llamado
         verify(historialEstadosRepository, never()).save(any(HistorialEstados.class));
-    }*/
+    }
+*/
 
+
+@Test
+    public void actualizarEstadoYPrioridad_DeberiaActualizarYGuardarHistorial() {
+        // Arrange
+        String idEnvio = "LT-123";
+// --- INICIALIZACIÓN COMPLETA ---
+        Establecimiento origen = new Establecimiento();
+        origen.setLatitud(-34.0);
+        origen.setLongitud(-58.0);
+        
+        Establecimiento destino = new Establecimiento();
+        destino.setLatitud(-35.0);
+        destino.setLongitud(-59.0);
+
+        Envio envio = Envio.builder()
+                .idEnvio(idEnvio)
+                .estadoActual(EstadoEnvio.PENDIENTE)
+                .prioridadIa("BAJA")
+                .origen(origen)   // <--- ¡Esto evita el NullPointer!
+                .destino(destino) // <--- ¡Esto evita el NullPointer!
+                .build();
+        Usuario user = new Usuario();
+
+        when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envio));
+        when(envioRepository.save(any(Envio.class))).thenAnswer(i -> i.getArguments()[0]);
+        // Mock necesario para el ruteo
+        when(graphHopperService.obtenerRuta(anyDouble(), anyDouble(), anyDouble(), anyDouble()))
+            .thenReturn(new com.fasterxml.jackson.databind.node.ObjectNode(
+                com.fasterxml.jackson.databind.node.JsonNodeFactory.instance));
+
+        // Act
+        envioService.actualizarEstadoYPrioridad(idEnvio, "EN_TRANSITO", "ALTA", user, TipoEvento.CAMBIO_ESTADO);
+        // Act
+        envioService.actualizarEstadoYPrioridad(idEnvio, "EN_TRANSITO", "ALTA", user, TipoEvento.CAMBIO_ESTADO);
+
+        // Assert
+        assertEquals(EstadoEnvio.EN_TRANSITO, envio.getEstadoActual());
+        assertEquals("ALTA", envio.getPrioridadIa());
+        verify(historialEstadosRepository, times(2)).save(any(HistorialEstados.class));
+    }
+
+    @Test
+    public void editarEnvio_DeberiaActualizarDatosYGuardarHistorial() {
+        // Arrange
+        String idEnvio = "LT-123";
+        EnvioRequestDTO dto = new EnvioRequestDTO();
+        dto.setIdChofer(1);
+        dto.setPatenteCamion("ABC-123");
+        
+        Envio envio = Envio.builder().estadoActual(EstadoEnvio.PENDIENTE).build();
+        
+// --- INICIALIZACIÓN COMPLETA ---
+        ChoferDetalle chofer = new ChoferDetalle();
+        chofer.setVtoLicencia(java.time.LocalDate.now().plusDays(10)); // Fecha futura
+        chofer.setVtoLinti(java.time.LocalDate.now().plusDays(10));
+        
+        Camion camion = new Camion();
+        camion.setVtoSenasa(java.time.LocalDate.now().plusDays(10));
+
+        when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envio));
+        when(choferDetalleRepository.findById(1)).thenReturn(Optional.of(chofer)); // <--- Chofer con fechas
+        when(camionRepository.findById("ABC-123")).thenReturn(Optional.of(camion)); // <--- Camion con fechas
+        when(usuarioRepository.findByUsername("user")).thenReturn(Optional.of(new Usuario()));
+        when(envioRepository.save(any(Envio.class))).thenReturn(envio);
+
+        // Act
+        envioService.editarEnvio(idEnvio, dto, "user");
+
+        // Assert
+        verify(envioRepository, times(1)).save(any(Envio.class));
+        verify(historialEstadosRepository, times(1)).save(any(HistorialEstados.class));
+    }
+
+    @Test
+    public void obtenerUbicacionActual_DeberiaLanzarExcepcionSiRutaEsNula() {
+        // Arrange
+        String idEnvio = "LT-123";
+        Envio envio = Envio.builder()
+                .estadoActual(EstadoEnvio.EN_TRANSITO)
+                .rutaEnvio(null) // No tiene ruta generada
+                .build();
+        
+        when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envio));
+
+        // Act & Assert
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> 
+            envioService.obtenerUbicacionActual(idEnvio)
+        );
+        assertTrue(ex.getMessage().contains("No se encontraron datos de ruta"));
+    }
 }
 
