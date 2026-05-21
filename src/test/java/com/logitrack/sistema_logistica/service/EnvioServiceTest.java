@@ -463,5 +463,80 @@ public class EnvioServiceTest {
         // Verificamos que el sistema frenó todo y NUNCA guardó nada en la BD
         verify(envioRepository, never()).save(any());
     }
+    ////issue 291
+    @Test
+    public void obtenerUbicacionActual_DeberiaLimitarAlDestinoSiElTiempoExcedioLaDuracion() {
+        // Arrange
+        String idEnvio = "LT-TEST-LIMITE";
+        long duracionTotal = 3600L; // 1 hora de viaje esperada
+        
+        // Simulación: El camión salió hace 2 horas. Es decir, se pasó del tiempo esperado.
+        // Esto va a forzar que el IF de límite (segundosTranscurridos > duracionTotal) se ejecute (verde en JaCoCo)
+        java.time.LocalDateTime fechaSalidaSimulada = java.time.LocalDateTime.now().minusSeconds(duracionTotal + 1800);
+
+        com.logitrack.sistema_logistica.model.RutaEnvio rutaMock = new com.logitrack.sistema_logistica.model.RutaEnvio();
+        rutaMock.setDuracionTotalSegundos(duracionTotal);
+        // Formato esperado por ObjectMapper de tu código: [[lon, lat], [lon, lat], [lon, lat]]
+        rutaMock.setPolylineJson("[[-58.0, -34.0], [-58.5, -34.5], [-59.0, -35.0]]");
+
+        Envio envioMock = Envio.builder()
+                .idEnvio(idEnvio)
+                .estadoActual(EstadoEnvio.EN_TRANSITO)
+                .fechaSalida(fechaSalidaSimulada)
+                .rutaEnvio(rutaMock)
+                .build();
+
+        when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envioMock));
+
+        // Act
+        // Llamamos al servicio, simulando que pedimos la ubicación mucho después de llegar
+        Map<String, Object> ubicacion = envioService.obtenerUbicacionActual(idEnvio);
+
+        // Assert
+        assertNotNull(ubicacion);
+        // Verifica que el porcentaje quedó topeado en 100% y no tiró error
+        assertEquals(100.0, (Double) ubicacion.get("porcentajeCompletado"), "Debería limitar el progreso al 100%");
+        // Verifica que devolvió EXACTAMENTE la última coordenada del JSON (Destino final)
+        assertEquals(-35.0, (Double) ubicacion.get("latitudActual"), 0.0001);
+        assertEquals(-59.0, (Double) ubicacion.get("longitudActual"), 0.0001);
+    }
+
+    @Test
+    public void obtenerUbicacionActual_DeberiaCalcularPosicionIntermediaCorrectamente() {
+        // Arrange
+        String idEnvio = "LT-TEST-MITAD";
+        long duracionTotal = 3600L; // 1 hora de viaje
+        
+        // Simulación: El camión salió hace exactamente 30 minutos (mitad del viaje)
+        java.time.LocalDateTime fechaSalidaSimulada = java.time.LocalDateTime.now().minusSeconds(1800);
+
+        com.logitrack.sistema_logistica.model.RutaEnvio rutaMock = new com.logitrack.sistema_logistica.model.RutaEnvio();
+        rutaMock.setDuracionTotalSegundos(duracionTotal);
+        // Ruta recta horizontal para probar interpolación: inicia en -58.0 y termina en -59.0
+        rutaMock.setPolylineJson("[[-58.0, -34.0], [-59.0, -34.0]]");
+
+        Envio envioMock = Envio.builder()
+                .idEnvio(idEnvio)
+                .estadoActual(EstadoEnvio.EN_REPARTO)
+                .fechaSalida(fechaSalidaSimulada)
+                .rutaEnvio(rutaMock)
+                .build();
+
+        when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envioMock));
+
+        // Act
+        Map<String, Object> ubicacion = envioService.obtenerUbicacionActual(idEnvio);
+
+        // Assert
+        assertNotNull(ubicacion);
+        double porcentaje = (Double) ubicacion.get("porcentajeCompletado");
+        
+        // El porcentaje debe ser cercano al 50% (puede variar una fracción de milisegundo por la ejecución)
+        assertTrue(porcentaje >= 49.9 && porcentaje <= 50.1, "El camión debe estar al 50% de la ruta");
+        
+        Double longitudActual = (Double) ubicacion.get("longitudActual");
+        // Verifica geométricamente que el punto esté a la mitad del trayecto
+        assertTrue(longitudActual < -58.0 && longitudActual > -59.0, "La coordenada debe ubicarse entre el punto inicial y final");
+    }
 }
 
