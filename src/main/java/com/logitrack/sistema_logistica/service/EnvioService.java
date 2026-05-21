@@ -393,6 +393,17 @@ public class EnvioService {
                 envio.setEstadoActual(estadoNuevo);
                 envio.setPrioridadIa(nuevaPrioridad); // Aquí el chofer mantiene la que ya tenía
 
+                //#222 - Liberamos a los choferes y camiónes si el envío termina o se cancela
+                if (estadoNuevo == EstadoEnvio.ENTREGADO || estadoNuevo == EstadoEnvio.CANCELADO) {
+                if (envio.getChofer() != null) {
+                        envio.getChofer().setDisponible(true);
+                        choferDetalleRepository.save(envio.getChofer());
+                }
+                if (envio.getCamion() != null) {
+                        envio.getCamion().setDisponible(true);
+                        camionRepository.save(envio.getCamion());
+                }
+                }
                 // 3. Guardamos el envío
                 Envio envioGuardado = envioRepository.save(envio);
 
@@ -587,7 +598,13 @@ public class EnvioService {
         envio.setChofer(chofer);
         envio.setCamion(camion);
 
-                return envioRepository.save(envio);
+        // 7. Marcar como no disponibles (#222)
+        chofer.setDisponible(false);
+        camion.setDisponible(false);
+        choferDetalleRepository.save(chofer);
+        camionRepository.save(camion);
+
+         return envioRepository.save(envio);
         }
 
         // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de

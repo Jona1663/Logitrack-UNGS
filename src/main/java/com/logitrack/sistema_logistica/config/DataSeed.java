@@ -1,19 +1,35 @@
 package com.logitrack.sistema_logistica.config;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.logitrack.sistema_logistica.model.Camion;
+import com.logitrack.sistema_logistica.model.ChoferDetalle;
+import com.logitrack.sistema_logistica.model.EmpresaCliente;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.HistorialEstados;
+import com.logitrack.sistema_logistica.model.Persona;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.model.enums.RolUsuario;
 import com.logitrack.sistema_logistica.model.enums.TipoEmpresa;
 import com.logitrack.sistema_logistica.model.enums.TipoGrano;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
-import com.logitrack.sistema_logistica.model.*;
-import com.logitrack.sistema_logistica.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDate;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import java.util.List;
-import java.util.ArrayList;
+import com.logitrack.sistema_logistica.repository.CamionRepository;
+import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
+import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
+import com.logitrack.sistema_logistica.repository.PersonaRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 
 @Component
 public class DataSeed implements CommandLineRunner {
@@ -85,15 +101,17 @@ public class DataSeed implements CommandLineRunner {
 
             // 3. Choferes (Casos de prueba técnicos)
             ChoferDetalle cd1 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder().nroLicencia("LIC-100")
-                    .vtoLicencia(futuro).vtoLinti(futuro).personaAsociada(p3).build());
+                    .vtoLicencia(futuro).vtoLinti(futuro).personaAsociada(p3).disponible(true).build());
             ChoferDetalle cd2 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder().nroLicencia("LIC-200")
-                    .vtoLicencia(futuro).vtoLinti(futuro).personaAsociada(p4).build());
+                     .vtoLicencia(futuro).vtoLinti(futuro).personaAsociada(p4).disponible(true).build());
             // Chofer 3: Vencido pero VÁLIDO (Debería renovarse solo al crear un envío)
-            ChoferDetalle cd3 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder()
-                    .nroLicencia("LIC-OK-300").vtoLicencia(pasado).vtoLinti(pasado).personaAsociada(p5).build());
+             ChoferDetalle cd3 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder()
+                     .nroLicencia("LIC-OK-300").vtoLicencia(pasado).vtoLinti(pasado).personaAsociada(p5).disponible(true).build());
             // Chofer 4: Vencido e INVÁLIDO (Tiene 999, el Mock lo va a rebotar)
-            ChoferDetalle cd4 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder()
-                    .nroLicencia("LIC-999-BAD").vtoLicencia(pasado).vtoLinti(pasado).personaAsociada(p6).build());
+             ChoferDetalle cd4 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder()
+                     .nroLicencia("LIC-999-BAD").vtoLicencia(pasado).vtoLinti(pasado).personaAsociada(p6).disponible(true).build());
+
+
 
             // 4. Empresas (4 Empresas)
             EmpresaCliente emp1 = empresaClienteRepository
@@ -126,15 +144,15 @@ public class DataSeed implements CommandLineRunner {
 
             // 6. Camiones (Mantenemos los 2 y agregamos 2 más)
             Camion cam1 = camionRepository.saveAndFlush(Camion.builder().patente("AE123XX").rutaNro("RUTA-1")
-                    .taraVacioKg(8500).vtoSenasa(futuro).build());
+                     .capacidadCargaKg(8500).vtoSenasa(futuro).disponible(true).build());
             Camion cam2 = camionRepository.saveAndFlush(Camion.builder().patente("AD456YY").rutaNro("RUTA-2")
-                    .taraVacioKg(8200).vtoSenasa(futuro).build());
+                    .capacidadCargaKg(8200).vtoSenasa(futuro).disponible(true).build());
             // Camion 3: Vencido pero renovable
             Camion cam3 = camionRepository.saveAndFlush(Camion.builder().patente("AF789ZZ").rutaNro("RUTA-3")
-                    .taraVacioKg(9000).vtoSenasa(pasado).build());
+                    .capacidadCargaKg(9000).vtoSenasa(pasado).disponible(true).build());
             // Camion 4: INHABILITADO (999 en patente)
-            Camion cam4 = camionRepository.saveAndFlush(Camion.builder().patente("BAD-999").rutaNro("RUTA-4")
-                    .taraVacioKg(8800).vtoSenasa(pasado).build());
+                Camion cam4 = camionRepository.saveAndFlush(Camion.builder().patente("BAD-999").rutaNro("RUTA-4")
+                        .capacidadCargaKg(8800).vtoSenasa(pasado).disponible(true).build());
 
             // 7. Envíos (10 Envíos con variedad de datos)
             for (int i = 1; i <= 10; i++) {

@@ -59,23 +59,13 @@ public class CatalogoController {
     // Choferes disponibles (sin viaje activo)
     @GetMapping("/choferes/disponibles")
     public List<ChoferDetalle> getChoferesDisponibles() {
-        List<EstadoEnvio> estadosActivos = Arrays.asList(
-            EstadoEnvio.EN_TRANSITO,
-            EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
-            EstadoEnvio.EN_REPARTO
-        );
-        return choferRepository.findChoferesDisponibles(estadosActivos);
+        return choferRepository.findByDisponibleTrue();
 }
 
     // Camiones disponibles (sin viaje activo)
     @GetMapping("/camiones/disponibles")
     public List<Camion> getCamionesDisponibles() {
-        List<EstadoEnvio> estadosActivos = Arrays.asList(
-            EstadoEnvio.EN_TRANSITO,
-            EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
-            EstadoEnvio.EN_REPARTO
-        );
-        return camionRepository.findCamionesDisponibles(estadosActivos);
+        return camionRepository.findByDisponibleTrue();
     }
 
     // 5. ENUMS (Metadatos dinámicos)

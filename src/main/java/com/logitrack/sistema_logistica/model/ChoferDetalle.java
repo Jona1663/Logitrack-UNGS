@@ -32,4 +32,7 @@ public class ChoferDetalle {
 
     @Column(name = "vto_linti", nullable = false)
     private LocalDate vtoLinti;
+
+    @Column(name = "disponible", nullable = false)
+    private Boolean disponible = true;
 }
