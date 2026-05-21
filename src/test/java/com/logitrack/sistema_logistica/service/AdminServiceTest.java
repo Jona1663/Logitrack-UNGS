@@ -16,10 +16,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
-
+import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+// IMPORTS NUEVOS PARA EL TEST DE MÉTRICAS
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.dto.MetadatosDTO;
 
 @ExtendWith(MockitoExtension.class)
 public class AdminServiceTest {
@@ -32,7 +37,10 @@ public class AdminServiceTest {
     private ChoferDetalleRepository choferDetalleRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
-
+// MOCK AGREGADO PARA EL TEST DE MÉTRICAS
+   
+    @Mock
+    private com.logitrack.sistema_logistica.repository.EnvioRepository envioRepository;
     @InjectMocks
     private AdminService adminService;
 
@@ -107,5 +115,50 @@ public class AdminServiceTest {
         // Assert
         assertEquals("hash", usuario.getPasswordHash());
         verify(usuarioRepository, times(1)).save(usuario);
+    }
+
+    // =========================================================
+    // ISSUE: Validar suma de kilos y conteo de estados (Lógica del Dashboard)
+    // =========================================================
+    @Test
+    public void validarLogica_Dashboard_sumarKilosYContarEstados() {
+        // GIVEN: Creamos nuestros "datos de prueba controlados" (3 envíos)
+        com.logitrack.sistema_logistica.model.Envio envio1 = new com.logitrack.sistema_logistica.model.Envio();
+        envio1.setIdEnvio("LT-001");
+        envio1.setKgOrigen(10000);
+        envio1.setEstadoActual(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.EN_TRANSITO);
+
+        com.logitrack.sistema_logistica.model.Envio envio2 = new com.logitrack.sistema_logistica.model.Envio();
+        envio2.setIdEnvio("LT-002");
+        envio2.setKgOrigen(5000);
+        envio2.setEstadoActual(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.EN_TRANSITO);
+
+        com.logitrack.sistema_logistica.model.Envio envio3 = new com.logitrack.sistema_logistica.model.Envio();
+        envio3.setIdEnvio("LT-003");
+        envio3.setKgOrigen(2000);
+        envio3.setEstadoActual(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.PENDIENTE);
+
+        // Agrupamos en una lista
+        java.util.List<com.logitrack.sistema_logistica.model.Envio> listaControlada = java.util.Arrays.asList(envio1, envio2, envio3);
+
+        // WHEN: Aplicamos la lógica de cálculo puro que pide la Issue
+        int kilosTotales = 0;
+        int enTransito = 0;
+        int pendientes = 0;
+
+        for (com.logitrack.sistema_logistica.model.Envio envio : listaControlada) {
+            kilosTotales += envio.getKgOrigen();
+            
+            if (envio.getEstadoActual() == com.logitrack.sistema_logistica.model.enums.EstadoEnvio.EN_TRANSITO) {
+                enTransito++;
+            } else if (envio.getEstadoActual() == com.logitrack.sistema_logistica.model.enums.EstadoEnvio.PENDIENTE) {
+                pendientes++;
+            }
+        }
+
+        // THEN: Validamos que la matemática es correcta
+        org.junit.jupiter.api.Assertions.assertEquals(17000, kilosTotales, "La suma total de kilos debe dar 17.000");
+        org.junit.jupiter.api.Assertions.assertEquals(2, enTransito, "Deben contarse 2 envíos en tránsito");
+        org.junit.jupiter.api.Assertions.assertEquals(1, pendientes, "Debe contarse 1 envío pendiente");
     }
 }

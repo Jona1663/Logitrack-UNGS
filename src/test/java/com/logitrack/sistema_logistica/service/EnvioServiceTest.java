@@ -436,5 +436,32 @@ public class EnvioServiceTest {
         );
         assertTrue(ex.getMessage().contains("No se encontraron datos de ruta"));
     }
+
+   
+   //issue #264
+    @Test
+    public void intentarAccion_EnViajeFinalizado_DeberiaLanzarExcepcion() {
+        // Arrange: Simulamos un viaje que ya está terminado (ENTREGADO)
+        String idEnvio = "LT-FINALIZADO-99";
+        Envio envioFinalizado = new Envio();
+        envioFinalizado.setIdEnvio(idEnvio);
+        envioFinalizado.setEstadoActual(EstadoEnvio.ENTREGADO); 
+        
+        when(envioRepository.findById(idEnvio)).thenReturn(Optional.of(envioFinalizado));
+
+        EnvioRequestDTO dtoFalso = new EnvioRequestDTO(); 
+
+        // Act & Assert: Intentamos meterle un cambio al viaje y esperamos que el sistema lo rechace
+        // Usamos editarEnvio porque ES REAL, YA EXISTE y tiene la regla de bloqueo programada
+        RuntimeException excepcion = assertThrows(RuntimeException.class, () -> {
+            envioService.editarEnvio(idEnvio, dtoFalso, "tester_qa");
+        });
+
+        // Validamos que el sistema efectivamente frenó la acción y tiró error
+        assertTrue(excepcion.getMessage().contains("No se pueden modificar los datos"));
+        
+        // Verificamos que el sistema frenó todo y NUNCA guardó nada en la BD
+        verify(envioRepository, never()).save(any());
+    }
 }
 
