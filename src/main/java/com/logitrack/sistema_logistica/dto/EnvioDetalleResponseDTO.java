@@ -52,7 +52,7 @@ public class EnvioDetalleResponseDTO {
                 .choferApellido(envio.getChofer().getPersonaAsociada().getApellido())
                 .fechaSalida(envio.getFechaSalida())
                 .distanciaKm(envio.getDistanciaKm())
-                .fechaEstimadaLlegada(envio.getFechaEstimadaLlegada())
+                .fechaEstimadaLlegada(etaCalculado)
                 .build();
     }
 }
