@@ -65,4 +65,16 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
                 " com.logitrack.sistema_logistica.model.enums.EstadoEnvio.ENTREGADO, " +
                 " com.logitrack.sistema_logistica.model.enums.EstadoEnvio.CANCELADO)")
         List<Envio> findByChoferUsername(@Param("username") String username);
+
+        //#213 
+        // Validación de disponibilidad concurrente
+        boolean existsByChoferAndEstadoActualIn(
+        com.logitrack.sistema_logistica.model.ChoferDetalle chofer,
+        List<EstadoEnvio> estados
+        );
+
+        boolean existsByCamionAndEstadoActualIn(
+        com.logitrack.sistema_logistica.model.Camion camion,
+        List<EstadoEnvio> estados
+);
 }

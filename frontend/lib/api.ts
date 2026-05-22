@@ -185,6 +185,14 @@ class ApiClient {
     return this.request<Camion[]>('/catalogos/camiones');
   }
 
+  async getChoferesDisponibles(): Promise<Chofer[]> {
+    return this.request<Chofer[]>('/catalogos/choferes/disponibles');
+}
+
+  async getCamionesDisponibles(): Promise<Camion[]> {
+    return this.request<Camion[]>('/catalogos/camiones/disponibles');
+}
+
   // Envíos pendientes de asignación (sin chofer ni camión)
   async getEnviosSinAsignar(): Promise<Envio[]> {
     return this.request<Envio[]>('/envios/sin-asignar');

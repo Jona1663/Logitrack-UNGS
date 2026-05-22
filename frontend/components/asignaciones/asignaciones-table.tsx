@@ -38,8 +38,8 @@ export function AsignacionesTable() {
     try {
       const [enviosData, choferesData, camionesData] = await Promise.all([
         api.getEnviosSinAsignar(),
-        api.getChoferes(),
-        api.getCamiones(),
+        api.getChoferesDisponibles(),  
+        api.getCamionesDisponibles(),
       ]);
       setEnvios(enviosData);
       setChoferes(choferesData);

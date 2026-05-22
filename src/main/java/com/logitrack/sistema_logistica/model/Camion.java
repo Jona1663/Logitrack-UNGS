@@ -26,6 +26,9 @@ public class Camion {
     @Column(name = "vto_senasa", nullable = false)
     private LocalDate vtoSenasa;
 
-    @Column(name = "tara_vacio_kg", nullable = false)
-    private Integer taraVacioKg;
+    @Column(name = "capacidad_Carga_kg", nullable = false)
+    private Integer capacidadCargaKg;
+
+    @Column(name = "disponible", nullable = false)
+    private Boolean disponible = true;
 }
