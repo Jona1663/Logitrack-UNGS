@@ -27,7 +27,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
-
+        System.out.println("AAAAAAAAAAAAA");
         // Buscar usuario por username
         Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
                 .orElse(null);

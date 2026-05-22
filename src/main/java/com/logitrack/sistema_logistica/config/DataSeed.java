@@ -34,34 +34,35 @@ import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 @Component
 public class DataSeed implements CommandLineRunner {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-    @Autowired
-    private PersonaRepository personaRepository;
-    @Autowired
-    private EmpresaClienteRepository empresaClienteRepository;
-    @Autowired
-    private EstablecimientoRepository establecimientoRepository;
-    @Autowired
-    private CamionRepository camionRepository;
-    @Autowired
-    private ChoferDetalleRepository choferDetalleRepository;
-    @Autowired
-    private EnvioRepository envioRepository;
-    @Autowired
-    private HistorialEstadosRepository historialEstadosRepository;
+        @Autowired
+        private UsuarioRepository usuarioRepository;
+        @Autowired
+        private PersonaRepository personaRepository;
+        @Autowired
+        private EmpresaClienteRepository empresaClienteRepository;
+        @Autowired
+        private EstablecimientoRepository establecimientoRepository;
+        @Autowired
+        private CamionRepository camionRepository;
+        @Autowired
+        private ChoferDetalleRepository choferDetalleRepository;
+        @Autowired
+        private EnvioRepository envioRepository;
+        @Autowired
+        private HistorialEstadosRepository historialEstadosRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+        @Autowired
+        private PasswordEncoder passwordEncoder;
 
-    @Override
-    public void run(String... args) throws Exception {
-        // Solo insertamos datos si la tabla de usuarios está vacía
-        if (usuarioRepository.count() == 0) {
-            cargarDatosSemilla();
-            System.out.println("🌱 DATOS SEMILLA CARGADOS CON ÉXITO 🌱");
-        } else {
-            System.out.println("✅ La base de datos ya contiene información. Se omite el DataSeed.");
+        @Override
+        public void run(String... args) throws Exception {
+                // Solo insertamos datos si la tabla de usuarios está vacía
+                if (usuarioRepository.count() == 0) {
+                        cargarDatosSemilla();
+                        System.out.println("🌱 DATOS SEMILLA CARGADOS CON ÉXITO 🌱");
+                } else {
+                        System.out.println("✅ La base de datos ya contiene información. Se omite el DataSeed.");
+                }
         }
     }
 
@@ -84,7 +85,11 @@ public class DataSeed implements CommandLineRunner {
                     .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(true).build());
             Usuario ch4 = usuarioRepository.saveAndFlush(Usuario.builder().username("chofer4")
                     .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(true).build());
+                        
+          Usuario adm1 = usuarioRepository.saveAndFlush(Usuario.builder().username("administrador1")
+                    .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.ADMINISTRADOR).activo(true).build());
 
+          
             // 2. Personas
             Persona p1 = personaRepository.saveAndFlush(Persona.builder().cuil("20-11111111-1").nombre("Laura")
                     .apellido("Gomez").idUsuario(admin).build());
@@ -98,6 +103,9 @@ public class DataSeed implements CommandLineRunner {
                     .apellido("Alfonso").idUsuario(ch3).build());
             Persona p6 = personaRepository.saveAndFlush(
                     Persona.builder().cuil("20-66666666-6").nombre("Raul").apellido("Mesa").idUsuario(ch4).build());
+            Persona p7 = personaRepository.saveAndFlush(
+                    Persona.builder().cuil("20-77777777-7").nombre("Sofia").apellido("Diaz").idUsuario(adm1).build());
+
 
             // 3. Choferes (Casos de prueba técnicos)
             ChoferDetalle cd1 = choferDetalleRepository.saveAndFlush(ChoferDetalle.builder().nroLicencia("LIC-100")
@@ -181,5 +189,4 @@ public class DataSeed implements CommandLineRunner {
         } catch (Exception e) {
             throw new RuntimeException("❌ ERROR EN DATA SEED: " + e.getMessage(), e);
         }
-    }
 }

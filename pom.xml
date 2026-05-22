@@ -164,6 +164,15 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/logitrack/sistema_logistica/*Application.class</exclude>
+                        <exclude>com/logitrack/sistema_logistica/dto/**</exclude>
+                        <exclude>com/logitrack/sistema_logistica/model/**</exclude>
+                        <exclude>com/logitrack/sistema_logistica/config/**</exclude>
+                        <exclude>com/logitrack/sistema_logistica/security/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
