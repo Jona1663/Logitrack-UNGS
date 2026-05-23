@@ -15,6 +15,7 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.linearref.LengthIndexedLine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -32,6 +33,7 @@ import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
 import com.logitrack.sistema_logistica.model.Camion;
 import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.EmpresaCliente;
@@ -79,6 +81,9 @@ public class EnvioService {
         private GraphHopperService graphHopperService;
         @Autowired
         private RutaEnvioRepository rutaEnvioRepository;
+
+        @Autowired
+        private ApplicationEventPublisher eventPublisher;
 
         @Value("${api.mock.base-url}")
         private String mockBaseUrl;
@@ -417,6 +422,9 @@ public class EnvioService {
                                 .build();
 
                 historialEstadosRepository.save(historial);
+
+                //despues del cambio de estado, avisa el evento
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
 
                 return envioGuardado;
         }
