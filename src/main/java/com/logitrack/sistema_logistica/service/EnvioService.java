@@ -8,7 +8,8 @@
         import java.util.List;
         import java.util.Map;
         import java.util.stream.Collectors;
-
+        import org.springframework.context.ApplicationEventPublisher;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
         import org.locationtech.jts.geom.Coordinate;
         import org.locationtech.jts.geom.GeometryFactory;
         import org.locationtech.jts.geom.LineString;
@@ -84,6 +85,9 @@
 
                 @Autowired 
                 private AuditoriaService auditoriaService;
+
+                @Autowired
+                private ApplicationEventPublisher eventPublisher;
 
 
 
@@ -283,6 +287,8 @@
                                                 estadoNuevo
                                         );
 
+                        //despues del cambio de estado, avisa el evento
+                        eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
                         return envioGuardado;
                 }
                 // 3. Guardamos el envío
