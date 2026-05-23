@@ -395,14 +395,20 @@ public class EnvioService {
 
                 //#222 - Liberamos a los choferes y camiónes si el envío termina o se cancela
                 if (estadoNuevo == EstadoEnvio.ENTREGADO || estadoNuevo == EstadoEnvio.CANCELADO) {
-                if (envio.getChofer() != null) {
+                    if (estadoNuevo == EstadoEnvio.ENTREGADO) {
+                        envio.setFechaLlegada(LocalDateTime.now());
+                        if (envio.getKgDestino() == null) {
+                            envio.setKgDestino(envio.getKgOrigen());
+                        }
+                    }
+                    if (envio.getChofer() != null) {
                         envio.getChofer().setDisponible(true);
                         choferDetalleRepository.save(envio.getChofer());
-                }
-                if (envio.getCamion() != null) {
+                    }
+                    if (envio.getCamion() != null) {
                         envio.getCamion().setDisponible(true);
                         camionRepository.save(envio.getCamion());
-                }
+                    }
                 }
                 // 3. Guardamos el envío
                 Envio envioGuardado = envioRepository.save(envio);

@@ -58,6 +58,10 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         "com.logitrack.sistema_logistica.model.enums.EstadoEnvio.ENTREGADO)")
         List<Envio> findEnviosSinAsignar();
 
+    // Suma simple de kilos para el reporte
+    @Query(value = "SELECT COALESCE(SUM(COALESCE(kg_destino, kg_origen)), 0) FROM envios", nativeQuery = true)
+    Long sumKilos();
+
         //#113
         //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).
         @Query("SELECT e FROM Envio e WHERE e.chofer.personaAsociada.idUsuario.username = :username" + 

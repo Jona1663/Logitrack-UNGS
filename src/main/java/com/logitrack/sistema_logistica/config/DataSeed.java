@@ -64,7 +64,6 @@ public class DataSeed implements CommandLineRunner {
                         System.out.println("✅ La base de datos ya contiene información. Se omite el DataSeed.");
                 }
         }
-    }
 
     @Transactional
     protected void cargarDatosSemilla() {
@@ -189,4 +188,5 @@ public class DataSeed implements CommandLineRunner {
         } catch (Exception e) {
             throw new RuntimeException("❌ ERROR EN DATA SEED: " + e.getMessage(), e);
         }
+    }
 }
