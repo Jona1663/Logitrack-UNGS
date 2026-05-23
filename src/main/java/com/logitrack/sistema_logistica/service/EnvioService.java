@@ -8,7 +8,8 @@
         import java.util.List;
         import java.util.Map;
         import java.util.stream.Collectors;
-
+        import org.springframework.context.ApplicationEventPublisher;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
         import org.locationtech.jts.geom.Coordinate;
         import org.locationtech.jts.geom.GeometryFactory;
         import org.locationtech.jts.geom.LineString;
@@ -84,6 +85,9 @@
 
                 @Autowired 
                 private AuditoriaService auditoriaService;
+
+                @Autowired
+                private ApplicationEventPublisher eventPublisher;
 
 
 
@@ -283,8 +287,36 @@
                                                 estadoNuevo
                                         );
 
+                        //despues del cambio de estado, avisa el evento
+                        eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
                         return envioGuardado;
                 }
+                // 3. Guardamos el envío
+                Envio envioGuardado = envioRepository.save(envio);
+
+                // 4. GENERAMOS EL HISTORIAL (Auditoría)
+                HistorialEstados historial = HistorialEstados.builder()
+                                .envio(envioGuardado)
+                                .usuario(usuarioModificador)
+                                .tipoEvento(eventoRealizado)
+                                .estadoAnterior(estadoAnterior)
+                                .estadoNuevo(estadoNuevo)
+                                .build();
+
+                historialEstadosRepository.save(historial);
+
+                //despues del cambio de estado, avisa el evento
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
+
+                return envioGuardado;
+        }
+
+        // cancelar envio, no permite cancelar a menos que el estado sea pendiente(esto
+        // lo podemos cambiar despues)
+        @Transactional
+        public Envio cancelarEnvio(String idEnvio, String username) {
+                Envio envio = envioRepository.findById(idEnvio)
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
                 // cancelar envio, no permite cancelar a menos que el estado sea pendiente(esto
                 // lo podemos cambiar despues)
