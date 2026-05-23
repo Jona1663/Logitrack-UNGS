@@ -16,10 +16,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+
+import com.logitrack.sistema_logistica.model.ChoferDetalle;
 // IMPORTS NUEVOS PARA EL TEST DE MÉTRICAS
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
@@ -160,5 +165,80 @@ public class AdminServiceTest {
         org.junit.jupiter.api.Assertions.assertEquals(17000, kilosTotales, "La suma total de kilos debe dar 17.000");
         org.junit.jupiter.api.Assertions.assertEquals(2, enTransito, "Deben contarse 2 envíos en tránsito");
         org.junit.jupiter.api.Assertions.assertEquals(1, pendientes, "Debe contarse 1 envío pendiente");
+    }
+
+    @Test
+    public void listarUsuarios_DeberiaRetornarSoloActivosConDatosDePersona() {
+        // Arrange
+        Usuario uActivo = new Usuario(); uActivo.setIdUsuario(1); uActivo.setActivo(true);
+        Usuario uInactivo = new Usuario(); uInactivo.setIdUsuario(2); uInactivo.setActivo(false);
+        
+        Persona p = new Persona(); p.setNombre("Juan"); p.setApellido("Perez");
+        
+        when(usuarioRepository.findAll()).thenReturn(List.of(uActivo, uInactivo));
+        when(personaRepository.findById(1)).thenReturn(Optional.of(p));
+
+        // Act
+        List<UsuarioResponseDTO> resultado = adminService.listarUsuarios();
+
+        // Assert
+        assertEquals(1, resultado.size(), "Debería listar solo el activo");
+        assertEquals("Juan", resultado.get(0).getNombre());
+        verify(personaRepository, times(1)).findById(1);
+    }
+
+    @Test
+    public void crearUsuario_UsuarioExistente_DebeLanzarExcepcion() {
+        // Arrange
+        UsuarioRequestDTO request = new UsuarioRequestDTO();
+        request.setUsername("existente@test.com");
+        when(usuarioRepository.existsByUsername("existente@test.com")).thenReturn(true);
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> adminService.crearUsuario(request));
+    }
+
+    @Test
+    public void crearUsuario_RolChoferExitoso_DebeGuardarChofer() {
+        // Arrange
+        UsuarioRequestDTO request = new UsuarioRequestDTO();
+        request.setUsername("chofer@test.com");
+        request.setPassword("123");
+        request.setRol(RolUsuario.CHOFER);
+        request.setNroLicencia("12345");
+        request.setVtoLicencia(LocalDate.now());
+        request.setVtoLinti(LocalDate.now());
+
+        Usuario u = Usuario.builder().idUsuario(1).build();
+        Persona p = Persona.builder().idUsuario(u).build();
+
+        when(usuarioRepository.existsByUsername(any())).thenReturn(false);
+        when(passwordEncoder.encode(any())).thenReturn("encoded");
+        when(usuarioRepository.save(any())).thenReturn(u);
+        when(personaRepository.save(any())).thenReturn(p);
+
+        // Act
+        adminService.crearUsuario(request);
+
+        // Assert
+        // Verificamos que se guardó el ChoferDetalle, entrando así en el bloque 'if'
+        verify(choferDetalleRepository, times(1)).save(any(ChoferDetalle.class));
+    }
+
+    @Test
+    public void crearUsuario_RolChoferFaltanDatos_DebeLanzarExcepcion() {
+        // Arrange: Rol chofer pero sin datos de licencia
+        UsuarioRequestDTO request = new UsuarioRequestDTO();
+        request.setRol(RolUsuario.CHOFER);
+        request.setNroLicencia(null); // <--- Dato faltante
+
+        when(usuarioRepository.existsByUsername(any())).thenReturn(false);
+        when(passwordEncoder.encode(any())).thenReturn("encoded");
+        when(usuarioRepository.save(any())).thenReturn(new Usuario());
+        when(personaRepository.save(any())).thenReturn(new Persona());
+
+        // Act & Assert
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> adminService.crearUsuario(request));
+        assertEquals("Error: Faltan datos de la licencia para dar de alta al Chofer.", ex.getMessage());
     }
 }
