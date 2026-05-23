@@ -1,9 +1,12 @@
 package com.logitrack.sistema_logistica.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 
@@ -26,4 +29,13 @@ public class ReporteService {
                 .totalKilos(totalKilos)
                 .build();
     }
+
+
+    @Transactional(readOnly = true)
+    public List<ReporteEstadoDTO> obtenerReportePorEstados() {
+        return envioRepository.obtenerMetricasPorEstado();
+    }
+
+    
+
 }

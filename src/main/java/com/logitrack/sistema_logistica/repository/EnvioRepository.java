@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 
@@ -79,6 +80,16 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
 
         boolean existsByCamionAndEstadoActualIn(
         com.logitrack.sistema_logistica.model.Camion camion,
-        List<EstadoEnvio> estados
-);
+        List<EstadoEnvio> estados);
+
+        //#232
+        // -----------------------------------------------------------------
+        // CONSULTAS PARA REPORTES (DASHBOARD)
+        // -----------------------------------------------------------------
+        @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEstadoDTO(" +
+           "CAST(e.estadoActual as string), " +
+           "COUNT(e), " +
+           "COALESCE(SUM(COALESCE(e.kgDestino, e.kgOrigen)), 0L)) " +
+           "FROM Envio e GROUP BY e.estadoActual")
+        List<ReporteEstadoDTO> obtenerMetricasPorEstado();
 }
