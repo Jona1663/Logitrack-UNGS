@@ -1,17 +1,20 @@
 package com.logitrack.sistema_logistica.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+
 public class ReporteEstadoDTO {
     private String estado;
-    private long cantidadEnvios;
-    private long kilos;
+    private Long cantidadEnvios;
+    private Long kilos;
 
-    public ReporteEstadoDTO() {}
-
-    public ReporteEstadoDTO(String estado, long cantidadEnvios, long kilos) {
-        this.estado = estado;
-        this.cantidadEnvios = cantidadEnvios;
-        this.kilos = kilos;
-    }
 
     public String getEstado() {
         return estado;

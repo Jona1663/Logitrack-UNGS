@@ -92,4 +92,37 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
            "COALESCE(SUM(COALESCE(e.kgDestino, e.kgOrigen)), 0L)) " +
            "FROM Envio e GROUP BY e.estadoActual")
         List<ReporteEstadoDTO> obtenerMetricasPorEstado();
+
+        // --- CONSULTAS PARA REPORTES CON FILTRO DE FECHAS ---
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.fechaCreacion >= :inicio AND e.fechaCreacion <= :fin")
+        long countEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+        @Query("SELECT COALESCE(SUM(COALESCE(e.kgDestino, e.kgOrigen)), 0L) FROM Envio e WHERE e.fechaCreacion >= :inicio AND e.fechaCreacion <= :fin")
+        Long sumKilosEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+        @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEstadoDTO(" +
+           "CAST(e.estadoActual as string), " +
+           "COUNT(e), " +
+           "COALESCE(SUM(COALESCE(e.kgDestino, e.kgOrigen)), 0L)) " +
+           "FROM Envio e WHERE e.fechaCreacion >= :inicio AND e.fechaCreacion <= :fin GROUP BY e.estadoActual")
+        List<ReporteEstadoDTO> obtenerMetricasPorEstadoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin); 
+
+        // 1. Por Tipo de Grano (Métrica de cantidad y kilos)
+        @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEstadoDTO(" +
+           "CAST(e.tipoGrano as string), COUNT(e), COALESCE(SUM(e.kgOrigen), 0L)) " +
+           "FROM Envio e WHERE e.fechaCreacion BETWEEN :inicio AND :fin " +
+           "GROUP BY e.tipoGrano")
+    List<ReporteEstadoDTO> obtenerMetricasPorGrano(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+
+        // 2. Envíos a Tiempo (Entregados donde fechaLlegada <= fechaEstimada)
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' " +
+           "AND e.fechaLlegada <= e.fechaEstimadaLlegada " +
+           "AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        long contarEntregasATiempo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+
+
+
+
 }
