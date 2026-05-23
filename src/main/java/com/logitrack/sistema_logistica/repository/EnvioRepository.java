@@ -10,7 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
+import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 
@@ -107,20 +109,22 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
            "FROM Envio e WHERE e.fechaCreacion >= :inicio AND e.fechaCreacion <= :fin GROUP BY e.estadoActual")
         List<ReporteEstadoDTO> obtenerMetricasPorEstadoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin); 
 
-        // 1. Por Tipo de Grano (Métrica de cantidad y kilos)
-        @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEstadoDTO(" +
-           "CAST(e.tipoGrano as string), COUNT(e), COALESCE(SUM(e.kgOrigen), 0L)) " +
-           "FROM Envio e WHERE e.fechaCreacion BETWEEN :inicio AND :fin " +
-           "GROUP BY e.tipoGrano")
-    List<ReporteEstadoDTO> obtenerMetricasPorGrano(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+        // 1. Cantidad de envíos y kilos por tipo de grano
+        @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteGranoDTO(" +
+                "CAST(e.tipoGrano as string), COUNT(e), COALESCE(SUM(e.kgOrigen), 0L)) " +
+                 "FROM Envio e WHERE e.fechaCreacion BETWEEN :inicio AND :fin " +
+                "GROUP BY e.tipoGrano")
+        List<ReporteGranoDTO> obtenerMetricasPorGrano(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
 
-        // 2. Envíos a Tiempo (Entregados donde fechaLlegada <= fechaEstimada)
-        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' " +
-           "AND e.fechaLlegada <= e.fechaEstimadaLlegada " +
-           "AND e.fechaCreacion BETWEEN :inicio AND :fin")
-        long contarEntregasATiempo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
-
+        // 2. Envíos y kilos que llegaron a tiempo
+        @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO(" +
+                "COUNT(e), COALESCE(SUM(e.kgOrigen), 0L)) " +
+                "FROM Envio e " +
+                "WHERE e.fechaLlegada IS NOT NULL " +
+                "AND e.fechaLlegada <= e.fechaEstimadaLlegada " +
+                "AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        ReporteEficienciaDTO obtenerMetricasATiempo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
 
 

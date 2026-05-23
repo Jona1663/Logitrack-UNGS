@@ -34,6 +34,8 @@ import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
+import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
@@ -450,5 +452,19 @@ public class EnvioController {
             error.setMessage(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
+    }
+
+    @GetMapping("/reportes/granos")
+    public ResponseEntity<List<ReporteGranoDTO>> getReporteGranos(
+            @RequestParam LocalDateTime fechaInicio, 
+            @RequestParam LocalDateTime fechaFin) {
+        return ResponseEntity.ok(envioRepository.obtenerMetricasPorGrano(fechaInicio, fechaFin));
+    }
+
+    @GetMapping("/reportes/a-tiempo")
+    public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo(
+            @RequestParam LocalDateTime fechaInicio, 
+            @RequestParam LocalDateTime fechaFin) {
+        return ResponseEntity.ok(envioRepository.obtenerMetricasATiempo(fechaInicio, fechaFin));
     }
 }

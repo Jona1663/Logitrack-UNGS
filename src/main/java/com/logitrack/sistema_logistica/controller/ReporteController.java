@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
+import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.service.ReporteService;
 
@@ -39,7 +41,7 @@ public class ReporteController {
 
     // GET /api/reportes/granos?fechaInicio=...&fechaFin=...
     @GetMapping("/granos")
-    public ResponseEntity<List<ReporteEstadoDTO>> obtenerReportePorGrano(
+    public ResponseEntity<List<ReporteGranoDTO>> obtenerReportePorGrano(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         return ResponseEntity.ok(reporteService.obtenerReportePorGrano(fechaInicio, fechaFin));
@@ -47,11 +49,13 @@ public class ReporteController {
 
     // GET /api/reportes/a-tiempo?fechaInicio=...&fechaFin=...
     @GetMapping("/a-tiempo")
-    public ResponseEntity<Long> obtenerEntregasATiempo(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
-        return ResponseEntity.ok(reporteService.obtenerCantidadATiempo(fechaInicio, fechaFin));
-    }
+    public ResponseEntity<ReporteEficienciaDTO> obtenerEntregasATiempo(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+    
+    // Ahora devuelve ReporteEficienciaDTO, no un Long
+    return ResponseEntity.ok(reporteService.obtenerMetricasATiempo(fechaInicio, fechaFin));
+}
 
 
 

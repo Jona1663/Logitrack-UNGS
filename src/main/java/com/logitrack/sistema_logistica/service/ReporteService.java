@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
+import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 
@@ -61,7 +63,7 @@ public class ReporteService {
 
         // Para obtener métricas por grano
         @Transactional(readOnly = true)
-        public List<ReporteEstadoDTO> obtenerReportePorGrano(LocalDate fechaInicio, LocalDate fechaFin) {
+        public List<ReporteGranoDTO> obtenerReportePorGrano(LocalDate fechaInicio, LocalDate fechaFin) {
                 LocalDateTime inicio = fechaInicio.atStartOfDay();
                 LocalDateTime fin = fechaFin.atTime(23, 59, 59);
                 return envioRepository.obtenerMetricasPorGrano(inicio, fin);
@@ -69,9 +71,13 @@ public class ReporteService {
 
         // Para obtener métricas de eficiencia (a tiempo)
         @Transactional(readOnly = true)
-        public long obtenerCantidadATiempo(LocalDate fechaInicio, LocalDate fechaFin) {
-                return envioRepository.contarEntregasATiempo(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59));
-        }
+        public ReporteEficienciaDTO obtenerMetricasATiempo(LocalDate fechaInicio, LocalDate fechaFin) {
+                LocalDateTime inicio = fechaInicio.atStartOfDay();
+                LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+    
+        // Ahora llama al método que devuelve el DTO completo
+        return envioRepository.obtenerMetricasATiempo(inicio, fin);
+}
 
 
 
