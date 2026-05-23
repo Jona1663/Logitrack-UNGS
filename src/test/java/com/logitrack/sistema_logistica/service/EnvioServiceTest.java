@@ -47,6 +47,9 @@ import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import org.springframework.context.ApplicationEventPublisher;
+
+
 
 @ExtendWith(MockitoExtension.class)
 public class EnvioServiceTest {
@@ -60,6 +63,7 @@ public class EnvioServiceTest {
     @Mock private EmpresaClienteRepository empresaClienteRepository;
     @Mock private RutaEnvioRepository rutaEnvioRepository;
     @Mock private HistorialEstadosRepository historialRepository;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
     
     // NUEVOS SERVICIOS (Reemplazan a GraphHopper y RestTemplate)
     @Mock private ValidacionExternaService validacionExternaService;
