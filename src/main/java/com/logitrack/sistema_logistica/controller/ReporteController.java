@@ -18,6 +18,11 @@ import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.service.ReporteService;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
+
+
 @RestController
 @RequestMapping("/api/reportes")
 public class ReporteController {
@@ -101,6 +106,45 @@ public class ReporteController {
     }
 
 
+    // Endpoint A: Exportación Operativa
+    @GetMapping("/operativo/exportar")
+    public void exportarReporteOperativoCsv(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        try {
+            response.setContentType("text/csv; charset=UTF-8");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Logitrack_Operativo_" + LocalDate.now() + ".csv\"");
+            response.setHeader(org.springframework.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, org.springframework.http.HttpHeaders.CONTENT_DISPOSITION);
+            
+            reporteService.exportarReporteOperativoCsv(fechaInicio, fechaFin, response.getWriter());
+        } catch (RuntimeException e) {
+            response.setStatus(400);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+    // Endpoint B: Exportación de Cumplimiento
+    @GetMapping("/cumplimiento/viajes/exportar")
+    public void exportarReporteCumplimientoCsv(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        try {
+            response.setContentType("text/csv; charset=UTF-8");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"Logitrack_Cumplimiento_" + LocalDate.now() + ".csv\"");
+            response.setHeader(org.springframework.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, org.springframework.http.HttpHeaders.CONTENT_DISPOSITION);
+
+            reporteService.exportarViajesCumplimientoStreamCsv(fechaInicio, fechaFin, response.getWriter());
+        } catch (RuntimeException e) {
+            response.setStatus(400);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
 
 
 

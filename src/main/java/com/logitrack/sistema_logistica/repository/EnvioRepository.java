@@ -3,6 +3,7 @@ package com.logitrack.sistema_logistica.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -138,7 +139,28 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         @Param("inicio") LocalDateTime inicio, 
         @Param("fin") LocalDateTime fin);
 
+        //
+        @Query("SELECT e FROM Envio e WHERE e.fechaCreacion >= :inicio AND e.fechaCreacion <= :fin ORDER BY e.fechaCreacion ASC")
+        Stream<Envio> obtenerEnviosComoStreamParaExportacion(
+                @Param("inicio") LocalDateTime inicio, 
+                @Param("fin") LocalDateTime fin
+        );
 
+        // 1. Arregla el bug de la Prueba 3 (Cuenta SOLO los completados)
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada IS NOT NULL AND e.fechaEstimadaLlegada IS NOT NULL AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        long countCompletadosEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+        // 2. Stream exclusivo para Cumplimiento (Solo entregados)
+        @Query("SELECT e FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada IS NOT NULL AND e.fechaEstimadaLlegada IS NOT NULL AND e.fechaCreacion BETWEEN :inicio AND :fin ORDER BY e.fechaCreacion ASC")
+        Stream<Envio> obtenerEnviosCompletadosComoStream(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+        // 3. Stream para Histórico completo (Usado en el reporte de Estados sin filtro)
+        @Query("SELECT e FROM Envio e ORDER BY e.fechaCreacion ASC")
+        Stream<Envio> obtenerTodosComoStream();
+
+        // 4. Stream para envíos A Tiempo
+        @Query("SELECT e FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin ORDER BY e.fechaCreacion ASC")
+        Stream<Envio> obtenerEnviosATiempoComoStream(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
 
 

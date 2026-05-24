@@ -24,6 +24,11 @@ import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import java.time.temporal.ChronoUnit;
 import com.logitrack.sistema_logistica.dto.ViajeCumplimientoDTO;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import java.io.StringWriter;
+import java.io.IOException;
+
 @Service
 public class ReporteService {
 
@@ -189,35 +194,93 @@ public class ReporteService {
         // El controlador llamaría a este método para obtener el CSV y luego lo enviaría con el header "Content-Disposition: attachment; filename=reporte_cumplimiento.csv"
         // Nota: Este método no maneja la respuesta HTTP directamente, solo genera el contenido del CSV. El controlador es responsable de configurar los headers y el tipo de contenido.
 
-        @Transactional(readOnly = true)
-        public String exportarViajesACsv(LocalDate fechaInicio, LocalDate fechaFin) {
-        // 1. Reutilizamos el método que ya programaste para obtener los viajes procesados
-        List<ViajeCumplimientoDTO> viajes = calcularDesviosYCumplimiento(fechaInicio, fechaFin);
-
-        StringBuilder csv = new StringBuilder();
-        
-        // 2. Definimos un formateador de fecha prolijo para el Excel (Ej: 15/05/2026 14:30)
-        DateTimeFormatter formateador = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-        // 3. Escribimos la primera fila: LOS ENCABEZADOS DE LAS COLUMNAS
-        csv.append("ID Envio;Estado;Fecha ETA;Fecha Entrega Real;Retrasado;Desvio (Horas)\n");
-
-        // 4. Recorremos la lista de viajes y agregamos una fila por cada uno
-        for (ViajeCumplimientoDTO viaje : viajes) {
-                String fechaEtaStr = viaje.getFechaEstimadaLlegada() != null ? viaje.getFechaEstimadaLlegada().format(formateador) : "";
-                String fechaRealStr = viaje.getFechaEntregaReal() != null ? viaje.getFechaEntregaReal().format(formateador) : "";
-                
-                csv.append(viaje.getIdEnvio()).append(";")
-                .append(viaje.getEstadoActual()).append(";")
-                .append(fechaEtaStr).append(";")
-                .append(fechaRealStr).append(";")
-                .append(viaje.isEsRetrasado() ? "SI" : "NO").append(";")
-                // Reemplazamos el punto por la coma para que Excel entienda el decimal (4.5 -> 4,5)
-                .append(String.valueOf(viaje.getDesvioHoras()).replace(".", ",")).append("\n");
+        // -formateo de horas como lo pide el frontend
+        private String formatearDesvio(double horas) {
+                if (horas <= 0) return "A tiempo";
+                int dias = (int) (horas / 24);
+                int horasRestantes = (int) (horas % 24);
+                if (dias > 0 && horasRestantes > 0) return dias + " d " + horasRestantes + " h de retraso";
+                if (dias > 0) return dias + " d de retraso";
+                return horasRestantes + " h de retraso";
         }
 
-        // 5. Retornamos todo el bloque de texto plano generado
-        return csv.toString();
+        // export en fformato que solicita el frontend
+        @Transactional(readOnly = true)
+        public void exportarViajesCumplimientoStreamCsv(LocalDate fechaInicio, LocalDate fechaFin, java.io.Writer writer) throws java.io.IOException {
+                LocalDateTime inicio = fechaInicio.atStartOfDay();
+                LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+                java.time.format.DateTimeFormatter formateador = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+                // Validación de datos para devolver error 400 si está vacío
+                long count = envioRepository.countEntreFechas(inicio, fin);
+                if (count == 0) {
+                throw new RuntimeException("No hay viajes completados para exportar en este período.");
+                }
+
+                // BOM UTF-8 para Excel
+                writer.write('\ufeff');
+
+                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.EXCEL.builder()
+                        .setDelimiter(';')
+                        .setHeader("ID Envío", "Estado", "ETA (Estimado)", "Entrega Real", "Desvío")
+                        .build();
+
+                try (java.util.stream.Stream<Envio> streamEnvios = envioRepository.obtenerEnviosComoStreamParaExportacion(inicio, fin);
+                org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
+
+                streamEnvios
+                        .filter(envio -> envio.getEstadoActual() != null && envio.getEstadoActual().name().equals("ENTREGADO"))
+                        .forEach(envio -> {
+                        try {
+                                double desvioHoras = 0;
+                                if (envio.getFechaLlegada() != null && envio.getFechaEstimadaLlegada() != null) {
+                                long minutosDiferencia = java.time.temporal.ChronoUnit.MINUTES.between(
+                                        envio.getFechaEstimadaLlegada(), envio.getFechaLlegada());
+                                if (minutosDiferencia > 0) {
+                                        desvioHoras = minutosDiferencia / 60.0;
+                                }
+                                }
+
+                                printer.printRecord(
+                                        envio.getIdEnvio(),
+                                        envio.getEstadoActual().name(),
+                                        envio.getFechaEstimadaLlegada() != null ? envio.getFechaEstimadaLlegada().format(formateador) : "",
+                                        envio.getFechaLlegada() != null ? envio.getFechaLlegada().format(formateador) : "",
+                                        formatearDesvio(desvioHoras)
+                                );
+                                printer.flush();
+                        } catch (java.io.IOException e) {
+                                throw new RuntimeException("Error escribiendo fila en CSV", e);
+                        }
+                        });
+                }
+        }
+
+        // formato de reporte que solicita el frontend
+        @Transactional(readOnly = true)
+        public void exportarReporteOperativoCsv(LocalDate fechaInicio, LocalDate fechaFin, java.io.Writer writer) throws java.io.IOException {
+                ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
+                List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
+                        envioRepository.obtenerMetricasPorEstadoEntreFechas(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)) : 
+                        envioRepository.obtenerMetricasPorEstado();
+
+                // BOM UTF-8 para Excel
+                writer.write('\ufeff');
+
+                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.EXCEL.builder()
+                        .setDelimiter(';')
+                        .setHeader("Métrica", "Valor")
+                        .build();
+
+                try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
+                printer.printRecord("Total de Viajes", totales.getTotalViajes());
+                printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
+                
+                for (ReporteEstadoDTO e : estados) {
+                        printer.printRecord("Estado: " + e.getEstado(), e.getCantidadEnvios());
+                }
+                printer.flush();
+                }
         }
 
 
