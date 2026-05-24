@@ -187,7 +187,8 @@ public class DataSeed implements CommandLineRunner {
 
         } catch (Exception e) {
             throw new RuntimeException("❌ ERROR EN DATA SEED: " + e.getMessage(), e);
-        }}
+        }
+    }
 }
 
 

@@ -35,6 +35,8 @@ import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
+import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
@@ -197,12 +199,19 @@ public class EnvioController {
     // directamente leyendo el Token JWT de la petición. El ID de usuario es
     // necesario
     // para auditorias.
+
+
+
+
+
+    //Original
     @PostMapping
     // Se agrega el parámetro Authentication.
     public ResponseEntity<?> crearEnvio(@RequestBody EnvioRequestDTO dto, Authentication authentication) {
         try {
             // Extraer el email/username del token JWT
             String username = authentication.getName();
+
 
             // Buscar el ID del usuario en la Base de Datos
             Usuario usuario = usuarioRepository.findByUsername(username)
@@ -217,6 +226,45 @@ public class EnvioController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+    //Modificado para que el endpoint de creación de envíos no requiera autenticación, pero igual 
+    // capture el usuario si el token JWT está presente. Esto es útil para permitir la creación de 
+    // envíos desde sistemas externos que no manejen autenticación, pero aún así aprovechar la 
+    // información del usuario cuando esté disponible para auditorías.
+    /*
+    @PostMapping
+    public ResponseEntity<?> crearEnvio(@RequestBody EnvioRequestDTO dto, Authentication authentication) {
+        try {
+            // 1. Intentamos sacar el nombre del usuario logueado
+            String username = (authentication != null) ? authentication.getName() : null;
+            Integer idUsuarioCreador;
+
+            if (username != null) {
+                // Si hay un usuario real (vía Frontend con JWT), lo buscamos normalmente
+                Usuario usuario = usuarioRepository.findByUsername(username)
+                        .orElseThrow(() -> new RuntimeException("Usuario autenticado no existe en el sistema"));
+                idUsuarioCreador = usuario.getIdUsuario();
+            } else {
+                // ¡AQUÍ ESTÁ EL TRUCO PARA THUNDER CLIENT!
+                // Si venimos sin token, le hardcodeamos un ID de usuario que SEPAS que existe en tu BD (ej: 1L)
+                idUsuarioCreador = 1; 
+            }
+
+            // Asignarlo al DTO de forma segura antes de guardarlo
+            dto.setIdUsuarioCreador(idUsuarioCreador);
+
+            Envio envioCreado = envioService.crearNuevoEnvio(dto);
+            return new ResponseEntity<>(envioCreado, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+    */
+
+
+
+
+
 
     // Se obtiene el envío completo esto habria que borrarlo a menos que se este
     // usando para algo
@@ -456,5 +504,19 @@ public class EnvioController {
             error.setMessage(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
+    }
+
+    @GetMapping("/reportes/granos")
+    public ResponseEntity<List<ReporteGranoDTO>> getReporteGranos(
+            @RequestParam LocalDateTime fechaInicio, 
+            @RequestParam LocalDateTime fechaFin) {
+        return ResponseEntity.ok(envioRepository.obtenerMetricasPorGrano(fechaInicio, fechaFin));
+    }
+
+    @GetMapping("/reportes/a-tiempo")
+    public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo(
+            @RequestParam LocalDateTime fechaInicio, 
+            @RequestParam LocalDateTime fechaFin) {
+        return ResponseEntity.ok(envioRepository.obtenerMetricasATiempo(fechaInicio, fechaFin));
     }
 }

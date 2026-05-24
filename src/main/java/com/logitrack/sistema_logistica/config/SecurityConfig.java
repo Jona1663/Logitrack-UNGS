@@ -36,6 +36,8 @@ public class SecurityConfig {
                         // Público 
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/mock/**").permitAll()
+                        .requestMatchers("/api/reportes/**").permitAll()
+                        .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
 
