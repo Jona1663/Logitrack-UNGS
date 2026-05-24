@@ -1,9 +1,11 @@
 package com.logitrack.sistema_logistica.service;
 
-import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -132,7 +134,7 @@ public class ReporteService {
 
 
 
-        
+
         @Transactional(readOnly = true)
         public ReporteCumplimientoResponse obtenerReporteCumplimiento(LocalDate fechaInicio, LocalDate fechaFin) {
         // 1. Obtenemos los viajes individuales con sus desvíos ya calculados (lo que hicimos en el Paso 3)
@@ -178,6 +180,49 @@ public class ReporteService {
 
 
 
-    
+        // Método adicional para exportar a CSV (Paso 4)
+        // Este método reutiliza el cálculo de desvíos y cumplimiento para generar un CSV descargable
+        // El CSV tendrá columnas: ID Envío, Estado, Fecha ETA, Fecha Entrega Real, Retrasado (SI/NO), Desvío en Horas
+        // El formato de fecha en el CSV será "dd/MM/yyyy HH:mm" para que sea legible en Excel
+        // El método devuelve un String con el contenido del CSV, que luego el controlador puede enviar como respuesta con el tipo de contenido adecuado
+        // Ejemplo de uso en el controlador: GET /api/reportes/v1/cumplimiento/exportar?fechaInicio=2024-01-01&fechaFin=2024-01-31
+        // El controlador llamaría a este método para obtener el CSV y luego lo enviaría con el header "Content-Disposition: attachment; filename=reporte_cumplimiento.csv"
+        // Nota: Este método no maneja la respuesta HTTP directamente, solo genera el contenido del CSV. El controlador es responsable de configurar los headers y el tipo de contenido.
+
+        @Transactional(readOnly = true)
+        public String exportarViajesACsv(LocalDate fechaInicio, LocalDate fechaFin) {
+        // 1. Reutilizamos el método que ya programaste para obtener los viajes procesados
+        List<ViajeCumplimientoDTO> viajes = calcularDesviosYCumplimiento(fechaInicio, fechaFin);
+
+        StringBuilder csv = new StringBuilder();
+        
+        // 2. Definimos un formateador de fecha prolijo para el Excel (Ej: 15/05/2026 14:30)
+        DateTimeFormatter formateador = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        // 3. Escribimos la primera fila: LOS ENCABEZADOS DE LAS COLUMNAS
+        csv.append("ID Envio;Estado;Fecha ETA;Fecha Entrega Real;Retrasado;Desvio (Horas)\n");
+
+        // 4. Recorremos la lista de viajes y agregamos una fila por cada uno
+        for (ViajeCumplimientoDTO viaje : viajes) {
+                String fechaEtaStr = viaje.getFechaEstimadaLlegada() != null ? viaje.getFechaEstimadaLlegada().format(formateador) : "";
+                String fechaRealStr = viaje.getFechaEntregaReal() != null ? viaje.getFechaEntregaReal().format(formateador) : "";
+                
+                csv.append(viaje.getIdEnvio()).append(";")
+                .append(viaje.getEstadoActual()).append(";")
+                .append(fechaEtaStr).append(";")
+                .append(fechaRealStr).append(";")
+                .append(viaje.isEsRetrasado() ? "SI" : "NO").append(";")
+                // Reemplazamos el punto por la coma para que Excel entienda el decimal (4.5 -> 4,5)
+                .append(String.valueOf(viaje.getDesvioHoras()).replace(".", ",")).append("\n");
+        }
+
+        // 5. Retornamos todo el bloque de texto plano generado
+        return csv.toString();
+        }
+
+
+
+
+
 
 }
