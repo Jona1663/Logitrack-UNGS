@@ -127,6 +127,19 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         ReporteEficienciaDTO obtenerMetricasATiempo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
 
+        //Para la #238
+        //Filtra estrictamente por estado 'ENTREGADO' y se asegura de que ninguna fecha sea nula
+        @Query("SELECT e FROM Envio e " +
+       "WHERE e.estadoActual = 'ENTREGADO' " +
+       "AND e.fechaLlegada IS NOT NULL " +
+       "AND e.fechaEstimadaLlegada IS NOT NULL " +
+       "AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        List<Envio> obtenerEnviosCompletadosParaCumplimiento(
+        @Param("inicio") LocalDateTime inicio, 
+        @Param("fin") LocalDateTime fin);
+
+
+
 
 
 }
