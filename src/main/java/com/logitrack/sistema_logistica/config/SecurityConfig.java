@@ -33,17 +33,35 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Público 
                         .requestMatchers("/api/auth/**").permitAll()
-                        // .requestMatchers(HttpMethod.PATCH, "/api/envios/**").hasRole("CHOFER")
-                        .requestMatchers(HttpMethod.PATCH, "/api/envios/**").permitAll()
-                        .requestMatchers("/api/envios/**").permitAll()
-                        .requestMatchers("/api/catalogos/**").permitAll()
                         .requestMatchers("/api/mock/**").permitAll()
                         .requestMatchers("/api/reportes/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
+
+                        // Admin 
+                        .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
+                        // Chofer 
                         .requestMatchers("/api/chofer/**").hasRole("CHOFER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/estado").hasRole("CHOFER")
+                        .requestMatchers(HttpMethod.POST, "/api/envios/*/incidencias").hasRole("CHOFER")
+                        // Solo Supervisor 
+                        .requestMatchers(HttpMethod.GET, "/api/envios/historial-completo").hasRole("SUPERVISOR")
+                        // Operador y Supervisor 
+                        .requestMatchers(HttpMethod.POST, "/api/envios").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.GET, "/api/envios/sin-asignar").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.GET, "/api/envios/search").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/operativo").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/asignar-transporte").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/envios/*/cancelar").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.GET, "/api/catalogos/**").hasAnyRole("OPERADOR", "SUPERVISOR")
+
+                        // Envío por ID — todos los roles autenticados 
+                        .requestMatchers(HttpMethod.GET, "/api/envios/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/envios/buscar/*").authenticated()
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

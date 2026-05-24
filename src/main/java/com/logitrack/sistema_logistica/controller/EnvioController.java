@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
@@ -490,9 +491,14 @@ public class EnvioController {
     public ResponseEntity<?> obtenerRutaCompleta(@PathVariable String idEnvio) {
         try {
             JsonNode rutaJson = envioService.obtenerGeometriaRuta(idEnvio);
+        
+            ObjectMapper mapper = new ObjectMapper();
+            // ✅ Convertir JsonNode a Object "puro" (List, Map, etc.)
+            Object coordinates = mapper.convertValue(rutaJson, Object.class);
+        
             return ResponseEntity.ok(Map.of(
                     "idEnvio", idEnvio,
-                    "coordinates", rutaJson));
+                    "coordinates", coordinates));
         } catch (RuntimeException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
             error.setMessage(e.getMessage());
