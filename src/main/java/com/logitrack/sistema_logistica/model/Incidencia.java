@@ -1,6 +1,11 @@
 package com.logitrack.sistema_logistica.model;
 
+import java.time.LocalDateTime;
+
 import com.logitrack.sistema_logistica.model.enums.Categoria;
+import com.logitrack.sistema_logistica.model.enums.EstadoIncidencia;
+import com.logitrack.sistema_logistica.model.enums.TipoIncidencia;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,12 +29,30 @@ public class Incidencia {
     private Envio envio;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private Categoria categoria;
+    @Column(nullable = false)
+    private TipoIncidencia tipoIncidencia;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(length = 500)
     private String descripcion;
 
-    @Column(columnDefinition = "TEXT")
-    private String lugarIncidencia;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoIncidencia estado;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaReporte;
+
+    // Estos campos se llenan cuando el supervisor interviene
+    private LocalDateTime fechaResolucion;
+
+    @Column(length = 500)
+    private String notasSupervisor;
+
+    @Column(columnDefinition = "TEXT")//actualmente es un text, si en algun momento decidimos implementar 
+    private String lugarIncidencia;   // mostrar en el mapa la ubicacion de la incidencia podemos dejarlo como coordenadas 
+
+    @Column(nullable = false, updatable = false)
+    private String creadoPor;
+
+
 }
