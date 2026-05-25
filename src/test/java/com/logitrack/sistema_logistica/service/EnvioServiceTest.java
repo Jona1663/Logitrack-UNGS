@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -859,5 +860,25 @@ public class EnvioServiceTest {
         
         // Verificamos que no se guardó nada
         verify(envioRepository, never()).save(any());
+    }
+    // =========================================================
+    // TICKET #284: Pruebas del servicio Mock de notificaciones
+    // =========================================================
+
+    @Test
+    public void mockEmailService_EnvioValido_NoDeberiaLanzarExcepcion() {
+        // Arrange: Instanciamos el servicio Mock (el servicio falso que hizo Nico)
+        // Fijate bien el package, si no es 'impl', ajustalo según tu carpeta
+        com.logitrack.sistema_logistica.service.impl.ConsoleNotificationService mockEmailService = 
+            new com.logitrack.sistema_logistica.service.impl.ConsoleNotificationService();
+
+        String emailDestino = "cliente@logitrack.com";
+        String asunto = "Prueba de notificación";
+        String cuerpo = "Este es un mensaje de prueba controlado.";
+
+        // Act & Assert: Comprobamos que el método se ejecuta sin lanzar excepciones
+        assertDoesNotThrow(() -> {
+            mockEmailService.enviarNotificacion(emailDestino, asunto, cuerpo);
+        }, "El servicio Mock debería procesar el envío sin lanzar ninguna excepción");
     }
 }
