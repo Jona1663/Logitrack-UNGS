@@ -5,6 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -64,7 +67,18 @@ public class IncidenciaServiceTest {
         incidenciaDTO = new IncidenciaDTO();
         incidenciaDTO.setTipoIncidencia(TipoIncidencia.MECANICA);
         incidenciaDTO.setDescripcion("Neumático pinchado");
+
+        // --- Simulamos el usuario logueado ---
+        org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+        org.springframework.security.core.Authentication authentication = mock(org.springframework.security.core.Authentication.class);
+        
+        // Le agregamos lenient() para que Mockito no tire error si el test no usa esta simulación
+        org.mockito.Mockito.lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        org.mockito.Mockito.lenient().when(authentication.getName()).thenReturn("chofer_test"); 
+        
+        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
     }
+    
 
     // =========================================================================
     // TESTS PARA: reportarIncidencia (US 32)
