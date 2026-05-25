@@ -795,4 +795,69 @@ public class EnvioServiceTest {
         assertThrows(RuntimeException.class, () -> envioService.actualizarEstadoChofer("4", "PENDIENTE", "chofer1"));
     }
 
+    // =========================================================
+    // TICKET #258: Pruebas de intercepción (Notificaciones)
+    // =========================================================
+    @Test
+    public void cambiarEstado_DeberiaInterceptarYLlamarNotificacion() {
+        // Arrange: Creamos el servicio de notificaciones falso acá mismo
+        com.logitrack.sistema_logistica.service.NotificationService notifServiceMock = 
+            mock(com.logitrack.sistema_logistica.service.NotificationService.class);
+            
+        // Instanciamos el "escuchador" (listener) pasándole nuestro mock
+        com.logitrack.sistema_logistica.events.EnvioCambioEstadoListener listener = 
+            new com.logitrack.sistema_logistica.events.EnvioCambioEstadoListener(notifServiceMock);
+
+        // Armamos el viaje de prueba con los datos mínimos que necesita el listener
+        com.logitrack.sistema_logistica.model.EmpresaCliente empresa = new com.logitrack.sistema_logistica.model.EmpresaCliente();
+        empresa.setRazonSocial("LogiCorp SRL");
+
+        com.logitrack.sistema_logistica.model.Establecimiento origen = new com.logitrack.sistema_logistica.model.Establecimiento();
+        origen.setEmpresa(empresa);
+
+        com.logitrack.sistema_logistica.model.Envio viajeDePrueba = com.logitrack.sistema_logistica.model.Envio.builder()
+                .idEnvio("LT-NOTIF-001")
+                .estadoActual(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.EN_TRANSITO) // Estado simulado
+                .origen(origen)
+                .build();
+
+        // Creamos el evento de Spring que simula la intercepción
+        com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent evento = 
+            new com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent(this, viajeDePrueba);
+
+        // Act: Hacemos que el interceptor escuche el evento y actúe
+        listener.onCambioEstado(evento);
+
+        // Assert: Validamos mediante Mockito que el servicio fue llamado al menos 1 vez
+        verify(notifServiceMock, times(1)).enviarNotificacion(
+                anyString(), // No nos importa a qué mail
+                anyString(), // No nos importa el asunto
+                anyString()  // No nos importa el cuerpo del mensaje
+        );
+    }
+    // =========================================================
+    // TICKET #223: Pruebas de validación de disponibilidad (AHORA SÍ!)
+    // =========================================================
+    @Test
+    public void asignarTransporte_ChoferYaOcupado_DeberiaLanzarExcepcion() {
+        // Arrange: Preparamos el DTO con los campos que REALMENTE existen
+        com.logitrack.sistema_logistica.dto.AsignarTransporteDTO dto = new com.logitrack.sistema_logistica.dto.AsignarTransporteDTO();
+        dto.setIdChofer(999);
+        dto.setPatenteCamion("ABC-123"); // <--- ¡ESTE ES EL CAMPO REAL!
+
+        // Simulamos que el repositorio encuentra el chofer y que su estado es OCUPADO
+        com.logitrack.sistema_logistica.model.ChoferDetalle choferOcupado = new com.logitrack.sistema_logistica.model.ChoferDetalle();
+        choferOcupado.setIdChofer(999);
+        choferOcupado.setDisponible(false); // Chofer ocupado
+
+        org.mockito.Mockito.lenient().when(choferDetalleRepository.findById(999)).thenReturn(java.util.Optional.of(choferOcupado));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            envioService.asignarTransporte("LT-1000", dto);
+        });
+        
+        // Verificamos que no se guardó nada
+        verify(envioRepository, never()).save(any());
+    }
 }

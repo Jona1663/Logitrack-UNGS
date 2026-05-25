@@ -1,6 +1,7 @@
 package com.logitrack.sistema_logistica.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
+import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.dto.ReporteCumplimientoResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -134,5 +136,90 @@ public class ReporteServiceTest {
         assertNotNull(reporte);
         assertEquals(1, reporte.getMetricas().getTotalEntregados());
         assertEquals(1, reporte.getMetricas().getEntregadosATiempo());
+    }
+
+    // =========================================================
+    // TICKET #236: Pruebas de cálculo de Reporte Operativo (Volumen y Viajes)
+    // =========================================================
+
+    @Test
+    public void obtenerReporte_ConFechas_SumaKilosYCuentaBien() {
+        // Arrange: Simulamos un filtro de fechas
+        LocalDate inicio = LocalDate.of(2026, 1, 1);
+        LocalDate fin = LocalDate.of(2026, 1, 31);
+        LocalDateTime inicioDt = inicio.atStartOfDay();
+        LocalDateTime finDt = fin.atTime(23, 59, 59);
+
+        // Simulamos que la base de datos nos dice que hubo 15 viajes y pesaron 25.000 kg
+        when(envioRepository.countEntreFechas(inicioDt, finDt)).thenReturn(15L);
+        when(envioRepository.sumKilosEntreFechas(inicioDt, finDt)).thenReturn(25000L);
+
+        // Act: Ejecutamos el método
+        ReporteSimpleDTO resultado = reporteService.obtenerReporte(inicio, fin);
+
+        // Assert: Validamos que los cálculos sean correctos
+        assertNotNull(resultado);
+        assertEquals(15L, resultado.getTotalViajes());
+        assertEquals(25000L, resultado.getTotalKilos());
+    }
+
+    @Test
+    public void obtenerReporte_SinFechas_TraeHistoricoCompleto() {
+        // Arrange: Simulamos que no mandaron fechas (piden todo el histórico)
+        when(envioRepository.count()).thenReturn(50L);
+        when(envioRepository.sumKilos()).thenReturn(100000L);
+
+        // Act: Le pasamos null a las fechas
+        ReporteSimpleDTO resultado = reporteService.obtenerReporte(null, null);
+
+        // Assert
+        assertNotNull(resultado);
+        assertEquals(50L, resultado.getTotalViajes());
+        assertEquals(100000L, resultado.getTotalKilos());
+    }
+
+    @Test
+    public void obtenerReportePorEstados_Ultimos7Dias_CuentaEstados() {
+        // Arrange: Creamos estados simulados
+        ReporteEstadoDTO estadoPendiente = mock(ReporteEstadoDTO.class);
+        when(estadoPendiente.getEstado()).thenReturn("PENDIENTE");
+        when(estadoPendiente.getCantidadEnvios()).thenReturn(10L);
+
+        ReporteEstadoDTO estadoEntregado = mock(ReporteEstadoDTO.class);
+        when(estadoEntregado.getEstado()).thenReturn("ENTREGADO");
+        when(estadoEntregado.getCantidadEnvios()).thenReturn(25L);
+
+        // OJO ACÁ: Como el código usa "LocalDateTime.now()" por dentro, los milisegundos 
+        // nunca van a coincidir exactos. Por eso usamos "any(LocalDateTime.class)" para atajarlo.
+        when(envioRepository.obtenerMetricasPorEstadoEntreFechas(any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(estadoPendiente, estadoEntregado));
+
+        // Act
+        List<ReporteEstadoDTO> resultados = reporteService.obtenerReportePorEstados("ULTIMOS_7_DIAS");
+
+        // Assert
+        assertEquals(2, resultados.size());
+        assertEquals("PENDIENTE", resultados.get(0).getEstado());
+        assertEquals(10L, resultados.get(0).getCantidadEnvios());
+        assertEquals("ENTREGADO", resultados.get(1).getEstado());
+        assertEquals(25L, resultados.get(1).getCantidadEnvios());
+    }
+
+    @Test
+    public void obtenerReportePorEstados_Historico_CuentaEstados() {
+        // Arrange: Creamos un estado simulado para el histórico general
+        ReporteEstadoDTO estadoMock = mock(ReporteEstadoDTO.class);
+        when(estadoMock.getEstado()).thenReturn("EN_TRANSITO");
+        when(estadoMock.getCantidadEnvios()).thenReturn(5L);
+
+        when(envioRepository.obtenerMetricasPorEstado()).thenReturn(List.of(estadoMock));
+
+        // Act: Le pasamos cualquier cosa que no sea "ULTIMOS_7_DIAS" (o null)
+        List<ReporteEstadoDTO> resultados = reporteService.obtenerReportePorEstados("HISTORICO_COMPLETO");
+
+        // Assert
+        assertEquals(1, resultados.size());
+        assertEquals("EN_TRANSITO", resultados.get(0).getEstado());
+        assertEquals(5L, resultados.get(0).getCantidadEnvios());
     }
 }
