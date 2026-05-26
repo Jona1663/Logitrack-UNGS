@@ -335,31 +335,48 @@
                         throw new RuntimeException(
                                         "Validación fallida: No se pueden modificar los datos de un viaje que ya comenzó.");
                 }
-
                 java.time.LocalDate hoy = java.time.LocalDate.now();
-
-                ChoferDetalle nuevoChofer = choferDetalleRepository.findById(dto.getIdChofer())
-                                .orElseThrow(() -> new RuntimeException("Nuevo chofer no encontrado"));
-                validacionExternaService.verificarLicenciaChofer(hoy, nuevoChofer);
-
-                Camion nuevoCamion = camionRepository.findById(dto.getPatenteCamion())
-                                .orElseThrow(() -> new RuntimeException("Nuevo camión no encontrado"));
-                validacionExternaService.verificarHabilitacionSenasa(hoy, nuevoCamion);
-
-                envioExistente.setChofer(nuevoChofer);
-                envioExistente.setCamion(nuevoCamion);
-                envioExistente.setTipoGrano(dto.getTipoGrano());
-                envioExistente.setPrioridadIa(dto.getPrioridadIa());
-                envioExistente.setKgOrigen(dto.getKgOrigen());
-
                 EstadoEnvio estadoActual = envioExistente.getEstadoActual();
 
+                // 1. ACTUALIZACIÓN SELECTIVA DE CHOFER
+                if (dto.getIdChofer() != null) {
+                        ChoferDetalle nuevoChofer = choferDetalleRepository.findById(dto.getIdChofer())
+                        .orElseThrow(() -> new RuntimeException("Nuevo chofer no encontrado"));
+                        validacionExternaService.verificarLicenciaChofer(hoy, nuevoChofer);
+                        envioExistente.setChofer(nuevoChofer);
+                }// Si es null, no entra acá y preserva el chofer que ya tenía.
+
+                // 2. ACTUALIZACIÓN SELECTIVA DE CAMIÓN
+                if (dto.getPatenteCamion() != null && !dto.getPatenteCamion().isBlank()) {
+                        Camion nuevoCamion = camionRepository.findById(dto.getPatenteCamion())
+                        .orElseThrow(() -> new RuntimeException("Nuevo camión no encontrado"));
+                validacionExternaService.verificarHabilitacionSenasa(hoy, nuevoCamion);
+                envioExistente.setCamion(nuevoCamion);
+                } // Si es null o blank, no entra acá y preserva el camión que ya tenía.
+                
+                // 3. ACTUALIZACIÓN SELECTIVA DE TIPO DE GRANO
+                if (dto.getTipoGrano() != null) {
+                        envioExistente.setTipoGrano(dto.getTipoGrano());
+                }// Si es null, no entra acá y preserva el tipo de grano que ya tenía.  
+                
+                // 4. ACTUALIZACIÓN SELECTIVA DE PRIORIDAD
+                if (dto.getPrioridadIa() != null && !dto.getPrioridadIa().isBlank()) {
+                        envioExistente.setPrioridadIa(dto.getPrioridadIa());
+                } // Si es null o blank, no entra acá y preserva la prioridad que ya tenía.
+
+                // 5. ACTUALIZACIÓN SELECTIVA DE KILOS ORIGEN
+                if (dto.getKgOrigen() != null && dto.getKgOrigen() > 0) {
+                        envioExistente.setKgOrigen(dto.getKgOrigen());
+                } // Si es null o no positivo, no entra acá y preserva los kg origen que ya tenía.      
+
+                // Guardamos los cambios consolidados
                 Envio envioGuardado = envioRepository.save(envioExistente);
 
+                // Construimos el historial de auditoría
                 // Buscamos el usuario operador/supervisor que edita el envio
                 Usuario usuarioModificador = usuarioRepository.findByUsername(username)
-                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado para auditoría"));
-
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado para auditoría"));
+                
                 // construimos el historial
                 auditoriaService.registrarEvento(
                                         envioGuardado, 
@@ -367,8 +384,7 @@
                                         TipoEvento.DATOS_ACTUALIZADOS, 
                                         estadoActual, 
                                         estadoActual
-                                );
-
+                );
                 return envioGuardado;
         }
 
