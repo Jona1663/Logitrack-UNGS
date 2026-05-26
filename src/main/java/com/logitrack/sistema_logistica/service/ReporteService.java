@@ -106,25 +106,52 @@ public class ReporteService {
         List<Envio> enviosCompletados = envioRepository.obtenerEnviosCompletadosParaCumplimiento(inicio, fin);
         List<ViajeCumplimientoDTO> viajesProcesados = new ArrayList<>();
 
+
+        /*
+        // ⚠️ LÍNEAS TEMPORALES PARA PROBAR EL BUG #238 
+        if (enviosCompletados.isEmpty()) {
+        Envio envioFalsoConEstadoNulo = Envio.builder()
+            .idEnvio("LT-TEST-NULL")
+            .estadoActual(null) // <-- Forzamos el estado en nulo
+            .fechaEstimadaLlegada(LocalDateTime.now())
+            .fechaLlegada(LocalDateTime.now().plusHours(2))
+            .build();
+        enviosCompletados = new java.util.ArrayList<>();
+        enviosCompletados.add(envioFalsoConEstadoNulo);
+}       */
+
         // 2. Iteramos cada envío para calcular la diferencia exacta contra el ETA
         for (Envio envio : enviosCompletados) {
+
+                // Salto seguro por si viene un objeto nulo de la lista
+                if (envio == null) continue;    
+
                 // Calculamos la diferencia en minutos entre la entrega real y el ETA
-                // Si el resultado es positivo, significa que llegó después del ETA (Retraso)
-                long minutosDiferencia = ChronoUnit.MINUTES.between(envio.getFechaEstimadaLlegada(), envio.getFechaLlegada());
-                
+                long minutosDiferencia = 0;
+                if (envio.getFechaEstimadaLlegada() != null && envio.getFechaLlegada() != null) {
+                        minutosDiferencia = ChronoUnit.MINUTES.between(envio.getFechaEstimadaLlegada(), envio.getFechaLlegada());
+                }
+
                 double horasDesvio = 0.0;
                 boolean esRetrasado = false;
 
                 if (minutosDiferencia > 0) {
-                // Pasamos los minutos a horas con decimales (ej: 90 minutos -> 1.5 horas)
-                horasDesvio = minutosDiferencia / 60.0;
-                esRetrasado = true;
+                        // Pasamos los minutos a horas con decimales (ej: 90 minutos -> 1.5 horas)
+                        horasDesvio = minutosDiferencia / 60.0;
+                        esRetrasado = true;
                 }
+
+                // --- SOLUCIÓN AL BUG #238 ---
+                // Evaluamos de forma segura si el estado es nulo antes de transformarlo a String
+                String estadoFormateado = (envio.getEstadoActual() != null) 
+                        ? envio.getEstadoActual().toString() 
+                        : "DESCONOCIDO";
+
 
                 // 3. Mapeamos los datos calculados al DTO individual
                 ViajeCumplimientoDTO dto = ViajeCumplimientoDTO.builder()
                         .idEnvio(envio.getIdEnvio()) // O el campo identificador que uses
-                        .estadoActual(envio.getEstadoActual().toString())
+                        .estadoActual(estadoFormateado)
                         .fechaEstimadaLlegada(envio.getFechaEstimadaLlegada())
                         .fechaEntregaReal(envio.getFechaLlegada())
                         .esRetrasado(esRetrasado)
