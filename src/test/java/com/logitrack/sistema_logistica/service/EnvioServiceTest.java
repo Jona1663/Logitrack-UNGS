@@ -837,7 +837,7 @@ public class EnvioServiceTest {
         );
     }
     // =========================================================
-    // TICKET #223: Pruebas de validación de disponibilidad (AHORA SÍ!)
+    // TICKET #223: Pruebas de validación de disponibilidad 
     // =========================================================
     @Test
     public void asignarTransporte_ChoferYaOcupado_DeberiaLanzarExcepcion() {

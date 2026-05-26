@@ -22,6 +22,7 @@ import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
+import com.logitrack.sistema_logistica.dto.ViajeCumplimientoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteCumplimientoResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -221,5 +222,59 @@ public class ReporteServiceTest {
         assertEquals(1, resultados.size());
         assertEquals("EN_TRANSITO", resultados.get(0).getEstado());
         assertEquals(5L, resultados.get(0).getCantidadEnvios());
+    }
+    // =========================================================
+    // TICKET #243: Pruebas de lógica de cálculo (A tiempo, Retraso, Nulos)
+    // =========================================================
+    @Test
+    public void testCalcularDesvios_TodosLosEscenarios() {
+        // Arrange: Preparamos la fecha base
+        LocalDateTime fechaETA = LocalDateTime.now();
+
+        // 1. Envío A TIEMPO (Llega justo a la hora pactada)
+        Envio envioATiempo = mock(Envio.class);
+        when(envioATiempo.getIdEnvio()).thenReturn("LT-1");
+        when(envioATiempo.getEstadoActual()).thenReturn(EstadoEnvio.ENTREGADO);
+        when(envioATiempo.getFechaEstimadaLlegada()).thenReturn(fechaETA);
+        when(envioATiempo.getFechaLlegada()).thenReturn(fechaETA); // Justo a tiempo
+
+        // 2. Envío RETRASADO (Llega 2 horas después del ETA)
+        Envio envioRetrasado = mock(Envio.class);
+        when(envioRetrasado.getIdEnvio()).thenReturn("LT-2");
+        when(envioRetrasado.getEstadoActual()).thenReturn(EstadoEnvio.ENTREGADO);
+        when(envioRetrasado.getFechaEstimadaLlegada()).thenReturn(fechaETA);
+        when(envioRetrasado.getFechaLlegada()).thenReturn(fechaETA.plusHours(2)); // 2 horas tarde
+
+        // 3. Envío con ESTADO NULO (La prueba de fuego que antes rompía todo)
+        Envio envioNulo = mock(Envio.class);
+        when(envioNulo.getIdEnvio()).thenReturn("LT-3");
+        when(envioNulo.getEstadoActual()).thenReturn(null); // ACÁ ESTÁ EL NULO
+        when(envioNulo.getFechaEstimadaLlegada()).thenReturn(fechaETA);
+        when(envioNulo.getFechaLlegada()).thenReturn(fechaETA);
+
+        // Simulamos que la base de datos nos devuelve estos 3 casos
+        when(envioRepository.obtenerEnviosCompletadosParaCumplimiento(any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(List.of(envioATiempo, envioRetrasado, envioNulo));
+
+        // Act: Ejecutamos el método. ¡Ahora sí tiene que pasar limpio!
+        List<ViajeCumplimientoDTO> resultados = reporteService.calcularDesviosYCumplimiento(LocalDate.now(), LocalDate.now());
+
+        // Assert: Verificamos que procesó los 3 sin explotar
+        assertEquals(3, resultados.size(), "Debería procesar los 3 envíos sin fallar");
+
+        // Verificamos que el cálculo del 'A Tiempo' es correcto
+        ViajeCumplimientoDTO dtoATiempo = resultados.stream().filter(v -> v.getIdEnvio().equals("LT-1")).findFirst().get();
+        assertFalse(dtoATiempo.isEsRetrasado());
+        assertEquals(0.0, dtoATiempo.getDesvioHoras());
+
+        // Verificamos que el cálculo del 'Retrasado' da 2 horitas
+        ViajeCumplimientoDTO dtoRetrasado = resultados.stream().filter(v -> v.getIdEnvio().equals("LT-2")).findFirst().get();
+        assertTrue(dtoRetrasado.isEsRetrasado());
+        assertEquals(2.0, dtoRetrasado.getDesvioHoras());
+
+        // Verificamos el 'Nulo'. Validamos que el arreglo de Nico funcionó y le puso "DESCONOCIDO"
+        ViajeCumplimientoDTO dtoNulo = resultados.stream().filter(v -> v.getIdEnvio().equals("LT-3")).findFirst().get();
+        assertNotNull(dtoNulo);
+        assertEquals("DESCONOCIDO", dtoNulo.getEstadoActual());
     }
 }

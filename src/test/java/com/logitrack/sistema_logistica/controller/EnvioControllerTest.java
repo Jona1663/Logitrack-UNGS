@@ -39,6 +39,14 @@ public class EnvioControllerTest {
     private EnvioService envioService;
 
     @Mock
+    private com.logitrack.sistema_logistica.repository.EnvioRepository envioRepository;
+
+    @Mock
+    private com.logitrack.sistema_logistica.repository.UsuarioRepository usuarioRepository;
+
+    @Mock
+    private com.logitrack.sistema_logistica.repository.HistorialEstadosRepository historialEstadosRepository;
+    @Mock
     private AuditoriaService auditoriaService;
 
     // Inyectamos los mocks directamente en el controlador limpio
@@ -224,4 +232,159 @@ public class EnvioControllerTest {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message").value("Error al obtener el historial: Error de base de datos inesperado"));
     }
 
+    // ==========================================
+    // TESTS ADICIONALES DE COBERTURA
+    // ==========================================
+
+    @Test
+    public void listarEnvios_DeberiaRetornarListaVaciaYStatus200() throws Exception {
+        when(envioRepository.findAll()).thenReturn(java.util.Collections.emptyList());
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void obtenerHistorialCompleto_DeberiaRetornarStatus200() throws Exception {
+        when(historialEstadosRepository.findAll()).thenReturn(java.util.Collections.emptyList());
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/historial-completo"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void crearEnvio_ConDatosValidos_DeberiaRetornarStatus201() throws Exception {
+        com.logitrack.sistema_logistica.model.Usuario mockUsuario = new com.logitrack.sistema_logistica.model.Usuario();
+        mockUsuario.setIdUsuario(1);
+        when(usuarioRepository.findByUsername(any())).thenReturn(java.util.Optional.of(mockUsuario));
+        
+        Authentication authMock = mock(Authentication.class);
+        when(authMock.getName()).thenReturn("operador_test");
+        when(envioService.crearNuevoEnvio(any())).thenReturn(new Envio());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/envios")
+                .principal(authMock)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated());
+    }
+
+    @Test
+    public void obtenerEnvioPorTracking_CuandoNoExiste_DeberiaRetornar404() throws Exception {
+        when(envioService.buscarPorId(any())).thenThrow(new RuntimeException("No encontrado"));
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/buscar/LT-999"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
+    }
+    @Test
+    public void cancelarEnvio_ConIdValido_DeberiaRetornar200() throws Exception {
+        java.security.Principal principalMock = mock(java.security.Principal.class);
+        when(principalMock.getName()).thenReturn("supervisor_test");
+        when(envioService.cancelarEnvio(any(), any())).thenReturn(new Envio());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/envios/LT-1/cancelar")
+               .principal(principalMock))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void editarEnvio_ConDatosValidos_DeberiaRetornar200() throws Exception {
+        java.security.Principal principalMock = mock(java.security.Principal.class);
+        when(principalMock.getName()).thenReturn("operador_test");
+        when(envioService.editarEnvio(any(), any(), any())).thenReturn(new Envio());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/envios/LT-1")
+               .principal(principalMock)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content("{}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void listarSinAsignar_DeberiaRetornarStatus200() throws Exception {
+        when(envioRepository.findEnviosSinAsignar()).thenReturn(java.util.Collections.emptyList());
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/sin-asignar"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void asignarTransporte_ConDatosValidos_DeberiaRetornar200() throws Exception {
+        when(envioService.asignarTransporte(any(), any())).thenReturn(new Envio());
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/envios/LT-1/asignar-transporte")
+               .contentType(MediaType.APPLICATION_JSON)
+               .content("{}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void actualizarOperativaEnvio_DeberiaRetornarStatus200() throws Exception {
+        Authentication authMock = mock(Authentication.class);
+        when(envioService.actualizarEstadoOperativo(any(), any(), any())).thenReturn(new Envio());
+        
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/envios/LT-1/operativo")
+               .principal(authMock)
+               .contentType(MediaType.APPLICATION_JSON)
+               .content("{}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+@org.junit.jupiter.api.Test
+    public void cobertura_listarEnviosVacio() throws Exception {
+        org.mockito.Mockito.when(envioRepository.findAll()).thenReturn(java.util.Collections.emptyList());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void cobertura_historialCompleto() throws Exception {
+        org.mockito.Mockito.when(historialEstadosRepository.findAll()).thenReturn(java.util.Collections.emptyList());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/historial-completo"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void cobertura_buscarEnvioError() throws Exception {
+        org.mockito.Mockito.when(envioService.buscarPorId(org.mockito.ArgumentMatchers.anyString()))
+               .thenThrow(new RuntimeException("No existe"));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/buscar/LT-999"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void cobertura_cancelarEnvioError() throws Exception {
+        java.security.Principal principal = org.mockito.Mockito.mock(java.security.Principal.class);
+        org.mockito.Mockito.when(principal.getName()).thenReturn("admin");
+        org.mockito.Mockito.when(envioService.cancelarEnvio(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+               .thenThrow(new RuntimeException("Fallo al cancelar"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/envios/LT-1/cancelar")
+               .principal(principal))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void cobertura_asignarTransporteError() throws Exception {
+        org.mockito.Mockito.when(envioService.asignarTransporte(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any()))
+               .thenThrow(new RuntimeException("Fallo al asignar"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/envios/LT-1/asignar-transporte")
+               .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+               .content("{}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @org.junit.jupiter.api.Test
+    public void cobertura_operativoError() throws Exception {
+        org.springframework.security.core.Authentication auth = org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
+        org.mockito.Mockito.when(envioService.actualizarEstadoOperativo(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+               .thenThrow(new RuntimeException("Fallo operativo"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/envios/LT-1/operativo")
+               .principal(auth)
+               .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+               .content("{}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+    }
 }
