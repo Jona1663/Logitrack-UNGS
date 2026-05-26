@@ -70,7 +70,7 @@ public class Envio {
 
     private Integer kgDestino;
 
-    @CreationTimestamp
+    //@CreationTimestamp
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
