@@ -39,4 +39,7 @@ public class EmpresaCliente {
 
     @Column(name = "vto_ruca")
     private LocalDate vtoRuca;
+
+    @Column(name = "email", length = 150)
+    private String email;
 }

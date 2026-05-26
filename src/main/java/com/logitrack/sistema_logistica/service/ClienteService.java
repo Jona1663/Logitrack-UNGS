@@ -33,6 +33,7 @@ public class ClienteService {
             .cuit(dto.cuit())
             .razonSocial(dto.razonSocial().trim())
             .tipoEmpresa(TipoEmpresa.valueOf(dto.tipoEmpresa()))
+            .email(dto.email())
             .rucaNro(dto.rucaNro())
             .vtoRuca(dto.vtoRuca() != null ? LocalDate.parse(dto.vtoRuca()) : null)
             .build();

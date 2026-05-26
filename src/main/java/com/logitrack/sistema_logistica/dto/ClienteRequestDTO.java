@@ -1,5 +1,6 @@
 package com.logitrack.sistema_logistica.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -20,6 +21,9 @@ public record ClienteRequestDTO(
     @NotBlank(message = "El tipo de empresa es obligatorio")
     String tipoEmpresa,
 
+    @Email(message = "El formato del email no es válido")
+    String email,
+    
     // Campos opcionales
     String rucaNro,
     String vtoRuca,    // Se recibe como String "YYYY-MM-DD" y se convierte en el servicio
