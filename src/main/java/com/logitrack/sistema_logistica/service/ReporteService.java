@@ -79,6 +79,15 @@ public class ReporteService {
                 return envioRepository.obtenerMetricasPorEstado();
         }
 
+        @Transactional(readOnly = true)
+        public List<ReporteEstadoDTO> obtenerReportePorEstadosPorFechas(LocalDate fechaInicio, LocalDate fechaFin) {
+                LocalDateTime inicio = fechaInicio.atStartOfDay();
+                LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+                return envioRepository.obtenerMetricasPorEstadoEntreFechas(inicio, fin);
+        }
+
+
+
         // Para obtener métricas por grano
         @Transactional(readOnly = true)
         public List<ReporteGranoDTO> obtenerReportePorGrano(LocalDate fechaInicio, LocalDate fechaFin) {
@@ -220,7 +229,7 @@ public class ReporteService {
         // El CSV tendrá columnas: ID Envío, Estado, Fecha ETA, Fecha Entrega Real, Retrasado (SI/NO), Desvío en Horas
         // El formato de fecha en el CSV será "dd/MM/yyyy HH:mm" para que sea legible en Excel
         // El método devuelve un String con el contenido del CSV, que luego el controlador puede enviar como respuesta con el tipo de contenido adecuado
-        // Ejemplo de uso en el controlador: GET /api/reportes/v1/cumplimiento/exportar?fechaInicio=2024-01-01&fechaFin=2024-01-31
+        // Ejemplo de uso en el controlador: GET /api/reportes/cumplimiento/exportar?fechaInicio=2024-01-01&fechaFin=2024-01-31
         // El controlador llamaría a este método para obtener el CSV y luego lo enviaría con el header "Content-Disposition: attachment; filename=reporte_cumplimiento.csv"
         // Nota: Este método no maneja la respuesta HTTP directamente, solo genera el contenido del CSV. El controlador es responsable de configurar los headers y el tipo de contenido.
 

@@ -89,7 +89,7 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerMetricasATiempo(fechaInicio, fechaFin));
     }
 
-    //237 exponemos la ruta GET /api/v1/cumplimiento que devuelve un ReporteCumplimientoResponse 
+    //237 exponemos la ruta GET /api/reportes/cumplimiento que devuelve un ReporteCumplimientoResponse 
     // con las métricas de cumplimiento y la lista de viajes para el período indicado.
     // El ReporteCumplimientoResponse incluye:
     // - porcentajeCumplimiento: el porcentaje de viajes que llegaron a tiempo (entrega real <= ETA)
@@ -97,7 +97,7 @@ public class ReporteController {
     // - viajes: una lista de ViajeCumplimientoDTO que contiene el detalle de cada viaje, incluyendo el cálculo del desvío en horas y si fue retrasado o no.
     // El cálculo del porcentaje de cumplimiento se hace dividiendo la cantidad de viajes a tiempo por el total de viajes completados en el período, multiplicado por 100.  
     // El cálculo del desvío promedio en horas se hace sumando el desvío en horas de cada viaje (positivo si llegó después del ETA, negativo si llegó antes) y dividiendo por la cantidad total de viajes completados.  
-    @GetMapping("/v1/cumplimiento")
+    @GetMapping("/cumplimiento")
     public ResponseEntity<ReporteCumplimientoResponse> getReporteCumplimiento(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -156,16 +156,6 @@ public class ReporteController {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
     // Endpoint B: Exportación de Cumplimiento
     @GetMapping("/cumplimiento/viajes/exportar")
     public void exportarReporteCumplimientoCsv(
@@ -185,6 +175,16 @@ public class ReporteController {
             response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    @GetMapping("/estadosPorFechas")
+    public ResponseEntity<List<ReporteEstadoDTO>> obtenerReportePorEstadosPorFechas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteService.obtenerReportePorEstadosPorFechas(fechaInicio, fechaFin));
+    }
+
+
+
 
 
 
