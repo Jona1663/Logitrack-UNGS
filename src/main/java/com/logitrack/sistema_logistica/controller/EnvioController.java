@@ -409,8 +409,7 @@ public class EnvioController {
     // }
 
     // endopitn cancelar envio
-    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')") // Descomentar cuando
-    // actives la seguridad por roles
+    @PreAuthorize("hasRole('SUPERVISOR')") // Solo el supervisor puede cancelar un envío
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<?> cancelarEnvio(@PathVariable String id, Principal principal) {
         try {

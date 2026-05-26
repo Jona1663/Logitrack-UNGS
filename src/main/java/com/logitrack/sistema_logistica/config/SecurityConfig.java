@@ -55,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/envios/search").hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/envios/*/operativo").hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/envios/*/asignar-transporte").hasAnyRole("OPERADOR", "SUPERVISOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/envios/*/cancelar").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/envios/*/cancelar").hasAnyRole("SUPERVISOR")
                         .requestMatchers(HttpMethod.GET, "/api/catalogos/**").hasAnyRole("OPERADOR", "SUPERVISOR")
 
                         // Envío por ID — todos los roles autenticados 
