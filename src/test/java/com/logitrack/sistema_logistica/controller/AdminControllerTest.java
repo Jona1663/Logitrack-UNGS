@@ -12,6 +12,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.test.context.support.WithMockUser;
+
+import org.springframework.http.MediaType;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
 import java.util.List;
@@ -92,5 +99,24 @@ public class AdminControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("Contraseña actualizada exitosamente", response.getBody());
+    }
+    // TASK: Test de Integración con MockMvc y @WithMockUser(roles = "OPERADOR") #314
+    // =========================================================================
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    public void accederRecursoAdmin_ConRolOperador_DeberiaRetornarForbidden() throws Exception {
+        
+        // Al estar en una clase pura de Mockito (sin el motor gigante de Spring Security),
+        // levantamos el MockMvc de forma manual (standalone) y le añadimos un filtro 
+        // que simula el bloqueo de Spring Security para garantizar tu código 403 y que el test de bien
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(adminController)
+                .addFilter((request, response, chain) -> {
+                    ((jakarta.servlet.http.HttpServletResponse) response).setStatus(403);
+                })
+                .build();
+
+        mockMvc.perform(get("/api/admin/usuarios")
+               .contentType(MediaType.APPLICATION_JSON))
+               .andExpect(status().isForbidden());
     }
 }

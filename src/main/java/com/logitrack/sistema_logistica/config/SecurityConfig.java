@@ -110,8 +110,8 @@ public class SecurityConfig {
 
         // 2. Al estar en false, PODEMOS usar el comodín global
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000",
-                "https://logitrack-m9yq.vercel.app",
-                "https://logitrack-m9yq-ikogy7mnd-logi-track-s-projects.vercel.app"));
+                "https://logitrackagro.vercel.app",
+                "https://logitrackagro-git-main-logi-track-s-projects.vercel.app"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
