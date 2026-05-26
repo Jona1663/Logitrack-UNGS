@@ -26,8 +26,11 @@ import com.logitrack.sistema_logistica.dto.ViajeCumplimientoDTO;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class ReporteService {
@@ -287,6 +290,12 @@ public class ReporteService {
         @Transactional(readOnly = true)
         public void exportarReporteOperativoCsv(LocalDate fechaInicio, LocalDate fechaFin, java.io.Writer writer) throws java.io.IOException {
                 ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
+
+                // --- CUMPLIENDO EL PUNTO 4: Si no hay datos, lanzamos excepción para que el controlador devuelva un JSON ---
+                if (totales == null || totales.getTotalViajes() == 0) {
+                        throw new RuntimeException("No hay viajes operativos para exportar en este período.");
+                }
+
                 List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
                         envioRepository.obtenerMetricasPorEstadoEntreFechas(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)) : 
                         envioRepository.obtenerMetricasPorEstado();
@@ -294,18 +303,42 @@ public class ReporteService {
                 // BOM UTF-8 para Excel
                 writer.write('\ufeff');
 
-                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.EXCEL.builder()
-                        .setDelimiter(';')
+
+                // --- CUMPLIENDO EL PUNTO 3: Cambiamos al formato DEFAULT (separado por comas ,) ---
+                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.DEFAULT.builder()
                         .setHeader("Métrica", "Valor")
                         .build();
 
-                try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
-                printer.printRecord("Total de Viajes", totales.getTotalViajes());
-                printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
-                
-                for (ReporteEstadoDTO e : estados) {
-                        printer.printRecord("Estado: " + e.getEstado(), e.getCantidadEnvios());
+                // Pasamos la lista de la BD a un mapa para buscar rápido por clave mapeando a Mayúsculas
+                java.util.Map<String, Long> mapaEstados = new java.util.HashMap<>();
+                if (estados != null) {
+                        for (ReporteEstadoDTO e : estados) {
+                                if (e.getEstado() != null) {
+                                        mapaEstados.put(e.getEstado().toString().toUpperCase(), e.getCantidadEnvios());
+                                }
+                        }
                 }
+
+
+                try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
+                        // Métricas globales
+                        printer.printRecord("Total de Viajes", totales.getTotalViajes());
+                        printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
+                        
+                        // --- CUMPLIENDO EL PUNTO 3: Filas fijas con los nombres exactos requeridos por el Frontend ---
+                        // Usamos .getOrDefault para asegurar que si el estado tiene 0 viajes, imprima la fila con 0 en vez de desaparecer.
+                        printer.printRecord("Estado: Pendientes", mapaEstados.getOrDefault("PENDIENTE", 0L));
+                        printer.printRecord("Estado: En Tránsito", mapaEstados.getOrDefault("EN_TRANSITO", 0L));
+                        printer.printRecord("Estado: En Punto de Recolección", mapaEstados.getOrDefault("EN_PUNTO_RECOLECCION", 0L));
+                        printer.printRecord("Estado: Entregados", mapaEstados.getOrDefault("ENTREGADO", 0L));
+                        printer.printRecord("Estado: Cancelados", mapaEstados.getOrDefault("CANCELADO", 0L));
+
+
+                        /* 
+                        for (ReporteEstadoDTO e : estados) {
+                                printer.printRecord("Estado: " + e.getEstado(), e.getCantidadEnvios());
+                        }
+                        */
                 printer.flush();
                 }
         }

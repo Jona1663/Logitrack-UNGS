@@ -105,8 +105,9 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerReporteCumplimiento(fechaInicio, fechaFin));
     }
 
-
+    /*
     // Endpoint A: Exportación Operativa
+    //Opcion 1
     @GetMapping("/operativo/exportar")
     public void exportarReporteOperativoCsv(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
@@ -125,6 +126,45 @@ public class ReporteController {
             response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
         }
     }
+    */
+    //Opcion 2
+
+    @GetMapping("/operativo/exportar")
+    public void exportarReporteOperativoCsv(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        
+        try {
+            // --- CUMPLIENDO EL PUNTO 1: Configurar cabeceras de descarga ---
+            response.setContentType("text/csv; charset=utf-8");
+            String fechaHoy = java.time.LocalDate.now().toString();
+            response.setHeader("Content-Disposition", "attachment; filename=\"Logitrack_ReporteOperativo_" + fechaHoy + ".csv\"");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+            // Llamamos al servicio pasando el writer de la respuesta HTTP
+            reporteService.exportarReporteOperativoCsv(fechaInicio, fechaFin, response.getWriter());
+
+        } catch (RuntimeException e) {
+            // --- CUMPLIENDO EL PUNTO 4: Si salta el error de datos vacíos, limpiamos la respuesta y mandamos JSON con Error 400 ---
+            response.reset();
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+            response.getWriter().flush();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 
     // Endpoint B: Exportación de Cumplimiento
     @GetMapping("/cumplimiento/viajes/exportar")
