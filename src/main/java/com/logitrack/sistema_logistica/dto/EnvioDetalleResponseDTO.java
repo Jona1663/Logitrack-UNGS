@@ -19,7 +19,7 @@ public class EnvioDetalleResponseDTO {
     private TipoGrano tipoGrano;
     private Integer kgOrigen;
     private String prioridadIa;
-
+    private Long capacidadCargaKg;
     // Datos de origen y destino
     private String origenNombre;
     private String origenDireccion;

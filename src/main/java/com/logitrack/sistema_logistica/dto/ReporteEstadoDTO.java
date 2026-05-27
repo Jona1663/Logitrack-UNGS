@@ -1,19 +1,23 @@
 package com.logitrack.sistema_logistica.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
 
 public class ReporteEstadoDTO {
     private String estado;
     private Long cantidadEnvios;
     private Long kilos;
+    private Long capacidadCargaKg;
+
+    // ESTE ES EL CONSTRUCTOR QUE HIBERNATE NECESITA PARA TUS 3 PARÁMETROS
+    public ReporteEstadoDTO(String estado, Long cantidadEnvios, Long kilos) {
+        this.estado = estado;
+        this.cantidadEnvios = cantidadEnvios;
+        this.kilos = kilos;
+    }
 
 
     public String getEstado() {
@@ -39,4 +43,9 @@ public class ReporteEstadoDTO {
     public void setKilos(long kilos) {
         this.kilos = kilos;
     }
+
+    public Long getCapacidadCargaKg() {
+        return capacidadCargaKg;
+    }       
+
 }

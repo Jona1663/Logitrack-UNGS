@@ -29,6 +29,9 @@ public class Camion {
     @Column(name = "capacidad_Carga_kg", nullable = false)
     private Integer capacidadCargaKg;
 
+    @Column(name = "peso_bruto_max_kg")
+    private Integer pesoBrutoMaxKg;
+
     @Column(name = "disponible", nullable = false)
     private Boolean disponible = true;
 }

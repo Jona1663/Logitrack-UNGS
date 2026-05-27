@@ -15,6 +15,7 @@ public class EnvioResumenDTO {
     private EstadoEnvio estadoActual;
     private TipoGrano tipoGrano;
     private Integer kgOrigen;
+    private Long capacidadCargaKg;
     // private String origenNombre;
     // private String destinoNombre;
     private LugarResumenDTO origen; // Objeto anidado

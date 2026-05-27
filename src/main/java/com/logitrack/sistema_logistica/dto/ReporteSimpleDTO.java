@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class ReporteSimpleDTO {
     private long totalViajes;
     private long totalKilos;
+    private Long capacidadCargaKg;
 }
