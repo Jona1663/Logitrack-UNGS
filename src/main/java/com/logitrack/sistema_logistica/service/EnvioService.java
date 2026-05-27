@@ -1,45 +1,31 @@
         package com.logitrack.sistema_logistica.service;
 
-        import java.time.Duration;
         import java.time.LocalDate;
         import java.time.LocalDateTime;
         import java.util.Arrays;
-        import java.util.HashMap;
         import java.util.List;
         import java.util.Map;
-        import java.util.stream.Collectors;
-        import org.springframework.context.ApplicationEventPublisher;
-        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
-        import org.locationtech.jts.geom.Coordinate;
-        import org.locationtech.jts.geom.GeometryFactory;
-        import org.locationtech.jts.geom.LineString;
-        import org.locationtech.jts.linearref.LengthIndexedLine;
+
         import org.springframework.beans.factory.annotation.Autowired;
-        import org.springframework.beans.factory.annotation.Value;
+        import org.springframework.context.ApplicationEventPublisher;
         import org.springframework.data.domain.Page;
         import org.springframework.data.domain.Pageable;
         import org.springframework.data.jpa.domain.Specification;
-        import org.springframework.http.ResponseEntity;
         import org.springframework.security.core.Authentication;
         import org.springframework.stereotype.Service;
         import org.springframework.transaction.annotation.Transactional;
-        import org.springframework.web.client.HttpClientErrorException;
-        import org.springframework.web.client.RestTemplate;
 
         import com.fasterxml.jackson.databind.JsonNode;
-        import com.fasterxml.jackson.databind.ObjectMapper;
         import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
         import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
         import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
         import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
         import com.logitrack.sistema_logistica.model.Camion;
         import com.logitrack.sistema_logistica.model.ChoferDetalle;
-        import com.logitrack.sistema_logistica.model.EmpresaCliente;
         import com.logitrack.sistema_logistica.model.Envio;
         import com.logitrack.sistema_logistica.model.Establecimiento;
-        import com.logitrack.sistema_logistica.model.HistorialEstados;
-        import com.logitrack.sistema_logistica.model.RutaEnvio;
         import com.logitrack.sistema_logistica.model.Usuario;
         import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
         import com.logitrack.sistema_logistica.model.enums.TipoEvento;
@@ -256,7 +242,7 @@
 
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
-                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_REPARTO) {
+                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
                                         trackingService.generarYGuardarRuta(envio);
                                 }
 
@@ -472,6 +458,10 @@
         // 6. Asignar y guardar
         envio.setChofer(chofer);
         envio.setCamion(camion);
+        envio.setEstadoActual(estadosActivos.get(0));
+        envio.setPrioridadIa("ALTA");//hardcodeado por bug .
+        trackingService.generarYGuardarRuta(envio);
+
 
         // 7. Marcar como no disponibles (#222)
         chofer.setDisponible(false);

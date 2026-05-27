@@ -1,22 +1,24 @@
 package com.logitrack.sistema_logistica.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.RutaEnvio;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
-import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
-import lombok.RequiredArgsConstructor;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.linearref.LengthIndexedLine;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.RutaEnvio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +46,14 @@ public class TrackingGeospatialService {
             lonFin = envio.getOrigen().getLongitud();
         } else {
             // TRAMO 2: Origen -> Destino (Yendo a entregar)
+                        // TRAMO 2: Origen -> Destino (Yendo a entregar)
+            if (envio.getRutaEnvio() != null) {
+                // 1. La borramos de la base de datos
+                rutaEnvioRepository.delete(envio.getRutaEnvio());
+                rutaEnvioRepository.flush();
+                // 2. La desvinculamos del objeto en memoria para que JPA no intente volver a guardarla
+                envio.setRutaEnvio(null);                 
+            }
             latInicio = envio.getOrigen().getLatitud();
             lonInicio = envio.getOrigen().getLongitud();
             latFin = envio.getDestino().getLatitud();
@@ -58,17 +68,26 @@ public class TrackingGeospatialService {
         Long tiempoSegundos = pathData.path("time").asLong() / 1000L;
         String polylineJson = pathData.path("points").path("coordinates").toString();
 
-        // 3. Guardamos/Actualizamos la ruta en la base de datos
-        RutaEnvio nuevaRuta = RutaEnvio.builder()
-                .envio(envio)
-                .polylineJson(polylineJson)
-                .distanciaTotalKm(distanciaKm)
-                .duracionTotalSegundos(tiempoSegundos)
-                .build();
-        rutaEnvioRepository.save(nuevaRuta);
-        
+        RutaEnvio ruta = rutaEnvioRepository.findByEnvio(envio).orElse(null);
+
+        if (ruta == null) {
+            // Si el envío no tiene ruta (Ej: primer tramo), creamos una nueva
+            ruta = RutaEnvio.builder()
+                    .envio(envio)
+                    .polylineJson(polylineJson)
+                    .distanciaTotalKm(distanciaKm)
+                    .duracionTotalSegundos(tiempoSegundos)
+                    .build();
+        } else {
+            // Si el envío YA tiene ruta (Ej: segundo tramo), le pisamos los datos (UPDATE)
+            ruta.setPolylineJson(polylineJson);
+            ruta.setDistanciaTotalKm(distanciaKm);
+            ruta.setDuracionTotalSegundos(tiempoSegundos);
+        }
+        rutaEnvioRepository.save(ruta);
+
         // 4. Actualizamos el objeto Envio en memoria
-        envio.setRutaEnvio(nuevaRuta);
+        envio.setRutaEnvio(ruta);
         envio.setFechaSalida(LocalDateTime.now());
         envio.setFechaEstimadaLlegada(LocalDateTime.now().plusSeconds(tiempoSegundos));
     }
