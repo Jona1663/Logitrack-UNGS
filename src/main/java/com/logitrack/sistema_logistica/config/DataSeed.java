@@ -84,7 +84,7 @@ public class DataSeed implements CommandLineRunner {
             Usuario ch3 = usuarioRepository.saveAndFlush(Usuario.builder().username("chofer3")
                     .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(true).build());
             Usuario ch4 = usuarioRepository.saveAndFlush(Usuario.builder().username("chofer4")
-                    .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(true).build());
+                    .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(false).build());
                         
           Usuario adm1 = usuarioRepository.saveAndFlush(Usuario.builder().username("administrador1")
                     .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.ADMINISTRADOR).activo(true).build());

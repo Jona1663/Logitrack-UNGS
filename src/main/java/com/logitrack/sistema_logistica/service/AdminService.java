@@ -89,7 +89,6 @@ public class AdminService {
 
     public List<UsuarioResponseDTO> listarUsuarios() {
         return usuarioRepository.findAll().stream()
-                .filter(Usuario::getActivo)
                 .map(u -> {
                     Persona p = personaRepository.findById(u.getIdUsuario()).orElse(new Persona());
                     return UsuarioResponseDTO.builder()
