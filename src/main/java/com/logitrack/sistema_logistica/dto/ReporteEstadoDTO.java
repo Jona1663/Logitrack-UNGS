@@ -15,15 +15,6 @@ public class ReporteEstadoDTO {
     private String estado;
     private Long cantidadEnvios;
     private Long kilos;
-    private Long capacidadCargaKg;
-
-    // ESTE ES EL CONSTRUCTOR QUE HIBERNATE NECESITA PARA TUS 3 PARÁMETROS
-    public ReporteEstadoDTO(String estado, Long cantidadEnvios, Long kilos) {
-        this.estado = estado;
-        this.cantidadEnvios = cantidadEnvios;
-        this.kilos = kilos;
-    }
-
 
     public String getEstado() {
         return estado;
@@ -47,10 +38,6 @@ public class ReporteEstadoDTO {
 
     public void setKilos(long kilos) {
         this.kilos = kilos;
-    }
-
-    public Long getCapacidadCargaKg() {
-        return capacidadCargaKg;
-    }       
+    }     
 
 }

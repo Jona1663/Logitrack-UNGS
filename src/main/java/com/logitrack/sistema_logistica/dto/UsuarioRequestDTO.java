@@ -25,7 +25,7 @@ public class UsuarioRequestDTO {
     @Email(message = "Formato de email inválido")
     private String username;
 
-    //@NotBlank(message = "La contraseña es obligatoria")
+    @NotBlank(message = "La contraseña es obligatoria")
     private String password;
 
     @NotNull(message = "El rol es obligatorio")
