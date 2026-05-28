@@ -152,15 +152,15 @@ public class DataSeed implements CommandLineRunner {
 
             // 6. Camiones (Mantenemos los 2 y agregamos 2 más)
             Camion cam1 = camionRepository.saveAndFlush(Camion.builder().patente("AE123XX").rutaNro("RUTA-1")
-                     .capacidadCargaKg(8500).pesoBrutoMaxKg(16500).vtoSenasa(futuro).disponible(true).build());
+                     .capacidadCargaKg(8500).vtoSenasa(futuro).disponible(true).build());
             Camion cam2 = camionRepository.saveAndFlush(Camion.builder().patente("AD456YY").rutaNro("RUTA-2")
-                    .capacidadCargaKg(8200).pesoBrutoMaxKg(16200).vtoSenasa(futuro).disponible(true).build());
+                    .capacidadCargaKg(8200).vtoSenasa(futuro).disponible(true).build());
             // Camion 3: Vencido pero renovable
             Camion cam3 = camionRepository.saveAndFlush(Camion.builder().patente("AF789ZZ").rutaNro("RUTA-3")
-                    .capacidadCargaKg(9000).pesoBrutoMaxKg(16500).vtoSenasa(pasado).disponible(true).build());
+                    .capacidadCargaKg(9000).vtoSenasa(pasado).disponible(true).build());
             // Camion 4: INHABILITADO (999 en patente)
                 Camion cam4 = camionRepository.saveAndFlush(Camion.builder().patente("BAD-999").rutaNro("RUTA-4")
-                        .capacidadCargaKg(8800).pesoBrutoMaxKg(16500).vtoSenasa(pasado).disponible(true).build());
+                        .capacidadCargaKg(8800).vtoSenasa(pasado).disponible(true).build());
 
             // 7. Envíos (10 Envíos con variedad de datos)
             LocalDateTime hoyExacto = LocalDateTime.now();

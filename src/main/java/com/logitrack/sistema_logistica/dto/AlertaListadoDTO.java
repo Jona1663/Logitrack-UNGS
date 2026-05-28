@@ -4,6 +4,13 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
 
+
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+@AllArgsConstructor
+@NoArgsConstructor
+
 @Data
 @Builder
 public class AlertaListadoDTO {
@@ -16,6 +23,5 @@ public class AlertaListadoDTO {
     private LocalDateTime fechaReporte;
     private LocalDateTime fechaResolucion;
     private String lugarIncidencia; // Agregamos la ubicación para el front!
-    private Long capacidadCargaKg;
     
 }

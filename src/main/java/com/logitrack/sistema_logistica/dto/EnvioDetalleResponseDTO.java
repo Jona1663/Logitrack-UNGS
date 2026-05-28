@@ -8,9 +8,14 @@ import com.logitrack.sistema_logistica.model.enums.TipoGrano;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+
 public class EnvioDetalleResponseDTO {
 
     private String idEnvio;
