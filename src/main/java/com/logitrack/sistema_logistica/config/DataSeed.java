@@ -1,6 +1,7 @@
 package com.logitrack.sistema_logistica.config;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +84,7 @@ public class DataSeed implements CommandLineRunner {
             Usuario ch3 = usuarioRepository.saveAndFlush(Usuario.builder().username("chofer3")
                     .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(true).build());
             Usuario ch4 = usuarioRepository.saveAndFlush(Usuario.builder().username("chofer4")
-                    .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(true).build());
+                    .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.CHOFER).activo(false).build());
                         
           Usuario adm1 = usuarioRepository.saveAndFlush(Usuario.builder().username("administrador1")
                     .passwordHash(passwordEncoder.encode("123456")).rol(RolUsuario.ADMINISTRADOR).activo(true).build());
@@ -162,7 +163,13 @@ public class DataSeed implements CommandLineRunner {
                         .capacidadCargaKg(8800).vtoSenasa(pasado).disponible(true).build());
 
             // 7. Envíos (10 Envíos con variedad de datos)
+            LocalDateTime hoyExacto = LocalDateTime.now();
+
             for (int i = 1; i <= 10; i++) {
+                // Truco: i % 4 dará resultados entre 0 y 3. 
+                // Esto crea envíos de hoy, hace 1 día, hace 2 días y hace 3 días.
+                LocalDateTime fechaDinamica = hoyExacto.minusDays(i % 4);
+
                 Envio env = Envio.builder()
                         .cpe("CPE-00" + i)
                         .autorizacionARCA("AUTH-PROV-" + i)
@@ -176,11 +183,18 @@ public class DataSeed implements CommandLineRunner {
                         .prioridadIa(i < 5 ? "ALTA" : "MEDIA")
                         .kgOrigen(25000 + (i * 500))
                         .distanciaKm(100.0 + (i * 10))
+                        .fechaCreacion(fechaDinamica)
                         .build();
 
                 env = envioRepository.saveAndFlush(env);
-                historialEstadosRepository.saveAndFlush(HistorialEstados.builder().envio(env).usuario(op)
-                        .estadoNuevo(EstadoEnvio.PENDIENTE).build());
+
+                // También le ponemos la fecha dinámica al historial para que coincida
+                historialEstadosRepository.saveAndFlush(HistorialEstados.builder()
+                .envio(env).
+                usuario(op)
+                .estadoNuevo(EstadoEnvio.PENDIENTE)
+               .fechaHora(fechaDinamica)
+                .build());
             }
 
             System.out.println("✅ DATOS SEMILLA CARGADOS EXITOSAMENTE");
