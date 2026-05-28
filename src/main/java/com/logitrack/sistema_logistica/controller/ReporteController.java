@@ -58,6 +58,13 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerReportePorEstados(rango));
     }
 
+    @GetMapping("/estadosPorFechas")
+     public ResponseEntity<List<ReporteEstadoDTO>> obtenerReportePorEstadosPorFechas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteService.obtenerReportePorEstadosPorFechas(fechaInicio, fechaFin));
+    }
+
     // GET /api/reportes/granos?fechaInicio=...&fechaFin=...
     // Criterio 3: Desglose por tipo de grano
     // El formato de fecha es ISO (YYYY-MM-DD)
@@ -89,7 +96,7 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerMetricasATiempo(fechaInicio, fechaFin));
     }
 
-    //237 exponemos la ruta GET /api/v1/cumplimiento que devuelve un ReporteCumplimientoResponse 
+    //237 exponemos la ruta GET /api/reportes/cumplimiento que devuelve un ReporteCumplimientoResponse 
     // con las métricas de cumplimiento y la lista de viajes para el período indicado.
     // El ReporteCumplimientoResponse incluye:
     // - porcentajeCumplimiento: el porcentaje de viajes que llegaron a tiempo (entrega real <= ETA)
@@ -97,7 +104,7 @@ public class ReporteController {
     // - viajes: una lista de ViajeCumplimientoDTO que contiene el detalle de cada viaje, incluyendo el cálculo del desvío en horas y si fue retrasado o no.
     // El cálculo del porcentaje de cumplimiento se hace dividiendo la cantidad de viajes a tiempo por el total de viajes completados en el período, multiplicado por 100.  
     // El cálculo del desvío promedio en horas se hace sumando el desvío en horas de cada viaje (positivo si llegó después del ETA, negativo si llegó antes) y dividiendo por la cantidad total de viajes completados.  
-    @GetMapping("/v1/cumplimiento")
+    @GetMapping("/cumplimiento")
     public ResponseEntity<ReporteCumplimientoResponse> getReporteCumplimiento(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -105,8 +112,9 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerReporteCumplimiento(fechaInicio, fechaFin));
     }
 
-
+    /*
     // Endpoint A: Exportación Operativa
+    //Opcion 1
     @GetMapping("/operativo/exportar")
     public void exportarReporteOperativoCsv(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
@@ -123,6 +131,35 @@ public class ReporteController {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
+    */
+    //Opcion 2
+
+    @GetMapping("/operativo/exportar")
+    public void exportarReporteOperativoCsv(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        
+        try {
+            // --- CUMPLIENDO EL PUNTO 1: Configurar cabeceras de descarga ---
+            response.setContentType("text/csv; charset=utf-8");
+            String fechaHoy = java.time.LocalDate.now().toString();
+            response.setHeader("Content-Disposition", "attachment; filename=\"Logitrack_ReporteOperativo_" + fechaHoy + ".csv\"");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+            // Llamamos al servicio pasando el writer de la respuesta HTTP
+            reporteService.exportarReporteOperativoCsv(fechaInicio, fechaFin, response.getWriter());
+
+        } catch (RuntimeException e) {
+            // --- CUMPLIENDO EL PUNTO 4: Si salta el error de datos vacíos, limpiamos la respuesta y mandamos JSON con Error 400 ---
+            response.reset();
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+            response.getWriter().flush();
         }
     }
 
@@ -145,6 +182,16 @@ public class ReporteController {
             response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
         }
     }
+
+    @GetMapping("/estadosPorFechas")
+    public ResponseEntity<List<ReporteEstadoDTO>> obtenerReportePorEstadosPorFechas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        return ResponseEntity.ok(reporteService.obtenerReportePorEstadosPorFechas(fechaInicio, fechaFin));
+    }
+
+
+
 
 
 

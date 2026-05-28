@@ -5,6 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -64,7 +67,18 @@ public class IncidenciaServiceTest {
         incidenciaDTO = new IncidenciaDTO();
         incidenciaDTO.setTipoIncidencia(TipoIncidencia.MECANICA);
         incidenciaDTO.setDescripcion("Neumático pinchado");
+
+        // --- Simulamos el usuario logueado ---
+        org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+        org.springframework.security.core.Authentication authentication = mock(org.springframework.security.core.Authentication.class);
+        
+        // Le agregamos lenient() para que Mockito no tire error si el test no usa esta simulación
+        org.mockito.Mockito.lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        org.mockito.Mockito.lenient().when(authentication.getName()).thenReturn("chofer_test"); 
+        
+        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
     }
+    
 
     // =========================================================================
     // TESTS PARA: reportarIncidencia (US 32)
@@ -226,6 +240,47 @@ public class IncidenciaServiceTest {
         });
 
         assertEquals("Incidencia no encontrada", exception.getMessage());
+        verify(incidenciaRepository, never()).save(any());
+    }
+    // =========================================================
+    // TICKET #273: Pruebas de resolución de incidencias
+    // =========================================================
+
+    @Test
+    void resolverIncidencia_CaminoFeliz_CambiaEstadoAResuelta() {
+        // Arrange: Creamos una incidencia PENDIENTE
+        Incidencia incidenciaPendiente = new Incidencia();
+        incidenciaPendiente.setIdIncidencia(1);
+        incidenciaPendiente.setEstado(EstadoIncidencia.PENDIENTE);
+        
+        when(incidenciaRepository.findById(1)).thenReturn(java.util.Optional.of(incidenciaPendiente));
+
+        ResolverIncidenciaDTO dto = new ResolverIncidenciaDTO();
+        dto.setNotasSupervisor("Incidencia resuelta correctamente.");
+
+        // Act: Resolvemos
+        incidenciaService.resolverIncidencia(1, dto);
+
+        // Assert: Verificamos que el estado cambió a RESUELTA
+        ArgumentCaptor<Incidencia> captor = ArgumentCaptor.forClass(Incidencia.class);
+        verify(incidenciaRepository).save(captor.capture());
+        
+        assertEquals(EstadoIncidencia.RESUELTA, captor.getValue().getEstado());
+        assertEquals("Incidencia resuelta correctamente.", captor.getValue().getNotasSupervisor());
+        assertNotNull(captor.getValue().getFechaResolucion(), "La fecha de resolución no debería ser nula");
+    }
+
+    @Test
+    void resolverIncidencia_CaminoTriste_IDInexistente_LanzaException() {
+        // Arrange: Simulamos que buscamos un ID que no está en la base
+        when(incidenciaRepository.findById(999)).thenReturn(java.util.Optional.empty());
+
+        // Act & Assert: Verificamos que el sistema tira error ante un ID inválido
+        assertThrows(RuntimeException.class, () -> {
+            incidenciaService.resolverIncidencia(999, new ResolverIncidenciaDTO());
+        });
+
+        // Verificamos que NUNCA intentó guardar nada
         verify(incidenciaRepository, never()).save(any());
     }
 }

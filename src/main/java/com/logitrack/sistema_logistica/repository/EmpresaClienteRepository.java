@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EmpresaClienteRepository extends JpaRepository<EmpresaCliente, String> {
+
+    // Método clave para que el servicio valide duplicados
+    boolean existsByCuit(String cuit);
 }
