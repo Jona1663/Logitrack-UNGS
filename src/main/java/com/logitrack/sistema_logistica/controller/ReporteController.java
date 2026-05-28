@@ -58,13 +58,6 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.obtenerReportePorEstados(rango));
     }
 
-    @GetMapping("/estadosPorFechas")
-     public ResponseEntity<List<ReporteEstadoDTO>> obtenerReportePorEstadosPorFechas(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
-        return ResponseEntity.ok(reporteService.obtenerReportePorEstadosPorFechas(fechaInicio, fechaFin));
-    }
-
     // GET /api/reportes/granos?fechaInicio=...&fechaFin=...
     // Criterio 3: Desglose por tipo de grano
     // El formato de fecha es ISO (YYYY-MM-DD)
@@ -189,10 +182,5 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         return ResponseEntity.ok(reporteService.obtenerReportePorEstadosPorFechas(fechaInicio, fechaFin));
     }
-
-
-
-
-
 
 }

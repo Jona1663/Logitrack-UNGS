@@ -86,15 +86,6 @@ public class ReporteService {
                 return envioRepository.obtenerMetricasPorEstadoEntreFechas(inicio, fin);
         }
 
-        @Transactional(readOnly = true)
-        public List<ReporteEstadoDTO> obtenerReportePorEstadosPorFechas(LocalDate fechaInicio, LocalDate fechaFin) {
-                LocalDateTime inicio = fechaInicio.atStartOfDay();
-                LocalDateTime fin = fechaFin.atTime(23, 59, 59);
-                return envioRepository.obtenerMetricasPorEstadoEntreFechas(inicio, fin);
-        }
-
-
-
         // Para obtener métricas por grano
         @Transactional(readOnly = true)
         public List<ReporteGranoDTO> obtenerReportePorGrano(LocalDate fechaInicio, LocalDate fechaFin) {

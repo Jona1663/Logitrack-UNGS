@@ -65,6 +65,7 @@ public class GlobalExceptionHandler {
         body.put("errors", fieldErrors);
  
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 
 
 
@@ -96,6 +97,7 @@ public class GlobalExceptionHandler {
     }
     */
 
+    /*
     //Version 2
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -109,4 +111,5 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errores, HttpStatus.BAD_REQUEST);
     }
+        */
 }
