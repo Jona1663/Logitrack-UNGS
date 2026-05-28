@@ -1,20 +1,20 @@
 package com.logitrack.sistema_logistica.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 
+
 public class ReporteEstadoDTO {
     private String estado;
     private Long cantidadEnvios;
     private Long kilos;
-
 
     public String getEstado() {
         return estado;
@@ -38,5 +38,6 @@ public class ReporteEstadoDTO {
 
     public void setKilos(long kilos) {
         this.kilos = kilos;
-    }
+    }     
+
 }

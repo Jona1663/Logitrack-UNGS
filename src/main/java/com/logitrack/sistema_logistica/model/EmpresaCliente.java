@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 public class EmpresaCliente {
 
     @Id
-    @Column(name = "cuit", length = 20)
+    @Column(name = "cuit")
     private String cuit;
 
     @Column(name = "razon_social", nullable = false, length = 150)

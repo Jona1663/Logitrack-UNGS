@@ -241,4 +241,5 @@ public class AdminServiceTest {
         RuntimeException ex = assertThrows(RuntimeException.class, () -> adminService.crearUsuario(request));
         assertEquals("Error: Faltan datos de la licencia para dar de alta al Chofer.", ex.getMessage());
     }
+
 }

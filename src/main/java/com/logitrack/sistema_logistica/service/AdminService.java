@@ -30,6 +30,15 @@ public class AdminService {
     @Transactional
     public UsuarioResponseDTO crearUsuario(UsuarioRequestDTO request) {
 
+        // --- AGREGAMOS ESTA VALIDACIÓN MANUAL ---
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new RuntimeException("La contraseña es obligatoria para crear un nuevo usuario.");
+        }
+
+
+
+
+
         if (usuarioRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Error: El nombre de usuario (email) ya está en uso.");
         }
@@ -89,7 +98,6 @@ public class AdminService {
 
     public List<UsuarioResponseDTO> listarUsuarios() {
         return usuarioRepository.findAll().stream()
-                .filter(Usuario::getActivo)
                 .map(u -> {
                     Persona p = personaRepository.findById(u.getIdUsuario()).orElse(new Persona());
                     return UsuarioResponseDTO.builder()

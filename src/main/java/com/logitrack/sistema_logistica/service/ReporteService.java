@@ -26,8 +26,11 @@ import com.logitrack.sistema_logistica.dto.ViajeCumplimientoDTO;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class ReporteService {
@@ -75,6 +78,13 @@ public class ReporteService {
                 //(Trae TODO el histórico)
                 return envioRepository.obtenerMetricasPorEstado();
         }
+        
+        @Transactional(readOnly = true)
+        public List<ReporteEstadoDTO> obtenerReportePorEstadosPorFechas(LocalDate fechaInicio, LocalDate fechaFin) {
+                LocalDateTime inicio = fechaInicio.atStartOfDay();
+                LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+                return envioRepository.obtenerMetricasPorEstadoEntreFechas(inicio, fin);
+        }
 
         // Para obtener métricas por grano
         @Transactional(readOnly = true)
@@ -106,25 +116,52 @@ public class ReporteService {
         List<Envio> enviosCompletados = envioRepository.obtenerEnviosCompletadosParaCumplimiento(inicio, fin);
         List<ViajeCumplimientoDTO> viajesProcesados = new ArrayList<>();
 
+
+        /*
+        // ⚠️ LÍNEAS TEMPORALES PARA PROBAR EL BUG #238 
+        if (enviosCompletados.isEmpty()) {
+        Envio envioFalsoConEstadoNulo = Envio.builder()
+            .idEnvio("LT-TEST-NULL")
+            .estadoActual(null) // <-- Forzamos el estado en nulo
+            .fechaEstimadaLlegada(LocalDateTime.now())
+            .fechaLlegada(LocalDateTime.now().plusHours(2))
+            .build();
+        enviosCompletados = new java.util.ArrayList<>();
+        enviosCompletados.add(envioFalsoConEstadoNulo);
+}       */
+
         // 2. Iteramos cada envío para calcular la diferencia exacta contra el ETA
         for (Envio envio : enviosCompletados) {
+
+                // Salto seguro por si viene un objeto nulo de la lista
+                if (envio == null) continue;    
+
                 // Calculamos la diferencia en minutos entre la entrega real y el ETA
-                // Si el resultado es positivo, significa que llegó después del ETA (Retraso)
-                long minutosDiferencia = ChronoUnit.MINUTES.between(envio.getFechaEstimadaLlegada(), envio.getFechaLlegada());
-                
+                long minutosDiferencia = 0;
+                if (envio.getFechaEstimadaLlegada() != null && envio.getFechaLlegada() != null) {
+                        minutosDiferencia = ChronoUnit.MINUTES.between(envio.getFechaEstimadaLlegada(), envio.getFechaLlegada());
+                }
+
                 double horasDesvio = 0.0;
                 boolean esRetrasado = false;
 
                 if (minutosDiferencia > 0) {
-                // Pasamos los minutos a horas con decimales (ej: 90 minutos -> 1.5 horas)
-                horasDesvio = minutosDiferencia / 60.0;
-                esRetrasado = true;
+                        // Pasamos los minutos a horas con decimales (ej: 90 minutos -> 1.5 horas)
+                        horasDesvio = minutosDiferencia / 60.0;
+                        esRetrasado = true;
                 }
+
+                // --- SOLUCIÓN AL BUG #238 ---
+                // Evaluamos de forma segura si el estado es nulo antes de transformarlo a String
+                String estadoFormateado = (envio.getEstadoActual() != null) 
+                        ? envio.getEstadoActual().toString() 
+                        : "DESCONOCIDO";
+
 
                 // 3. Mapeamos los datos calculados al DTO individual
                 ViajeCumplimientoDTO dto = ViajeCumplimientoDTO.builder()
                         .idEnvio(envio.getIdEnvio()) // O el campo identificador que uses
-                        .estadoActual(envio.getEstadoActual().toString())
+                        .estadoActual(estadoFormateado)
                         .fechaEstimadaLlegada(envio.getFechaEstimadaLlegada())
                         .fechaEntregaReal(envio.getFechaLlegada())
                         .esRetrasado(esRetrasado)
@@ -190,7 +227,7 @@ public class ReporteService {
         // El CSV tendrá columnas: ID Envío, Estado, Fecha ETA, Fecha Entrega Real, Retrasado (SI/NO), Desvío en Horas
         // El formato de fecha en el CSV será "dd/MM/yyyy HH:mm" para que sea legible en Excel
         // El método devuelve un String con el contenido del CSV, que luego el controlador puede enviar como respuesta con el tipo de contenido adecuado
-        // Ejemplo de uso en el controlador: GET /api/reportes/v1/cumplimiento/exportar?fechaInicio=2024-01-01&fechaFin=2024-01-31
+        // Ejemplo de uso en el controlador: GET /api/reportes/cumplimiento/exportar?fechaInicio=2024-01-01&fechaFin=2024-01-31
         // El controlador llamaría a este método para obtener el CSV y luego lo enviaría con el header "Content-Disposition: attachment; filename=reporte_cumplimiento.csv"
         // Nota: Este método no maneja la respuesta HTTP directamente, solo genera el contenido del CSV. El controlador es responsable de configurar los headers y el tipo de contenido.
 
@@ -260,6 +297,12 @@ public class ReporteService {
         @Transactional(readOnly = true)
         public void exportarReporteOperativoCsv(LocalDate fechaInicio, LocalDate fechaFin, java.io.Writer writer) throws java.io.IOException {
                 ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
+
+                // --- CUMPLIENDO EL PUNTO 4: Si no hay datos, lanzamos excepción para que el controlador devuelva un JSON ---
+                if (totales == null || totales.getTotalViajes() == 0) {
+                        throw new RuntimeException("No hay viajes operativos para exportar en este período.");
+                }
+
                 List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
                         envioRepository.obtenerMetricasPorEstadoEntreFechas(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)) : 
                         envioRepository.obtenerMetricasPorEstado();
@@ -267,18 +310,42 @@ public class ReporteService {
                 // BOM UTF-8 para Excel
                 writer.write('\ufeff');
 
-                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.EXCEL.builder()
-                        .setDelimiter(';')
+
+                // --- CUMPLIENDO EL PUNTO 3: Cambiamos al formato DEFAULT (separado por comas ,) ---
+                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.DEFAULT.builder()
                         .setHeader("Métrica", "Valor")
                         .build();
 
-                try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
-                printer.printRecord("Total de Viajes", totales.getTotalViajes());
-                printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
-                
-                for (ReporteEstadoDTO e : estados) {
-                        printer.printRecord("Estado: " + e.getEstado(), e.getCantidadEnvios());
+                // Pasamos la lista de la BD a un mapa para buscar rápido por clave mapeando a Mayúsculas
+                java.util.Map<String, Long> mapaEstados = new java.util.HashMap<>();
+                if (estados != null) {
+                        for (ReporteEstadoDTO e : estados) {
+                                if (e.getEstado() != null) {
+                                        mapaEstados.put(e.getEstado().toString().toUpperCase(), e.getCantidadEnvios());
+                                }
+                        }
                 }
+
+
+                try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
+                        // Métricas globales
+                        printer.printRecord("Total de Viajes", totales.getTotalViajes());
+                        printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
+                        
+                        // --- CUMPLIENDO EL PUNTO 3: Filas fijas con los nombres exactos requeridos por el Frontend ---
+                        // Usamos .getOrDefault para asegurar que si el estado tiene 0 viajes, imprima la fila con 0 en vez de desaparecer.
+                        printer.printRecord("Estado: Pendientes", mapaEstados.getOrDefault("PENDIENTE", 0L));
+                        printer.printRecord("Estado: En Tránsito", mapaEstados.getOrDefault("EN_TRANSITO", 0L));
+                        printer.printRecord("Estado: En Punto de Recolección", mapaEstados.getOrDefault("EN_PUNTO_RECOLECCION", 0L));
+                        printer.printRecord("Estado: Entregados", mapaEstados.getOrDefault("ENTREGADO", 0L));
+                        printer.printRecord("Estado: Cancelados", mapaEstados.getOrDefault("CANCELADO", 0L));
+
+
+                        /* 
+                        for (ReporteEstadoDTO e : estados) {
+                                printer.printRecord("Estado: " + e.getEstado(), e.getCantidadEnvios());
+                        }
+                        */
                 printer.flush();
                 }
         }

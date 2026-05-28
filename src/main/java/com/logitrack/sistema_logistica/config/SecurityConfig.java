@@ -55,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/envios/search").hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/envios/*/operativo").hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/envios/*/asignar-transporte").hasAnyRole("OPERADOR", "SUPERVISOR")
-                        .requestMatchers(HttpMethod.PUT, "/api/envios/*/cancelar").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/envios/*/cancelar").hasAnyRole("SUPERVISOR")
                         .requestMatchers(HttpMethod.GET, "/api/catalogos/**").hasAnyRole("OPERADOR", "SUPERVISOR")
 
                         // Envío por ID — todos los roles autenticados 
@@ -110,8 +110,8 @@ public class SecurityConfig {
 
         // 2. Al estar en false, PODEMOS usar el comodín global
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000",
-                "https://logitrack-m9yq.vercel.app",
-                "https://logitrack-m9yq-ikogy7mnd-logi-track-s-projects.vercel.app"));
+                "https://logitrackagro.vercel.app",
+                "https://logitrackagro-git-main-logi-track-s-projects.vercel.app"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
