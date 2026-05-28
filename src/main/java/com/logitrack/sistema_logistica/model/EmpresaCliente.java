@@ -1,12 +1,19 @@
 package com.logitrack.sistema_logistica.model;
 
+import java.time.LocalDate;
+
 import com.logitrack.sistema_logistica.model.enums.TipoEmpresa;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import java.time.LocalDate;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "empresas_Clientes")
@@ -17,7 +24,7 @@ import java.time.LocalDate;
 public class EmpresaCliente {
 
     @Id
-    @Column(name = "cuit", length = 20)
+    @Column(name = "cuit")
     private String cuit;
 
     @Column(name = "razon_social", nullable = false, length = 150)
@@ -32,4 +39,7 @@ public class EmpresaCliente {
 
     @Column(name = "vto_ruca")
     private LocalDate vtoRuca;
+
+    @Column(name = "email", length = 150)
+    private String email;
 }
