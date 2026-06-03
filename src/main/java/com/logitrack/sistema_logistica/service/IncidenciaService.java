@@ -14,10 +14,14 @@ import com.logitrack.sistema_logistica.dto.IncidenciaDTO;
 import com.logitrack.sistema_logistica.dto.ResolverIncidenciaDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Incidencia;
+import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.model.enums.EstadoIncidencia;
+import com.logitrack.sistema_logistica.model.enums.RolUsuario;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.IncidenciaRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+
 
 @Service
 public class IncidenciaService {
@@ -33,6 +37,12 @@ public class IncidenciaService {
 
     @Autowired
     private NotificationService notificationService; // Inyectamos el de tu compañero
+
+    @Autowired
+    private AlertaWebService alertaWebService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Transactional
     public void reportarIncidencia(String idEnvio, IncidenciaDTO dto) {
@@ -75,6 +85,21 @@ public class IncidenciaService {
         String mensaje = "El chofer ha reportado un problema.\nUbicación: " + ubicacionFormateada + "\nDetalle: " + dto.getDescripcion();
         
         notificationService.enviarNotificacion("supervisor@logitrack.com", asunto, mensaje);
+        try {
+                // Buscamos a TODOS los supervisores de la base de datos
+                List<Usuario> supervisores = usuarioRepository.findByRol(RolUsuario.SUPERVISOR);
+
+                String mensajeVisual = "NUEVA INCIDENCIA: " + dto.getTipoIncidencia().name() + " en viaje " + idEnvio;
+
+                // Le mandamos la alerta web (campanita) a cada supervisor activo
+                for (Usuario supervisor : supervisores) {
+                    if(supervisor.getActivo()) {
+                        alertaWebService.crearYEnviarAlerta(supervisor, mensajeVisual, "CRITICA");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("No se pudo enviar la alerta visual: " + e.getMessage());
+            }
     }
 
     // --- MÉTODOS DEL SUPERVISOR ---
@@ -124,4 +149,7 @@ public class IncidenciaService {
 
         incidenciaRepository.save(incidencia);
     }
+
+    
+
 }
