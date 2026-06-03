@@ -13,4 +13,5 @@ import lombok.NoArgsConstructor;
 public class ReporteEficienciaDTO {
     private Long cantidadEnviosATiempo;
     private Long totalKilosEnTiempo;
+    private double porcentajeATiempo;
 }

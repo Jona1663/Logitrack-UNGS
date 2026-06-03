@@ -91,6 +91,7 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         List<ReporteGranoDTO> obtenerMetricasPorGrano(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
 
+        /*
         // 2. Envíos y kilos que llegaron a tiempo
         @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO(" +
                 "COUNT(e), COALESCE(SUM(e.kgOrigen), 0L)) " +
@@ -99,6 +100,23 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
                 "AND e.fechaLlegada <= e.fechaEstimadaLlegada " +
                 "AND e.fechaCreacion BETWEEN :inicio AND :fin")
         ReporteEficienciaDTO obtenerMetricasATiempo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+        */
+
+        // Cuenta la cantidad de envíos que llegaron a tiempo
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        long countEnviosATiempoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+        // Suma los kilos de los envíos que llegaron a tiempo
+        @Query("SELECT COALESCE(SUM(e.kgOrigen), 0L) FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        long sumKilosATiempoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+
+
+
+
+
+
+
 
 
         //Para la #238

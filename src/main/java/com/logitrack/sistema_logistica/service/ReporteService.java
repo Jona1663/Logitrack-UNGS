@@ -20,6 +20,7 @@ import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.dto.ViajeCumplimientoDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
+import com.logitrack.sistema_logistica.repository.IncidenciaRepository;
 
 import java.time.temporal.ChronoUnit;
 import com.logitrack.sistema_logistica.dto.ViajeCumplimientoDTO;
@@ -38,30 +39,50 @@ public class ReporteService {
         @Autowired
         private EnvioRepository envioRepository;
 
+        @Autowired
+        private IncidenciaRepository incidenciaRepository;
+
         @Transactional(readOnly = true)
         public ReporteSimpleDTO obtenerReporte(LocalDate fechaInicio, LocalDate fechaFin) {
-                // Si el usuario envió fechas, usamos los filtros
+                // --- CAMINO 1: Si el usuario envió fechas, usamos los filtros
                 if (fechaInicio != null && fechaFin != null) {
-                LocalDateTime inicio = fechaInicio.atStartOfDay();
-                LocalDateTime fin = fechaFin.atTime(23, 59, 59);
-                
-                long totalViajes = envioRepository.countEntreFechas(inicio, fin);
-                Long totalKilos = envioRepository.sumKilosEntreFechas(inicio, fin);
-                return ReporteSimpleDTO.builder().totalViajes(totalViajes).totalKilos(totalKilos != null ? totalKilos : 0L).build();
+                        LocalDateTime inicio = fechaInicio.atStartOfDay();
+                        LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+                        
+                        long totalViajes = envioRepository.countEntreFechas(inicio, fin);
+
+                        // Validación para Empty State
+                        if (totalViajes == 0) {
+                                throw new RuntimeException("EMPTY_STATE");
+                        }
+
+                        Long totalKilos = envioRepository.sumKilosEntreFechas(inicio, fin);
+                        long totalIncidencias = incidenciaRepository.countByFechaReporteBetween(inicio, fin);
+                        
+                        return ReporteSimpleDTO.builder()
+                                .totalViajes(totalViajes).
+                                totalKilos(totalKilos != null ? totalKilos : 0L)
+                                .totalIncidencias(totalIncidencias)
+                                .build();
                 }
 
 
-                //(Trae TODO el histórico)
+                //--- CAMINO 2: Histórico (Trae TODO el histórico)
                 long totalViajes = envioRepository.count();
-                Long totalKilos = envioRepository.sumKilos();
-                if (totalKilos == null) {
-                totalKilos = 0L;
+
+                // Validación para Empty State en histórico
+                if (totalViajes == 0) {
+                throw new RuntimeException("EMPTY_STATE");
                 }
+
+                Long totalKilos = envioRepository.sumKilos();
+                long totalIncidencias = incidenciaRepository.count();
 
                 return ReporteSimpleDTO.builder()
-                .totalViajes(totalViajes)
-                .totalKilos(totalKilos)
-                .build();
+                        .totalViajes(totalViajes)
+                        .totalKilos(totalKilos != null ? totalKilos : 0L )
+                        .totalIncidencias(totalIncidencias)
+                        .build();
         }
 
 
@@ -100,8 +121,28 @@ public class ReporteService {
                 LocalDateTime inicio = fechaInicio.atStartOfDay();
                 LocalDateTime fin = fechaFin.atTime(23, 59, 59);
     
-        // Ahora llama al método que devuelve el DTO completo
-        return envioRepository.obtenerMetricasATiempo(inicio, fin);    
+                // 1. Obtenemos cuántos llegaron a tiempo y sus kilos
+                long viajesATiempo = envioRepository.countEnviosATiempoEntreFechas(inicio, fin);
+                long kilosATiempo = envioRepository.sumKilosATiempoEntreFechas(inicio, fin);
+
+                // 2. Necesitamos el total de viajes completados para sacar el porcentaje real
+                long totalCompletados = envioRepository.countCompletadosEntreFechas(inicio, fin);
+
+                // 3. Calculamos el porcentaje de forma segura
+                double porcentaje = 0.0;
+                if (totalCompletados > 0) {
+                        porcentaje = Math.round(((double) viajesATiempo / totalCompletados) * 100.0);
+                }
+
+
+
+
+                // Ahora llama al método que devuelve el DTO completo
+                return ReporteEficienciaDTO.builder()
+                .cantidadEnviosATiempo(viajesATiempo)
+                .totalKilosEnTiempo(kilosATiempo)
+                .porcentajeATiempo(porcentaje)
+                .build();  
         }
 
 

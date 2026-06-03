@@ -38,6 +38,8 @@ public class ReporteController {
     // Ejemplo sin fechas: GET /api/reportes/operativo
     // El formato de fecha es ISO (YYYY-MM-DD)
     // El rango de fechas es opcional, pero si se envía, ambos parámetros deben estar presentes
+    //Version 1 antes de la #362 y #363
+    /* 
     @GetMapping("/operativo")
     public ResponseEntity<ReporteSimpleDTO> reporteOperativo(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
@@ -45,6 +47,31 @@ public class ReporteController {
         ReporteSimpleDTO reporte = reporteService.obtenerReporte(fechaInicio, fechaFin);
         return ResponseEntity.ok(reporte);
     }
+    */
+
+    //Version 2 Para la #362 y #363
+    @GetMapping("/operativo")
+    public ResponseEntity<?> reporteOperativo(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        try {
+            // Intentamos llamar al servicio
+            ReporteSimpleDTO reporte = reporteService.obtenerReporte(fechaInicio, fechaFin);
+            return ResponseEntity.ok(reporte);
+            
+        } catch (RuntimeException e) {
+            // Si el servicio nos avisó que no hay datos con "EMPTY_STATE"
+            if ("EMPTY_STATE".equals(e.getMessage())) {
+                return ResponseEntity.noContent().build(); // Esto devuelve el 204
+            }
+            // Si es otro error, devolvemos un bad request
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+
 
     //Desglose por estados (Criterio 2)
     // GET /api/reportes/estados?rango=ultimos7dias

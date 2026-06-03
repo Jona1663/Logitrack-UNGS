@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,6 +46,7 @@ import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import com.logitrack.sistema_logistica.service.EnvioService;
+import com.logitrack.sistema_logistica.service.ReporteService;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -62,6 +64,12 @@ public class EnvioController {
                                                  // frontend, sino que el EnvioController extraiga quién es el usuario
                                                  // directamente leyendo el Token JWT de la petición. El usuario es
                                                  // necesario para auditorias.
+
+    @Autowired
+    private ReporteService reporteService;  // Inyectar el servicio de reportes para usar sus métodos en los endpoints de reportes
+                                            // (ej: obtenerMetricasPorGrano, obtenerMetricasATiempo, etc.)
+                                            // Estos métodos a su vez llaman a consultas
+
 
     // GET para listar (siempre es útil tenerlo)
     @GetMapping
@@ -512,10 +520,22 @@ public class EnvioController {
         return ResponseEntity.ok(envioRepository.obtenerMetricasPorGrano(fechaInicio, fechaFin));
     }
 
+    /*  Metodo antiguo antes de la US41
     @GetMapping("/reportes/a-tiempo")
     public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo(
             @RequestParam LocalDateTime fechaInicio, 
             @RequestParam LocalDateTime fechaFin) {
         return ResponseEntity.ok(envioRepository.obtenerMetricasATiempo(fechaInicio, fechaFin));
     }
+    */
+
+    @GetMapping("/reportes/a-tiempo")
+    public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio, 
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        // Llamamos al SERVICIO, no al repositorio
+        return ResponseEntity.ok(reporteService.obtenerMetricasATiempo(fechaInicio, fechaFin));
+    }
+    
 }
