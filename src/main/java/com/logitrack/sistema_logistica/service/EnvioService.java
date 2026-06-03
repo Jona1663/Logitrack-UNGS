@@ -395,6 +395,7 @@
                 envio.setFechaSalida(fechaSalida);
                 envio.setChofer(chofer);
                 envioRepository.save(envio);
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
 
         }
 
@@ -468,8 +469,10 @@
         camion.setDisponible(false);
         choferDetalleRepository.save(chofer);
         camionRepository.save(camion);
+        eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
 
         return envioRepository.save(envio);
+        
         }
 
         // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de
