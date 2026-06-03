@@ -1,21 +1,18 @@
 package com.logitrack.sistema_logistica.repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import org.springframework.data.jpa.repository.JpaRepository;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Query;
 import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.stream.Stream;
+import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecificationExecutor<Envio> {

@@ -18,11 +18,6 @@ import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.service.ReporteService;
 
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-
-
-
 @RestController
 @RequestMapping("/api/reportes")
 public class ReporteController {
