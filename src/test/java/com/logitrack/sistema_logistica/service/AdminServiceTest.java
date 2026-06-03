@@ -36,7 +36,10 @@ public class AdminServiceTest {
     private ChoferDetalleRepository choferDetalleRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
-    
+     @Mock
+    private com.logitrack.sistema_logistica.repository.EmpresaClienteRepository empresaClienteRepository;
+    @InjectMocks
+    private com.logitrack.sistema_logistica.service.ClienteService clienteService;
     @InjectMocks
     private AdminService adminService;
 
@@ -167,5 +170,30 @@ public class AdminServiceTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> adminService.crearUsuario(request));
         assertEquals("Error: Faltan datos de la licencia para dar de alta al Chofer.", ex.getMessage());
+    }
+
+    // =========================================================
+    // TICKET #307: Pruebas de validación (Cliente Existente)
+    // =========================================================
+    @Test
+    public void crearCliente_ConCuitExistente_DebeLanzarExcepcion() {
+        // GIVEN: Un DTO de cliente con un CUIT que ya está en la base de datos
+        com.logitrack.sistema_logistica.dto.ClienteRequestDTO request = new com.logitrack.sistema_logistica.dto.ClienteRequestDTO(
+            "30-12345678-9", "La Veloz", "TRANSPORTE", "mail@test.com", "RUCA-123", "2027-12-31", null
+        );
+
+        // Simulamos que el repositorio encuentra el CUIT (Fijate que tu ClienteService usa existsById)
+        when(empresaClienteRepository.existsById("30-12345678-9")).thenReturn(true);
+
+        // WHEN & THEN: Intentamos crearlo y validamos que tire IllegalArgumentException
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            clienteService.crearCliente(request);
+        });
+
+        // Validamos que el mensaje sea exactamente el que pusiste en tu ClienteService.java
+        assertTrue(exception.getMessage().contains("Ya existe un cliente con este CUIT"));
+        
+        // Confirmamos que NUNCA intentó guardar en la base
+        verify(empresaClienteRepository, never()).save(any());
     }
 }
