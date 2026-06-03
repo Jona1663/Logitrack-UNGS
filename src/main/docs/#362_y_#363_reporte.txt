@@ -1,5 +1,5 @@
 ═══════════════════════════════════════════════════════════════════════════════
-TAREA #362 y #363 - MÉTRICAS PARA DASHBOARD GERENCIAL (Incidencias y Eficiencia)
+TAREA US41 #362 y #363 - MÉTRICAS PARA DASHBOARD GERENCIAL (Incidencias y Eficiencia)
 ═══════════════════════════════════════════════════════════════════════════════
 
 Integrante a cargo: Jonatan

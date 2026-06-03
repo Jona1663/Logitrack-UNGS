@@ -12,8 +12,12 @@ import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.model.Envio;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import java.time.temporal.ChronoUnit;
+import org.apache.poi.ss.usermodel.*;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -278,7 +282,7 @@ public class ReporteService {
                 // Validación de datos para devolver error 400 si está vacío
                 long count = envioRepository.countEntreFechas(inicio, fin);
                 if (count == 0) {
-                throw new RuntimeException("No hay viajes completados para exportar en este período.");
+                throw new RuntimeException("EMPTY_STATE");
                 }
 
                 // BOM UTF-8 para Excel
@@ -327,7 +331,7 @@ public class ReporteService {
 
                 // --- CUMPLIENDO EL PUNTO 4: Si no hay datos, lanzamos excepción para que el controlador devuelva un JSON ---
                 if (totales == null || totales.getTotalViajes() == 0) {
-                        throw new RuntimeException("No hay viajes operativos para exportar en este período.");
+                        throw new RuntimeException("EMPTY_STATE");
                 }
 
                 List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
@@ -378,7 +382,116 @@ public class ReporteService {
         }
 
 
+        // =======================================================
+        // NUEVOS MÉTODOS PARA EXCEL (#368)
+        // =======================================================
 
+        @Transactional(readOnly = true)
+        public java.io.ByteArrayInputStream generarExcelOperativo(LocalDate fechaInicio, LocalDate fechaFin) throws java.io.IOException {
+                ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
+                // Nota: obtenerReporte() ya lanza "EMPTY_STATE" internamente si está vacío.
+
+                List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
+                        envioRepository.obtenerMetricasPorEstadoEntreFechas(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)) : 
+                        envioRepository.obtenerMetricasPorEstado();
+
+                java.util.Map<String, Long> mapaEstados = new java.util.HashMap<>();
+                if (estados != null) {
+                        for (ReporteEstadoDTO e : estados) {
+                                if (e.getEstado() != null) mapaEstados.put(e.getEstado().toString().toUpperCase(), e.getCantidadEnvios());
+                        }
+                }
+
+                try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(); 
+                     java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+                        
+                        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Reporte Operativo");
+
+                        org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
+                        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
+                        font.setBold(true);
+                        headerStyle.setFont(font);
+
+                        // Cabeceras
+                        org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+                        headerRow.createCell(0).setCellValue("Métrica");
+                        headerRow.createCell(1).setCellValue("Valor");
+                        headerRow.getCell(0).setCellStyle(headerStyle);
+                        headerRow.getCell(1).setCellStyle(headerStyle);
+
+                        // Filas
+                        sheet.createRow(1).createCell(0).setCellValue("Total de Viajes");
+                        sheet.getRow(1).createCell(1).setCellValue(totales.getTotalViajes());
+
+                        sheet.createRow(2).createCell(0).setCellValue("Kilos Transportados");
+                        sheet.getRow(2).createCell(1).setCellValue(totales.getTotalKilos());
+
+                        sheet.createRow(3).createCell(0).setCellValue("Total Incidencias");
+                        sheet.getRow(3).createCell(1).setCellValue(totales.getTotalIncidencias());
+
+                        int rowIdx = 4;
+                        String[] estadosFijos = {"PENDIENTE", "EN_TRANSITO", "EN_PUNTO_RECOLECCION", "ENTREGADO", "CANCELADO"};
+                        for (String estado : estadosFijos) {
+                                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
+                                row.createCell(0).setCellValue("Estado: " + estado);
+                                row.createCell(1).setCellValue(mapaEstados.getOrDefault(estado, 0L));
+                        }
+
+                        sheet.autoSizeColumn(0);
+                        sheet.autoSizeColumn(1);
+
+                        workbook.write(out);
+                        return new java.io.ByteArrayInputStream(out.toByteArray());
+                }
+        }
+
+        @Transactional(readOnly = true)
+        public java.io.ByteArrayInputStream generarExcelCumplimiento(LocalDate fechaInicio, LocalDate fechaFin) throws java.io.IOException {
+                List<ViajeCumplimientoDTO> viajes = calcularDesviosYCumplimiento(fechaInicio, fechaFin);
+                
+                if (viajes == null || viajes.isEmpty()) {
+                        throw new RuntimeException("EMPTY_STATE");
+                }
+
+                try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(); 
+                     java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+                        
+                        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Cumplimiento");
+                        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+                        org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+                        String[] columnas = {"ID Envío", "Estado", "ETA", "Entrega Real", "Retrasado", "Desvío"};
+                        
+                        org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
+                        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
+                        font.setBold(true);
+                        headerStyle.setFont(font);
+
+                        for (int i = 0; i < columnas.length; i++) {
+                                org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
+                                cell.setCellValue(columnas[i]);
+                                cell.setCellStyle(headerStyle);
+                        }
+
+                        int rowIdx = 1;
+                        for (ViajeCumplimientoDTO viaje : viajes) {
+                                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
+                                row.createCell(0).setCellValue(viaje.getIdEnvio());
+                                row.createCell(1).setCellValue(viaje.getEstadoActual());
+                                row.createCell(2).setCellValue(viaje.getFechaEstimadaLlegada() != null ? viaje.getFechaEstimadaLlegada().format(fmt) : "");
+                                row.createCell(3).setCellValue(viaje.getFechaEntregaReal() != null ? viaje.getFechaEntregaReal().format(fmt) : "");
+                                row.createCell(4).setCellValue(viaje.isEsRetrasado() ? "SÍ" : "NO");
+                                row.createCell(5).setCellValue(formatearDesvio(viaje.getDesvioHoras()));
+                        }
+
+                        for (int i = 0; i < columnas.length; i++) {
+                                sheet.autoSizeColumn(i);
+                        }
+
+                        workbook.write(out);
+                        return new java.io.ByteArrayInputStream(out.toByteArray());
+                }
+        }
 
 
 
