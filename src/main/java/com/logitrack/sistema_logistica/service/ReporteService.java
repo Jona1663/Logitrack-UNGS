@@ -327,6 +327,7 @@ public class ReporteService {
         // formato de reporte que solicita el frontend
         @Transactional(readOnly = true)
         public void exportarReporteOperativoCsv(LocalDate fechaInicio, LocalDate fechaFin, java.io.Writer writer) throws java.io.IOException {
+                // --- CRITERIO 1: Métricas Globales ---
                 ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
 
                 // --- CUMPLIENDO EL PUNTO 4: Si no hay datos, lanzamos excepción para que el controlador devuelva un JSON ---
@@ -334,20 +335,11 @@ public class ReporteService {
                         throw new RuntimeException("EMPTY_STATE");
                 }
 
+                // --- CRITERIO 2: Estados ---
                 List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
                         envioRepository.obtenerMetricasPorEstadoEntreFechas(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)) : 
                         envioRepository.obtenerMetricasPorEstado();
 
-                // BOM UTF-8 para Excel
-                writer.write('\ufeff');
-
-
-                // --- CUMPLIENDO EL PUNTO 3: Cambiamos al formato DEFAULT (separado por comas ,) ---
-                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.DEFAULT.builder()
-                        .setHeader("Métrica", "Valor")
-                        .build();
-
-                // Pasamos la lista de la BD a un mapa para buscar rápido por clave mapeando a Mayúsculas
                 java.util.Map<String, Long> mapaEstados = new java.util.HashMap<>();
                 if (estados != null) {
                         for (ReporteEstadoDTO e : estados) {
@@ -358,13 +350,37 @@ public class ReporteService {
                 }
 
 
+                // --- CRITERIOS 3 y 4: Granos y Eficiencia ---
+                // Para evitar errores si exportan todo el histórico sin fechas, asignamos un rango seguro.
+                LocalDate inicioSeguro = (fechaInicio != null) ? fechaInicio : LocalDate.of(2000, 1, 1);
+                LocalDate finSeguro = (fechaFin != null) ? fechaFin : LocalDate.now();
+
+                List<ReporteGranoDTO> granos = obtenerReportePorGrano(inicioSeguro, finSeguro);
+                ReporteEficienciaDTO eficiencia = obtenerMetricasATiempo(inicioSeguro, finSeguro);
+
+
+
+                // BOM UTF-8 para Excel
+                writer.write('\ufeff');
+
+
+                // --- CUMPLIENDO EL PUNTO 3: Cambiamos al formato DEFAULT (separado por comas ,) ---
+                org.apache.commons.csv.CSVFormat formato = org.apache.commons.csv.CSVFormat.DEFAULT.builder()
+                        .setHeader("Métrica", "Valor")
+                        .build();
+
                 try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
-                        // Métricas globales
+                        
+                        // Imprimir Criterio 1
+                        printer.printRecord("--- MÉTRICAS GLOBALES ---", "");
                         printer.printRecord("Total de Viajes", totales.getTotalViajes());
                         printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
+                        printer.printRecord("Total Incidencias", totales.getTotalIncidencias());
                         
+                        // Imprimir Criterio 2
                         // --- CUMPLIENDO EL PUNTO 3: Filas fijas con los nombres exactos requeridos por el Frontend ---
                         // Usamos .getOrDefault para asegurar que si el estado tiene 0 viajes, imprima la fila con 0 en vez de desaparecer.
+                        printer.printRecord("--- DESGLOSE POR ESTADOS ---", "");
                         printer.printRecord("Estado: Pendientes", mapaEstados.getOrDefault("PENDIENTE", 0L));
                         printer.printRecord("Estado: En Tránsito", mapaEstados.getOrDefault("EN_TRANSITO", 0L));
                         printer.printRecord("Estado: En Punto de Recolección", mapaEstados.getOrDefault("EN_PUNTO_RECOLECCION", 0L));
@@ -372,12 +388,29 @@ public class ReporteService {
                         printer.printRecord("Estado: Cancelados", mapaEstados.getOrDefault("CANCELADO", 0L));
 
 
-                        /* 
-                        for (ReporteEstadoDTO e : estados) {
-                                printer.printRecord("Estado: " + e.getEstado(), e.getCantidadEnvios());
+                        // Imprimir Criterio 3
+                        printer.printRecord("--- DESGLOSE POR TIPO DE GRANO ---", "");
+                        if (granos != null && !granos.isEmpty()) {
+                                for (ReporteGranoDTO grano : granos) {
+                                        printer.printRecord("Grano: " + grano.getTipoGrano(), grano.getCantidadEnvios());
+                                }
+                        } else {
+                                printer.printRecord("Sin datos de granos", 0);
                         }
-                        */
-                printer.flush();
+
+                        // Imprimir Criterio 4
+                        printer.printRecord("--- EFICIENCIA DE ENTREGAS ---", "");
+                        if (eficiencia != null) {
+                                printer.printRecord("Viajes a tiempo", eficiencia.getCantidadEnviosATiempo());
+                                printer.printRecord("Kilos a tiempo (kg)", eficiencia.getTotalKilosEnTiempo());
+                                printer.printRecord("Porcentaje a tiempo (%)", eficiencia.getPorcentajeATiempo());
+                        } else {
+                                printer.printRecord("Viajes a tiempo", 0);
+                                printer.printRecord("Kilos a tiempo (kg)", 0);
+                                printer.printRecord("Porcentaje a tiempo (%)", 0.0);
+                        }
+
+                        printer.flush();
                 }
         }
 
