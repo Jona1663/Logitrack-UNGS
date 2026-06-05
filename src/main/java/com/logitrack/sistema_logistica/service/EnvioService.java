@@ -238,11 +238,30 @@
                         EstadoEnvio estadoAnterior = envio.getEstadoActual();
                         EstadoEnvio estadoNuevo = EstadoEnvio.valueOf(nuevoEstadoStr);
 
+
+                        //VERSION1
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
+                        /* 
                         if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
                                         trackingService.generarYGuardarRuta(envio);
                                 }
+                        */
+                        //VERSION2        
+                        // logica de ruteo
+                        // Si el estado cambia a En transito o Enreparto , pedimos la ruta
+                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
+                                try {
+                                        trackingService.generarYGuardarRuta(envio);
+                                } catch (Exception e) {
+                                        // Si la API de mapas falla o las coordenadas son inválidas, atrapamos el error.
+                                        // El estado del viaje se actualizará igual, previniendo que se bloquee el sistema.
+                                        System.err.println("Advertencia de Ruteo: " + e.getMessage());
+                                }
+                        }
+
+
+
 
                         // 2. Actualizamos los campos en la entidad
                         envio.setEstadoActual(estadoNuevo);
@@ -472,6 +491,8 @@
 
         // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de
         // operador/supervisor
+        //VERSION 1
+        /* 
         @Transactional
         public Envio actualizarEstadoOperativo(String idEnvio, EnvioOperativoDTO dto, Authentication auth) {
                 Envio envioExistente = envioRepository.findById(idEnvio)
@@ -514,7 +535,7 @@
                         * .build();
                         * 
                         * historialEstadosRepository.save(historial);
-                        */
+                        
                         return actualizarEstadoYPrioridad(
                                         idEnvio,
                                         dto.getEstado().name(),
@@ -529,19 +550,78 @@
                 // auditarlo
                 if (!estadoCambiado && dto.getPrioridadIa() != null
                         && !dto.getPrioridadIa().equals(estadoAnterior.name())) {
-                Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName()).get();
+                        Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName()).get();
 
-                auditoriaService.registrarEvento(
-                        envioGuardado, 
-                        usuarioModificador, 
-                        TipoEvento.CAMBIO_PRIORIDAD, 
-                        estadoAnterior, 
-                        estadoAnterior
-                );
-        }
+                        auditoriaService.registrarEvento(
+                                envioGuardado, 
+                                usuarioModificador, 
+                                TipoEvento.CAMBIO_PRIORIDAD, 
+                                estadoAnterior, 
+                                estadoAnterior
+                        );
+                }
 
                 return envioGuardado;
         }
+        */
+
+        //VERSION 2
+        // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de
+        // operador/supervisor
+        @Transactional
+        public Envio actualizarEstadoOperativo(String idEnvio, EnvioOperativoDTO dto, Authentication auth) {
+                Envio envioExistente = envioRepository.findById(idEnvio)
+                                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+                EstadoEnvio estadoAnterior = envioExistente.getEstadoActual();
+                boolean estadoCambiado = (dto.getEstado() != null && dto.getEstado() != estadoAnterior);
+                String prioridadFinal = envioExistente.getPrioridadIa();
+                boolean prioridadCambiada = false;
+
+                // 1. Validación de Prioridad (Estrictamente restringido a Supervisor)
+                if (dto.getPrioridadIa() != null && !dto.getPrioridadIa().equals(envioExistente.getPrioridadIa())) {
+                        boolean esSupervisor = auth.getAuthorities().stream()
+                                        .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"));
+
+                        if (!esSupervisor) {
+                                throw new RuntimeException("La prioridad del envío solo puede ser modificada por un supervisor.");
+                        }
+                        prioridadFinal = dto.getPrioridadIa();
+                        prioridadCambiada = true;
+                }
+
+                Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName())
+                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+                // 2. Si el estado cambió, delegamos TODO al método centralizado
+                // (Ese método ya se encarga de guardar el envío, generar el historial y recalcular rutas)
+                if (estadoCambiado) {
+                        return actualizarEstadoYPrioridad(
+                                        idEnvio,
+                                        dto.getEstado().name(),
+                                        prioridadFinal,
+                                        usuarioModificador,
+                                        TipoEvento.CAMBIO_ESTADO);
+                }
+
+                // 3. Si NO cambió el estado, pero SÍ cambió la prioridad, guardamos y auditamos acá
+                if (prioridadCambiada) {
+                        envioExistente.setPrioridadIa(prioridadFinal);
+                        Envio envioGuardado = envioRepository.save(envioExistente);
+
+                        auditoriaService.registrarEvento(
+                                        envioGuardado, 
+                                        usuarioModificador, 
+                                        TipoEvento.CAMBIO_PRIORIDAD, 
+                                        estadoAnterior, 
+                                        estadoAnterior
+                        );
+                        return envioGuardado;
+                }
+
+                // Si no cambió ni el estado ni la prioridad, simplemente retornamos el envío intacto
+                return envioExistente;
+        }       
 
         // Calcula y devuelve la ubicación exacta del camión en base al tiempo
         // transcurrido
