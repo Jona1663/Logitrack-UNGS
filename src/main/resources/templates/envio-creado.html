@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Envío registrado — Logitrack</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body, table, td, p, a  { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-collapse: collapse; mso-table-lspace: 0; mso-table-rspace: 0; }
+    body  { margin: 0; padding: 0; background-color: #f0f4f8; }
+
+    .wrapper { width: 100%; background: #f0f4f8; padding: 32px 16px; }
+    .card    { max-width: 600px; margin: 0 auto; background: #fff;
+               border-radius: 12px; overflow: hidden;
+               box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+
+    /* Header */
+    .hdr       { background: #0f1f3d; padding: 26px 36px; }
+    .logo      { font-family: Arial,sans-serif; font-size: 22px;
+                 font-weight: bold; color: #fff; letter-spacing: 1px; }
+    .logo span { color: #00b4d8; }
+    .tagline   { font-family: Arial,sans-serif; font-size: 11px;
+                 color: #7a9abf; margin-top: 4px;
+                 text-transform: uppercase; letter-spacing: .5px; }
+
+    /* Banner de confirmación */
+    .confirm-banner {
+      background: linear-gradient(135deg, #0f1f3d 0%, #1a3a5c 100%);
+      padding: 24px 36px;
+      text-align: center;
+    }
+    .confirm-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+    .confirm-title {
+      font-family: Arial,sans-serif; font-size: 20px;
+      font-weight: bold; color: #ffffff; margin: 0 0 4px;
+    }
+    .confirm-sub {
+      font-family: Arial,sans-serif; font-size: 13px;
+      color: #90b8d8; margin: 0;
+    }
+
+    /* Body */
+    .body { padding: 32px 36px 28px; }
+    .greeting { font-family: Arial,sans-serif; font-size: 15px;
+                color: #222; margin: 0 0 16px; }
+
+    /* Badge PENDIENTE */
+    .badge {
+      display: inline-block; padding: 6px 16px; border-radius: 20px;
+      font-family: Arial,sans-serif; font-size: 13px; font-weight: bold;
+      margin-bottom: 24px;
+    }
+    .badge--pendiente { background: #e0e7ff; color: #3730a3; }
+
+    /* ID de seguimiento destacado */
+    .tracking-box {
+      background: #f0f9ff; border: 1.5px solid #00b4d8;
+      border-radius: 8px; padding: 14px 18px;
+      margin-bottom: 24px; text-align: center;
+    }
+    .tracking-label {
+      font-family: Arial,sans-serif; font-size: 11px;
+      color: #60a5c8; text-transform: uppercase;
+      letter-spacing: .5px; margin-bottom: 4px;
+    }
+    .tracking-id {
+      font-family: Arial,sans-serif; font-size: 22px;
+      font-weight: bold; color: #0f1f3d; letter-spacing: 2px;
+    }
+
+    /* Tabla de detalles */
+    .details { width: 100%; border-collapse: collapse; margin: 0 0 24px; }
+    .details td {
+      font-family: Arial,sans-serif; font-size: 14px;
+      padding: 10px 0; border-bottom: 1px solid #eef1f5;
+      color: #333; vertical-align: top;
+    }
+    .details td.lbl { color: #888; width: 40%; font-size: 13px; }
+    .details td.val { font-weight: 500; }
+    .details tr:last-child td { border-bottom: none; }
+
+    /* Comentarios */
+    .comments-box {
+      background: #fffbeb; border-left: 3px solid #f59e0b;
+      border-radius: 0 6px 6px 0; padding: 12px 14px;
+      margin-bottom: 24px;
+    }
+    .comments-label {
+      font-family: Arial,sans-serif; font-size: 11px;
+      font-weight: bold; color: #92400e; text-transform: uppercase;
+      letter-spacing: .5px; margin-bottom: 4px;
+    }
+    .comments-text {
+      font-family: Arial,sans-serif; font-size: 13px; color: #44403c;
+    }
+
+    .hr   { border: none; border-top: 1px solid #eef1f5; margin: 20px 0; }
+    .note { font-family: Arial,sans-serif; font-size: 13px;
+            color: #888; line-height: 1.6; margin: 0; }
+
+    /* Footer */
+    .ftr { background: #f8fafc; border-top: 1px solid #eef1f5;
+           padding: 18px 36px; text-align: center; }
+    .ftr p { font-family: Arial,sans-serif; font-size: 12px;
+             color: #aaa; margin: 3px 0; }
+
+    @media only screen and (max-width: 620px) {
+      .card { border-radius: 0 !important; }
+      .hdr, .confirm-banner, .body, .ftr { padding-left: 20px !important; padding-right: 20px !important; }
+      .details td { display: block; width: 100% !important; }
+      .details td.lbl { padding-bottom: 2px; border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper"><div class="card">
+
+  <!-- Header logo -->
+  <div class="hdr">
+    <div class="logo">Logi<span>track</span></div>
+    <div class="tagline">Sistema de logística de granos</div>
+  </div>
+
+  <!-- Banner de confirmación -->
+  <div class="confirm-banner">
+    <div class="confirm-icon">✅</div>
+    <p class="confirm-title">¡Envío registrado!</p>
+    <p class="confirm-sub">Tu envío fue creado correctamente en el sistema</p>
+  </div>
+
+  <!-- Cuerpo -->
+  <div class="body">
+
+    <p class="greeting">
+      Hola, <strong th:text="${nombreCliente}">Cliente</strong>
+    </p>
+
+    <div>
+      <span class="badge badge--pendiente">Pendiente de salida</span>
+    </div>
+
+    <!-- ID de seguimiento destacado -->
+    <div class="tracking-box">
+      <div class="tracking-label">ID de seguimiento</div>
+      <div class="tracking-id" th:text="${idSeguimiento}">LT-A1B2C3</div>
+    </div>
+
+    <!-- Tabla de datos del envío -->
+    <table class="details">
+      <tr>
+        <td class="lbl">Origen</td>
+        <td class="val" th:text="${origen}">Rosario, Santa Fe</td>
+      </tr>
+      <tr>
+        <td class="lbl">Destino</td>
+        <td class="val" th:text="${destino}">Bahía Blanca, Bs. As.</td>
+      </tr>
+      <tr>
+        <td class="lbl">Tipo de grano</td>
+        <td class="val" th:text="${tipoGrano}">SOJA</td>
+      </tr>
+      <tr>
+        <td class="lbl">Fecha de registro</td>
+        <td class="val" th:text="${fechaHoraEvento}">02/06/2025 09:15</td>
+      </tr>
+    </table>
+
+    <!-- Comentarios (solo si hay) -->
+    <div class="comments-box" th:if="${comentarios != null and !#strings.isEmpty(comentarios)}">
+      <div class="comments-label">Comentarios del operador</div>
+      <div class="comments-text" th:text="${comentarios}">Sin comentarios</div>
+    </div>
+
+    <hr class="hr"/>
+
+    <p class="note">
+      Usá el ID de seguimiento para consultar el estado de tu envío en cualquier momento.
+      Recibirás notificaciones automáticas cuando el estado cambie.
+    </p>
+
+  </div>
+
+  <div class="ftr">
+    <p>Este correo fue generado automáticamente por el sistema Logitrack.</p>
+    <p>Por favor no respondas directamente a esta dirección.</p>
+  </div>
+
+</div></div>
+</body>
+</html>

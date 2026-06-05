@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Actualización de envío</title>
+</head>
+<body>
+
+    <h2>Actualización de envío</h2>
+
+    <p>Hola <strong th:text="${nombreCliente}"></strong>,</p>
+
+<p>Tu envío ha cambiado de estado.</p>
+
+<p><strong>ID de seguimiento:</strong> <span th:text="${idSeguimiento}"></span></p>
+
+<p><strong>Toneladas:</strong> <span th:text="${toneladas}"></span></p>
+
+<p><strong>Tipo de grano:</strong> <span th:text="${tipoGrano}"></span></p>
+
+<p><strong>Estado:</strong> <span th:text="${estadoLabel}"></span></p>
+
+<p><strong>Fecha:</strong> <span th:text="${fechaHoraEvento}"></span></p>
+
+    <p>Gracias por utilizar Logitrack.</p>
+
+</body>
+</html>

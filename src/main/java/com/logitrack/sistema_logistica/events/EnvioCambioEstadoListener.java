@@ -1,51 +1,52 @@
 package com.logitrack.sistema_logistica.events;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Set;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.logitrack.sistema_logistica.model.enums.PlantillaNotificacion;
-import com.logitrack.sistema_logistica.service.EmailService;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.service.NotificationService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * MODIFICAR — events/EnvioCambioEstadoListener.java
+ *
+ * Cambios respecto a la versión anterior:
+ * - Se agrega PENDIENTE al set de estados notificables (email de creación de envío)
+ * - Se agrega CANCELADO al set de estados notificables (email de cancelación)
+ * - Ahora notifica los 5 estados relevantes:
+ *     PENDIENTE, EN_TRANSITO, EN_REPARTO, ENTREGADO, CANCELADO
+ * - EN_PUNTO_DE_RECOLECCION sigue sin notificación (no se requiere)
+ */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class EnvioCambioEstadoListener {
 
-    private static final Logger log = LoggerFactory.getLogger(EnvioCambioEstadoListener.class);
     private final NotificationService notificationService;
-    private final EmailService emailService;  // ← Agregar
 
-    // Constructor actualizado
-    public EnvioCambioEstadoListener(NotificationService notificationService, EmailService emailService) {
-        this.notificationService = notificationService;
-        this.emailService = emailService;
-    }
+    private static final Set<EstadoEnvio> ESTADOS_NOTIFICABLES = Set.of(
+        EstadoEnvio.PENDIENTE,       // nuevo — email de confirmación de creación
+        EstadoEnvio.EN_TRANSITO,
+        EstadoEnvio.EN_REPARTO,
+        EstadoEnvio.ENTREGADO,
+        EstadoEnvio.CANCELADO        // nuevo — email de cancelación
+    );
 
     @EventListener
     public void onCambioEstado(EnvioCambioEstadoEvent event) {
-        try {
-            var envio = event.getEnvio();
-            PlantillaNotificacion plantilla = PlantillaNotificacion.valueOf(envio.getEstadoActual().name());
-            String cliente = envio.getOrigen().getEmpresa().getRazonSocial();
-            String asunto = plantilla.getAsunto();
-            String mensaje = plantilla.getCuerpo(cliente, envio.getIdEnvio());
-
-            // 1. Notificación por consola (sigue activa)
-            notificationService.enviarNotificacion("cliente-fijo@logitrack.com", asunto, mensaje);
-
-            // 2. Email real al cliente (ahora descomentado y funcional)
-            String email = envio.getOrigen().getEmpresa().getEmail();
-            if (email != null && !email.isBlank()) {
-                emailService.sendEmail(email, asunto, mensaje);
-                log.info("Email enviado a {} para envío {}", email, envio.getIdEnvio());
-            } else {
-                log.warn("El cliente {} no tiene email de contacto registrado", cliente);
-            }
-
-        } catch (Exception e) {
-            log.warn("No se pudo enviar notificación para envío {}: {}",
-                event.getEnvio().getIdEnvio(), e.getMessage());
+        if (!ESTADOS_NOTIFICABLES.contains(event.getNuevoEstado())) {
+            log.debug("[LISTENER] Estado {} no dispara notificación. Envío: {}",
+                event.getNuevoEstado(), event.getEnvio().getIdEnvio());
+            return;
         }
+
+        log.info("[LISTENER] Disparando notificación → envío {} | estado: {}",
+            event.getEnvio().getIdEnvio(), event.getNuevoEstado());
+
+        notificationService.notificarCambioEstado(event.getEnvio(), event.getNuevoEstado());
     }
 }

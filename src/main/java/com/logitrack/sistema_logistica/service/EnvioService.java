@@ -279,7 +279,7 @@
                                                 estadoAnterior, 
                                                 estadoNuevo
                                         );
-                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado, estadoNuevo));
 
                 return envioGuardado;
         }
