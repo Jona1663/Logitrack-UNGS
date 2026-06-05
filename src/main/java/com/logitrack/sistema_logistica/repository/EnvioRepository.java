@@ -17,24 +17,23 @@ import java.util.List;
 @Repository
 public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecificationExecutor<Envio> {
     
-    // Forzamos a Hibernate a buscar por el nombre exacto de la variable en el modelo
-    @Query("SELECT e FROM Envio e WHERE e.idEnvio = :idEnvio")
-    Optional<Envio> buscarPorId(@Param("idEnvio") String idEnvio);
-
-    // Buscar por el nombre exacto de la variable en el modelo
-   // @Query(value = "SELECT * FROM envios WHERE trackingCtg = :tracking", nativeQuery = true)
-       // Optional<Envio> buscarPorTracking(@Param("tracking") String tracking);
-    
+        // Forzamos a Hibernate a buscar por el nombre exacto de la variable en el modelo
+        @Query("SELECT e FROM Envio e WHERE e.idEnvio = :idEnvio")
+        Optional<Envio> buscarPorId(@Param("idEnvio") String idEnvio);
+        
+        // Buscar por el nombre exacto de la variable en el modelo
+        // @Query(value = "SELECT * FROM envios WHERE trackingCtg = :tracking", nativeQuery = true)
+        // Optional<Envio> buscarPorTracking(@Param("tracking") String tracking); 
         // Devuelve envíos que no tienen chofer NI camión asignado todavía
-    @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
+        @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
         "AND e.estadoActual NOT IN " +
         "(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.CANCELADO, " +
         "com.logitrack.sistema_logistica.model.enums.EstadoEnvio.ENTREGADO)")
         List<Envio> findEnviosSinAsignar();
 
-    // Suma simple de kilos para el reporte
-    @Query(value = "SELECT COALESCE(SUM(COALESCE(kg_destino, kg_origen)), 0) FROM envios", nativeQuery = true)
-    Long sumKilos();
+        // Suma simple de kilos para el reporte
+        @Query(value = "SELECT COALESCE(SUM(COALESCE(kg_destino, kg_origen)), 0) FROM envios", nativeQuery = true)
+        Long sumKilos();
 
         //#113
         //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).
@@ -87,7 +86,6 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
                 "GROUP BY e.tipoGrano")
         List<ReporteGranoDTO> obtenerMetricasPorGrano(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-
         /*
         // 2. Envíos y kilos que llegaron a tiempo
         @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO(" +
@@ -106,15 +104,6 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         // Suma los kilos de los envíos que llegaron a tiempo
         @Query("SELECT COALESCE(SUM(e.kgOrigen), 0L) FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin")
         long sumKilosATiempoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
-
-
-
-
-
-
-
-
-
 
         //Para la #238
         //Filtra estrictamente por estado 'ENTREGADO' y se asegura de que ninguna fecha sea nula
@@ -150,6 +139,8 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         @Query("SELECT e FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin ORDER BY e.fechaCreacion ASC")
         Stream<Envio> obtenerEnviosATiempoComoStream(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
+        // Trae todos los envíos creados entre dos fechas para el reporte detallado (CSV y Excel)
+        List<Envio> findByFechaCreacionBetween(LocalDateTime startDate, LocalDateTime endDate);
 
 
 }

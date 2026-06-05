@@ -203,7 +203,7 @@ public class ReporteController {
 
 
     //V2
-// =========================================================
+    // =========================================================
     // ENDPOINTS DE EXPORTACIÓN (EXCEL) - TICKET #368
     // =========================================================
 
@@ -320,6 +320,53 @@ public class ReporteController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         return ResponseEntity.ok(reporteService.obtenerReportePorEstadosPorFechas(fechaInicio, fechaFin));
+    }
+
+    // Endpoint para exportar el detalle de envíos (CSV y Excel)
+    // GET /api/reportes/detalle/exportar?fechaInicio=...&fechaFin=...
+    @GetMapping("/detalle/exportar")
+    public void exportarDetalleCsv(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        
+        try {
+            response.setContentType("text/csv; charset=utf-8");
+            response.setHeader("Content-Disposition", "attachment; filename=\"Logitrack_DetalleEnvios_" + LocalDate.now() + ".csv\"");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition"); // CLAVE PARA EL FRONTEND
+            
+            reporteService.exportarDetalleEnviosCsv(fechaInicio, fechaFin, response.getWriter());
+            
+        } catch (RuntimeException e) {
+            response.reset();
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"message\": \"" + e.getMessage() + "\"}");
+            response.getWriter().flush();
+        }
+    }
+
+    @GetMapping("/detalle/exportar/excel")
+    public ResponseEntity<?> exportarDetalleExcel(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        try {
+            java.io.ByteArrayInputStream stream = reporteService.generarExcelDetalleEnvios(fechaInicio, fechaFin);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=\"Logitrack_DetalleEnvios_" + LocalDate.now() + ".xlsx\"");
+            headers.add("Access-Control-Expose-Headers", "Content-Disposition"); // CLAVE PARA EL FRONTEND
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(new org.springframework.core.io.InputStreamResource(stream));
+                    
+        } catch (RuntimeException | java.io.IOException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
 }
