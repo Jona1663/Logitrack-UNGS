@@ -372,15 +372,13 @@ public class ReporteService {
                 try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
                         
                         // Imprimir Criterio 1
-                        printer.printRecord("--- MÉTRICAS GLOBALES ---", "");
-                        printer.printRecord("Total de Viajes", totales.getTotalViajes());
-                        printer.printRecord("Kilos Transportados (kg)", totales.getTotalKilos());
-                        printer.printRecord("Total Incidencias", totales.getTotalIncidencias());
+                        printer.printRecord("Viajes", totales.getTotalViajes());
+                        printer.printRecord("Kilos Transportados", totales.getTotalKilos());
+                        printer.printRecord("Incidencias", totales.getTotalIncidencias());
                         
                         // Imprimir Criterio 2
                         // --- CUMPLIENDO EL PUNTO 3: Filas fijas con los nombres exactos requeridos por el Frontend ---
                         // Usamos .getOrDefault para asegurar que si el estado tiene 0 viajes, imprima la fila con 0 en vez de desaparecer.
-                        printer.printRecord("--- DESGLOSE POR ESTADOS ---", "");
                         printer.printRecord("Estado: Pendientes", mapaEstados.getOrDefault("PENDIENTE", 0L));
                         printer.printRecord("Estado: En Tránsito", mapaEstados.getOrDefault("EN_TRANSITO", 0L));
                         printer.printRecord("Estado: En Punto de Recolección", mapaEstados.getOrDefault("EN_PUNTO_RECOLECCION", 0L));
@@ -389,25 +387,21 @@ public class ReporteService {
 
 
                         // Imprimir Criterio 3
-                        printer.printRecord("--- DESGLOSE POR TIPO DE GRANO ---", "");
                         if (granos != null && !granos.isEmpty()) {
                                 for (ReporteGranoDTO grano : granos) {
                                         printer.printRecord("Grano: " + grano.getTipoGrano(), grano.getCantidadEnvios());
                                 }
-                        } else {
-                                printer.printRecord("Sin datos de granos", 0);
-                        }
+                        } 
 
                         // Imprimir Criterio 4
-                        printer.printRecord("--- EFICIENCIA DE ENTREGAS ---", "");
                         if (eficiencia != null) {
                                 printer.printRecord("Viajes a tiempo", eficiencia.getCantidadEnviosATiempo());
-                                printer.printRecord("Kilos a tiempo (kg)", eficiencia.getTotalKilosEnTiempo());
-                                printer.printRecord("Porcentaje a tiempo (%)", eficiencia.getPorcentajeATiempo());
+                                printer.printRecord("Kilos a tiempo", eficiencia.getTotalKilosEnTiempo());
+                                printer.printRecord("Porcentaje a tiempo", eficiencia.getPorcentajeATiempo());
                         } else {
                                 printer.printRecord("Viajes a tiempo", 0);
-                                printer.printRecord("Kilos a tiempo (kg)", 0);
-                                printer.printRecord("Porcentaje a tiempo (%)", 0.0);
+                                printer.printRecord("Kilos a tiempo", 0);
+                                printer.printRecord("Porcentaje a tiempo", 0.0);
                         }
 
                         printer.flush();
@@ -419,6 +413,8 @@ public class ReporteService {
         // NUEVOS MÉTODOS PARA EXCEL (#368)
         // =======================================================
 
+        //vVERSION 1
+        /* 
         @Transactional(readOnly = true)
         public java.io.ByteArrayInputStream generarExcelOperativo(LocalDate fechaInicio, LocalDate fechaFin) throws java.io.IOException {
                 ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
@@ -477,6 +473,111 @@ public class ReporteService {
                         return new java.io.ByteArrayInputStream(out.toByteArray());
                 }
         }
+        */
+
+
+        //VERSION 2
+        @Transactional(readOnly = true)
+        public java.io.ByteArrayInputStream generarExcelOperativo(LocalDate fechaInicio, LocalDate fechaFin) throws java.io.IOException {
+                
+                ReporteSimpleDTO totales = obtenerReporte(fechaInicio, fechaFin);
+                if (totales == null || totales.getTotalViajes() == 0) {
+                        throw new RuntimeException("EMPTY_STATE");
+                }
+
+                // Obtener datos
+                List<ReporteEstadoDTO> estados = (fechaInicio != null && fechaFin != null) ? 
+                        envioRepository.obtenerMetricasPorEstadoEntreFechas(fechaInicio.atStartOfDay(), fechaFin.atTime(23, 59, 59)) : 
+                        envioRepository.obtenerMetricasPorEstado();
+
+                java.util.Map<String, Long> mapaEstados = new java.util.HashMap<>();
+                if (estados != null) {
+                        for (ReporteEstadoDTO e : estados) {
+                                if (e.getEstado() != null) {
+                                        mapaEstados.put(e.getEstado().toString().toUpperCase(), e.getCantidadEnvios());
+                                }
+                        }
+                }
+
+                LocalDate inicioSeguro = (fechaInicio != null) ? fechaInicio : LocalDate.of(2000, 1, 1);
+                LocalDate finSeguro = (fechaFin != null) ? fechaFin : LocalDate.now();
+                List<ReporteGranoDTO> granos = obtenerReportePorGrano(inicioSeguro, finSeguro);
+                ReporteEficienciaDTO eficiencia = obtenerMetricasATiempo(inicioSeguro, finSeguro);
+
+                // Crear Excel en memoria
+                try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(); 
+                     java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+                     
+                        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Reporte Operativo");
+                        
+                        // Cabecera en negrita
+                        org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
+                        org.apache.poi.ss.usermodel.Font font = workbook.createFont();
+                        font.setBold(true);
+                        headerStyle.setFont(font);
+                        
+                        org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+                        org.apache.poi.ss.usermodel.Cell cell0 = headerRow.createCell(0);
+                        cell0.setCellValue("Métrica");
+                        cell0.setCellStyle(headerStyle);
+                        
+                        org.apache.poi.ss.usermodel.Cell cell1 = headerRow.createCell(1);
+                        cell1.setCellValue("Valor");
+                        cell1.setCellStyle(headerStyle);
+                        
+                        // SOLUCIÓN: Usamos un array de 1 posición para poder incrementarlo dentro del Lambda
+                        int[] rowNum = {1};
+
+                        // Función auxiliar para agregar filas rápido
+                        java.util.function.BiConsumer<String, Object> addRow = (metrica, valor) -> {
+                                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum[0]++);
+                                row.createCell(0).setCellValue(metrica);
+                                if (valor instanceof Long) row.createCell(1).setCellValue((Long) valor);
+                                else if (valor instanceof Integer) row.createCell(1).setCellValue((Integer) valor);
+                                else if (valor instanceof Double) row.createCell(1).setCellValue((Double) valor);
+                                else row.createCell(1).setCellValue(valor.toString());
+                        };
+
+                        // 1. Métricas Globales
+                        addRow.accept("Viajes", totales.getTotalViajes());
+                        addRow.accept("Kilos Transportados", totales.getTotalKilos());
+                        addRow.accept("Incidencias", totales.getTotalIncidencias());
+
+                        // 2. Estados
+                        addRow.accept("Estado: Pendientes", mapaEstados.getOrDefault("PENDIENTE", 0L));
+                        addRow.accept("Estado: En Tránsito", mapaEstados.getOrDefault("EN_TRANSITO", 0L));
+                        addRow.accept("Estado: En Punto de Recolección", mapaEstados.getOrDefault("EN_PUNTO_RECOLECCION", 0L));
+                        addRow.accept("Estado: Entregados", mapaEstados.getOrDefault("ENTREGADO", 0L));
+                        addRow.accept("Estado: Cancelados", mapaEstados.getOrDefault("CANCELADO", 0L));
+
+                        // 3. Granos
+                        if (granos != null && !granos.isEmpty()) {
+                                for (ReporteGranoDTO grano : granos) {
+                                        addRow.accept("Grano: " + grano.getTipoGrano(), grano.getCantidadEnvios());
+                                }
+                        }
+
+                        // 4. Eficiencia
+                        if (eficiencia != null) {
+                                addRow.accept("Viajes a tiempo", eficiencia.getCantidadEnviosATiempo());
+                                addRow.accept("Kilos a tiempo", eficiencia.getTotalKilosEnTiempo());
+                                addRow.accept("Porcentaje a tiempo", eficiencia.getPorcentajeATiempo());
+                        } else {
+                                addRow.accept("Viajes a tiempo", 0L);
+                                addRow.accept("Kilos a tiempo", 0L);
+                                addRow.accept("Porcentaje a tiempo", 0.0);
+                        }
+
+                        // Autoajustar columnas
+                        sheet.autoSizeColumn(0);
+                        sheet.autoSizeColumn(1);
+
+                        workbook.write(out);
+                        return new java.io.ByteArrayInputStream(out.toByteArray());
+                }
+        }
+
+
 
         @Transactional(readOnly = true)
         public java.io.ByteArrayInputStream generarExcelCumplimiento(LocalDate fechaInicio, LocalDate fechaFin) throws java.io.IOException {
