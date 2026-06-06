@@ -1,6 +1,5 @@
 package com.logitrack.sistema_logistica.controller;
 
-
 import com.logitrack.sistema_logistica.dto.ReporteCumplimientoResponse;
 import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteSimpleDTO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -368,5 +369,24 @@ public class ReporteController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/cumplimiento/metricas/exportar")
+    public ResponseEntity<byte[]> exportarCumplimientoCsvEndpoint() {
+        byte[] csvBytes = reporteService.exportarCumplimientoCsv();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csvBytes);
+    }
+
+    @GetMapping("/cumplimiento/metricas/exportar/excel")
+    public ResponseEntity<byte[]> exportarCumplimientoExcelEndpoint() {
+        byte[] excelBytes = reporteService.exportarCumplimientoExcel();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
 
 }

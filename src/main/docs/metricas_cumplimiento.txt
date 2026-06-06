@@ -1,0 +1,254 @@
+═══════════════════════════════════════════════════════════════════════════════
+ ENDPOINTS DE MÉTRICAS DE CUMPLIMIENTO (CSV Y EXCEL)
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+
+OBJETIVO:
+Crear dos nuevos endpoints REST para exportar reportes consolidados (en formatos CSV y Excel) que calculen y expongan el nivel de cumplimiento del sistema de entregas.
+Métricas incluidas:
+
+Total de envíos entregados
+
+Envíos entregados a tiempo
+
+Envíos entregados con retraso
+
+Porcentaje (%) de entregas a tiempo
+
+Porcentaje (%) de entregas con retraso
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CLASE CREADA: CumplimientoMetricasDTO.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/dto/CumplimientoMetricasDTO.java
+
+Propósito:
+
+Encapsular los resultados cuantitativos y porcentuales calculados en la capa de negocio.
+
+Facilitar la transferencia estructurada de datos hacia los generadores de archivos (CSV/Excel).
+
+Código:
+
+Java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CumplimientoMetricasDTO {
+    private long totalEntregados;
+    private long entregadosATiempo;
+    private long conRetraso;
+    private double porcentajeATiempo;
+    private double porcentajeConRetraso;
+}
+Explicación:
+
+@Data: Lombok genera automáticamente getters, setters, constructores internos y métodos auxiliares.
+
+totalEntregados: Cuenta global de envíos finalizados con éxito.
+
+entregadosATiempo: Envíos cuya fecha de llegada real es menor o igual a la estimada.
+
+conRetraso: Envíos cuya fecha de llegada real superó el ETA planificado.
+
+porcentajeATiempo / porcentajeConRetraso: Valores calculados con precisión de dos decimales.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. CLASE MODIFICADA: EnvioRepository.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/repository/EnvioRepository.java
+
+QUE SE AGREGÓ:
+Tres consultas mediante JPQL para delegar el filtrado y conteo de registros directamente al motor de la base de datos de manera eficiente.
+
+CÓDIGO AGREGADO AL FINAL:
+
+Java
+@Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO'")
+long countTotalEntregados();
+
+@Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada <= e.fechaEstimadaLlegada")
+long countEntregadosATiempo();
+
+@Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada > e.fechaEstimadaLlegada")
+long countConRetraso();
+EXPLICACIÓN:
+
+@Query: Mapea consultas orientadas a objetos (JPQL) que Spring Data JPA traduce a SQL nativo.
+
+Comparación temporal: e.fechaLlegada <= e.fechaEstimadaLlegada discrimina matemáticamente el estado de puntualidad del viaje.
+
+Retorno de tipo long: Asegura compatibilidad óptima para manejar volúmenes masivos de datos sin desbordamientos de memoria.
+
+POR QUE:
+
+Evita traer miles de registros a la memoria de la aplicación para contarlos en Java.
+
+Aprovecha los índices de la base de datos en los campos de fecha y estados, logrando ejecuciones instantáneas.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. CLASE MODIFICADA: ReporteService.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/service/ReporteService.java
+
+QUE SE AGREGÓ:
+Lógica matemática para calcular ratios de eficiencia y métodos de serialización binaria para la construcción de archivos descargables.
+
+CÓDIGO AGREGADO:
+
+Java
+@Transactional(readOnly = true)
+public CumplimientoMetricasDTO obtenerMetricasCumplimiento() {
+    long total = envioRepository.countTotalEntregados();
+    long aTiempo = envioRepository.countEntregadosATiempo();
+    long conRetraso = envioRepository.countConRetraso();
+
+    double pctATiempo = (total == 0) ? 0.0 : Math.round(((double) aTiempo / total * 100) * 100.0) / 100.0;
+    double pctRetraso = (total == 0) ? 0.0 : Math.round(((double) conRetraso / total * 100) * 100.0) / 100.0;
+
+    return CumplimientoMetricasDTO.builder()
+            .totalEntregados(total)
+            .entregadosATiempo(aTiempo)
+            .conRetraso(conRetraso)
+            .porcentajeATiempo(pctATiempo)
+            .porcentajeConRetraso(pctRetraso)
+            .build();
+}
+
+public byte[] exportarCumplimientoCsv() {
+    CumplimientoMetricasDTO metricas = obtenerMetricasCumplimiento();
+    StringBuilder sb = new StringBuilder();
+    sb.append("Total Entregados,Entregados a Tiempo,Con Retraso,% a Tiempo,% con Retraso\n");
+    sb.append(metricas.getTotalEntregados()).append(",")
+      .append(metricas.getEntregadosATiempo()).append(",")
+      .append(metricas.getConRetraso()).append(",")
+      .append(metricas.getPorcentajeATiempo()).append("%,")
+      .append(metricas.getPorcentajeConRetraso()).append("%\n");
+    return sb.toString().getBytes(StandardCharsets.UTF_8);
+}
+
+public byte[] exportarCumplimientoExcel() {
+    CumplimientoMetricasDTO metricas = obtenerMetricasCumplimiento();
+    try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        Sheet sheet = workbook.createSheet("Métricas de Cumplimiento");
+        Row headerRow = sheet.createRow(0);
+        String[] columnas = {"Total Entregados", "Entregados a Tiempo", "Con Retraso", "% a Tiempo", "% con Retraso"};
+        
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font font = workbook.createFont(); font.setBold(true); headerStyle.setFont(font);
+
+        for (int i = 0; i < columnas.length; i++) {
+            Cell cell = headerRow.createCell(i); cell.setCellValue(columnas[i]); cell.setCellStyle(headerStyle);
+        }
+
+        Row dataRow = sheet.createRow(1);
+        dataRow.createCell(0).setCellValue(metricas.getTotalEntregados());
+        dataRow.createCell(1).setCellValue(metricas.getEntregadosATiempo());
+        dataRow.createCell(2).setCellValue(metricas.getConRetraso());
+        dataRow.createCell(3).setCellValue(metricas.getPorcentajeATiempo() + "%");
+        dataRow.createCell(4).setCellValue(metricas.getPorcentajeConRetraso() + "%");
+
+        for (int i = 0; i < columnas.length; i++) sheet.autoSizeColumn(i);
+        workbook.write(out);
+        return out.toByteArray();
+    } catch (IOException e) {
+        throw new RuntimeException("Error al generar el Excel de cumplimiento", e);
+    }
+}
+EXPLICACIÓN:
+
+Protección contra división por cero: (total == 0) ? 0.0 : ... evita fallas lógicas si la base de datos no registra envíos completados.
+
+Redondeo: Math.round(... * 100.0) / 100.0 trunca los decimales excedentes para conservar una salida limpia en el documento.
+
+Apache POI y Streams: Se implementó un try-with-resources para instanciar el XSSFWorkbook y asegurar el cierre correcto de flujos de memoria tras escribir el array de bytes.
+
+═══════════════════════════════════════════════════════════════════════════════
+4. CLASE MODIFICADA: ReporteController.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/controller/ReporteController.java
+
+QUE SE AGREGÓ:
+Dos nuevos métodos con mapeo de peticiones GET configurados para inyectar flujos de datos en el cuerpo de la respuesta HTTP con sus respectivos tipos MIME.
+
+CÓDIGO AGREGADO:
+
+Java
+@GetMapping("/cumplimiento/metricas/exportar")
+public ResponseEntity<byte[]> exportarCumplimientoCsvEndpoint() {
+    byte[] csvBytes = reporteService.exportarCumplimientoCsv();
+    return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.csv")
+            .contentType(MediaType.parseMediaType("text/csv"))
+            .body(csvBytes);
+}
+
+@GetMapping("/cumplimiento/metricas/exportar/excel")
+public ResponseEntity<byte[]> exportarCumplimientoExcelEndpoint() {
+    byte[] excelBytes = reporteService.exportarCumplimientoExcel();
+    return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.xlsx")
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(excelBytes);
+}
+EXPLICACIÓN:
+
+Content-Disposition / attachment: Atributo clave del protocolo HTTP que le ordena formalmente al cliente (navegador o Thunder Client) activar el cuadro de diálogo de descarga de archivos locales.
+
+MediaType personalizado: Determina la firma exacta del archivo binario (vnd.openxmlformats...), impidiendo que los programas lectores interpreten los bytes de manera errónea.
+
+═══════════════════════════════════════════════════════════════════════════════
+FLUJO COMPLETO DE EJECUCIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+Usuario invoca la petición desde el cliente:
+GET http://localhost:8080/api/reportes/cumplimiento/metricas/exportar/excel
+
+ReporteController captura la llamada en el endpoint /excel.
+
+Delega la lógica al método exportarCumplimientoExcel() de ReporteService.
+
+El servicio ejecuta en paralelo las 3 consultas escalares (COUNT) mediante JPA en la BD.
+
+Con los valores numéricos devueltos, calcula algebraicamente los ratios de efectividad.
+
+Apache POI dibuja la cuadrícula en memoria, inyecta los textos formateados y convierte el libro a binario (byte[]).
+
+El controlador recibe el arreglo binario, añade las cabeceras de descarga directa y despacha el flujo con código de estado HTTP 200 OK.
+
+═══════════════════════════════════════════════════════════════════════════════
+CÓMO PROBAR
+═══════════════════════════════════════════════════════════════════════════════
+
+Asegúrate de levantar la aplicación localmente.
+
+Abre Thunder Client o Postman:
+
+Configura el método en GET.
+
+URL para CSV: http://localhost:8080/api/reportes/cumplimiento/metricas/exportar
+
+URL para Excel: http://localhost:8080/api/reportes/cumplimiento/metricas/exportar/excel
+
+En la pestaña de Headers de Seguridad, añade la clave de autorización: Authorization: Bearer <TOKEN_JWT>.
+
+Haz clic en Send.
+
+En el endpoint de Excel, selecciona la opción "Save Response" o "Download" para almacenar y abrir el archivo .xlsx de manera nativa.
+
+═══════════════════════════════════════════════════════════════════════════════
+VENTAJAS DE ESTA IMPLEMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Escalabilidad: Consultas ultra eficientes que no penalizan el uso de memoria en el servidor web.
+✓ Robustez lógica: El sistema está blindado ante bases de datos vacías o nulas.
+✓ Portabilidad: Archivos generados bajo estándares estrictos de la industria de datos, compatibles con Microsoft Excel, Google Sheets y herramientas de BI (Business Intelligence).
+✓ Experiencia de usuario (UX): Descargas limpias y automáticas directamente desde el panel de control operativo.
+═══════════════════════════════════════════════════════════════════════════════

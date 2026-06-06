@@ -142,5 +142,14 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         // Trae todos los envíos creados entre dos fechas para el reporte detallado (CSV y Excel)
         List<Envio> findByFechaCreacionBetween(LocalDateTime startDate, LocalDateTime endDate);
 
+        // Para la #238: Métricas de Cumplimiento
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO'")
+        long countTotalEntregados();
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada <= e.fechaEstimadaLlegada")
+        long countEntregadosATiempo();
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada > e.fechaEstimadaLlegada")
+        long countConRetraso();        
 
 }
