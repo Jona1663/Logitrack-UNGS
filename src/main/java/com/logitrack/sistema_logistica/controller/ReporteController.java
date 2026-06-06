@@ -18,6 +18,11 @@ import org.springframework.http.MediaType;
 import java.time.LocalDate;
 import java.util.List;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
+
 @RestController
 @RequestMapping("/api/reportes")
 public class ReporteController {
@@ -370,6 +375,8 @@ public class ReporteController {
         }
     }
 
+    //version1
+    /* 
     @GetMapping("/cumplimiento/metricas/exportar")
     public ResponseEntity<byte[]> exportarCumplimientoCsvEndpoint() {
         byte[] csvBytes = reporteService.exportarCumplimientoCsv();
@@ -382,6 +389,75 @@ public class ReporteController {
     @GetMapping("/cumplimiento/metricas/exportar/excel")
     public ResponseEntity<byte[]> exportarCumplimientoExcelEndpoint() {
         byte[] excelBytes = reporteService.exportarCumplimientoExcel();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
+    */
+
+    //version2
+    /* 
+    @GetMapping("/cumplimiento/metricas/exportar")
+    public ResponseEntity<byte[]> exportarCumplimientoCsvEndpoint(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        // Convertimos la fecha al inicio del día (00:00:00) y al final del día (23:59:59)
+        LocalDateTime inicio = fechaInicio.atStartOfDay();
+        LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+
+        byte[] csvBytes = reporteService.exportarCumplimientoCsv(inicio, fin);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csvBytes);
+    }
+
+    @GetMapping("/cumplimiento/metricas/exportar/excel")
+    public ResponseEntity<byte[]> exportarCumplimientoExcelEndpoint(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        LocalDateTime inicio = fechaInicio.atStartOfDay();
+        LocalDateTime fin = fechaFin.atTime(23, 59, 59);
+
+        byte[] excelBytes = reporteService.exportarCumplimientoExcel(inicio, fin);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    } 
+                */
+
+    @GetMapping("/cumplimiento/metricas/exportar")
+    public ResponseEntity<byte[]> exportarCumplimientoCsvEndpoint(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        // Si no envían fechaInicio, usamos una fecha muy antigua (ej. 1 de Enero del 2000)
+        LocalDateTime inicio = (fechaInicio != null) ? fechaInicio.atStartOfDay() : LocalDateTime.of(2000, 1, 1, 0, 0);
+        
+        // Si no envían fechaFin, usamos la fecha y hora actual para traer todo hasta el momento
+        LocalDateTime fin = (fechaFin != null) ? fechaFin.atTime(23, 59, 59) : LocalDateTime.now();
+
+        byte[] csvBytes = reporteService.exportarCumplimientoCsv(inicio, fin);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(csvBytes);
+    }
+
+    @GetMapping("/cumplimiento/metricas/exportar/excel")
+    public ResponseEntity<byte[]> exportarCumplimientoExcelEndpoint(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        
+        LocalDateTime inicio = (fechaInicio != null) ? fechaInicio.atStartOfDay() : LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime fin = (fechaFin != null) ? fechaFin.atTime(23, 59, 59) : LocalDateTime.now();
+
+        byte[] excelBytes = reporteService.exportarCumplimientoExcel(inicio, fin);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cumplimiento_metricas.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

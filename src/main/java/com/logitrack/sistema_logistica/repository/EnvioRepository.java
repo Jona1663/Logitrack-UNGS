@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.stream.Stream;
 import java.util.Optional;
 import java.util.List;
+import org.springframework.data.repository.query.Param;
+import java.time.LocalDateTime;
 
 @Repository
 public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecificationExecutor<Envio> {
@@ -142,6 +144,8 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         // Trae todos los envíos creados entre dos fechas para el reporte detallado (CSV y Excel)
         List<Envio> findByFechaCreacionBetween(LocalDateTime startDate, LocalDateTime endDate);
 
+        //VERSION1
+        /* 
         // Para la #238: Métricas de Cumplimiento
         @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO'")
         long countTotalEntregados();
@@ -150,6 +154,17 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         long countEntregadosATiempo();
 
         @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada > e.fechaEstimadaLlegada")
-        long countConRetraso();        
+        long countConRetraso();     
+        */   
+
+       //VERSION2
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaCreacion >= :fechaInicio AND e.fechaCreacion <= :fechaFin")
+        long countTotalEntregados(@Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion >= :fechaInicio AND e.fechaCreacion <= :fechaFin")
+        long countEntregadosATiempo(@Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada > e.fechaEstimadaLlegada AND e.fechaCreacion >= :fechaInicio AND e.fechaCreacion <= :fechaFin")
+        long countConRetraso(@Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
 
 }

@@ -701,6 +701,8 @@ public class ReporteService {
         // ===============================================================
         //                   MÉTODOS PARA MÉTRICAS DE CUMPLIMIENTO              
         // ===============================================================
+        //version1
+        /* 
         @Transactional(readOnly = true)
         public CumplimientoMetricasDTO obtenerMetricasCumplimiento() {
                 long total = envioRepository.countTotalEntregados();
@@ -778,9 +780,93 @@ public class ReporteService {
                 workbook.write(out);
                 return out.toByteArray();
 
-        } catch (IOException e) {
-                throw new RuntimeException("Error crítico al generar el archivo Excel de cumplimiento", e);
+                } catch (IOException e) {
+                        throw new RuntimeException("Error crítico al generar el archivo Excel de cumplimiento", e);
+                }
         }
+        */
+
+        //Version2
+        @Transactional(readOnly = true)
+                public CumplimientoMetricasDTO obtenerMetricasCumplimiento(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+                long total = envioRepository.countTotalEntregados(fechaInicio, fechaFin);
+                long aTiempo = envioRepository.countEntregadosATiempo(fechaInicio, fechaFin);
+                long conRetraso = envioRepository.countConRetraso(fechaInicio, fechaFin);
+
+                double pctATiempo = (total == 0) ? 0.0 : Math.round(((double) aTiempo / total * 100) * 100.0) / 100.0;
+                double pctRetraso = (total == 0) ? 0.0 : Math.round(((double) conRetraso / total * 100) * 100.0) / 100.0;
+
+                return CumplimientoMetricasDTO.builder()
+                        .totalEntregados(total)
+                        .entregadosATiempo(aTiempo)
+                        .conRetraso(conRetraso)
+                        .porcentajeATiempo(pctATiempo)
+                        .porcentajeConRetraso(pctRetraso)
+                        .build();
         }
+
+        // Actualiza los métodos de exportación para que pasen los parámetros
+        public byte[] exportarCumplimientoCsv(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+                CumplimientoMetricasDTO metricas = obtenerMetricasCumplimiento(fechaInicio, fechaFin);
+                // ... el resto de la generación del CSV queda igual ...
+                StringBuilder sb = new StringBuilder();
+                sb.append("Total Entregados,Entregados a Tiempo,Con Retraso,% a Tiempo,% con Retraso\n");
+                sb.append(metricas.getTotalEntregados()).append(",")
+                .append(metricas.getEntregadosATiempo()).append(",")
+                .append(metricas.getConRetraso()).append(",")
+                .append(metricas.getPorcentajeATiempo()).append("%,")
+                .append(metricas.getPorcentajeConRetraso()).append("%\n");
+                return sb.toString().getBytes(StandardCharsets.UTF_8);
+        }    
+
+        public byte[] exportarCumplimientoExcel(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        CumplimientoMetricasDTO metricas = obtenerMetricasCumplimiento( fechaInicio, fechaFin);
+
+        try (Workbook workbook = new XSSFWorkbook(); 
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                
+                Sheet sheet = workbook.createSheet("Métricas de Cumplimiento");
+
+                // 1. Crear la fila de encabezados (Fila 0)
+                Row headerRow = sheet.createRow(0);
+                String[] columnas = {"Total Entregados", "Entregados a Tiempo", "Con Retraso", "% a Tiempo", "% con Retraso"};
+                
+                // Estilo pro para los encabezados (Negrita)
+                CellStyle headerStyle = workbook.createCellStyle();
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerStyle.setFont(headerFont);
+
+                for (int i = 0; i < columnas.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columnas[i]);
+                cell.setCellStyle(headerStyle);
+                }
+
+                // 2. Crear la fila de datos (Fila 1)
+                Row dataRow = sheet.createRow(1);
+                dataRow.createCell(0).setCellValue(metricas.getTotalEntregados());
+                dataRow.createCell(1).setCellValue(metricas.getEntregadosATiempo());
+                dataRow.createCell(2).setCellValue(metricas.getConRetraso());
+                
+                // Concatenamos el "%" para que se muestre directo como texto formateado
+                dataRow.createCell(3).setCellValue(metricas.getPorcentajeATiempo() + "%");
+                dataRow.createCell(4).setCellValue(metricas.getPorcentajeConRetraso() + "%");
+
+                // 3. Autoajustar el ancho de las columnas para que no se corte el texto
+                for (int i = 0; i < columnas.length; i++) {
+                sheet.autoSizeColumn(i);
+                }
+
+                // Escribir los datos en el flujo de bytes
+                workbook.write(out);
+                return out.toByteArray();
+
+                } catch (IOException e) {
+                        throw new RuntimeException("Error crítico al generar el archivo Excel de cumplimiento", e);
+                }
+        }
+
+
 
 }
