@@ -375,6 +375,8 @@
                 envio.setFechaSalida(fechaSalida);
                 envio.setChofer(chofer);
                 envioRepository.save(envio);
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
+
         }
 
 
@@ -446,13 +448,15 @@
                 // Ahora generamos la ruta (el mapa)
                 trackingService.generarYGuardarRuta(envio);                
 
-                // 7. Marcar como no disponibles (#222)
-                chofer.setDisponible(false);
-                camion.setDisponible(false);
-                choferDetalleRepository.save(chofer);
-                camionRepository.save(camion);
+        // 7. Marcar como no disponibles (#222)
+        chofer.setDisponible(false);
+        camion.setDisponible(false);
+        choferDetalleRepository.save(chofer);
+        camionRepository.save(camion);
+        eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
 
-                return envioRepository.save(envio);
+        return envioRepository.save(envio);
+        
         }
 
         // SOLUCIÓN TEMPORAL para editar los estados de un envío desde la vista de

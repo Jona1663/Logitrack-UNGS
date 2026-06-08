@@ -62,6 +62,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/envios/*").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/envios/buscar/*").authenticated()
 
+                        .requestMatchers("/ws-logistica/**").permitAll() // Libera el WebSocket
+                        //.requestMatchers("/test-ws.html").permitAll() //para testear los websockets
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
