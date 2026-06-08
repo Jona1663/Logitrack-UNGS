@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,6 +46,7 @@ import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import com.logitrack.sistema_logistica.service.EnvioService;
+import com.logitrack.sistema_logistica.service.ReporteService;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -63,33 +65,21 @@ public class EnvioController {
                                                  // directamente leyendo el Token JWT de la petición. El usuario es
                                                  // necesario para auditorias.
 
+    @Autowired
+    private ReporteService reporteService;  // Inyectar el servicio de reportes para usar sus métodos en los endpoints de reportes
+                                            // (ej: obtenerMetricasPorGrano, obtenerMetricasATiempo, etc.)
+                                            // Estos métodos a su vez llaman a consultas
+
+
     // GET para listar (siempre es útil tenerlo)
     @GetMapping
     public List<Envio> listarEnvios() {
         return envioRepository.findAll();
     }
-    /*
-     * @GetMapping
-     * public ResponseEntity<List<EnvioResumenDTO>> listarEnvios() {
-     * List<Envio> envios = envioRepository.findAll();
-     * 
-     * List<EnvioResumenDTO> resumen = envios.stream()
-     * .map(EnvioResumenDTO::fromEntity)
-     * .collect(Collectors.toList());
-     * 
-     * return ResponseEntity.ok(resumen);
-     * }
-     */
 
     // GET para buscar envíos con filtros opcionales por fecha, estado y paginación
     @GetMapping("/search")
-    public ResponseEntity<?> buscarEnvios(
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) String estado,
-            @RequestParam(required = false) String fecha,
-            @RequestParam(required = false) String tipoGrano,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<?> buscarEnvios( @RequestParam(required = false) String query, @RequestParam(required = false) String estado, @RequestParam(required = false) String fecha, @RequestParam(required = false) String tipoGrano, @RequestParam(defaultValue = "0") int page,@RequestParam(defaultValue = "10") int size) {
         try {
             LocalDate fechaFiltro = null;
             EstadoEnvio estadoFiltro = null;
@@ -180,19 +170,6 @@ public class EnvioController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // // POST para crear
-    // @PostMapping
-    // public ResponseEntity<?> crearEnvio(@RequestBody EnvioRequestDTO dto) {
-    // try {
-    // Envio envioCreado = envioService.crearNuevoEnvio(dto);
-    // return new ResponseEntity<>(envioCreado, HttpStatus.CREATED);
-    // } catch (RuntimeException e) {
-    // // Si falla una validación (ej: camión no existe), devolvemos un 400 Bad
-    // Request
-    // return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-    // }
-    // }
-
     // Nuevo POST para crear envío. Necesario para no enviar el ID de usuario desde
     // el
     // frontend, sino que el EnvioController extraiga quién es el usuario
@@ -231,41 +208,6 @@ public class EnvioController {
     // capture el usuario si el token JWT está presente. Esto es útil para permitir la creación de 
     // envíos desde sistemas externos que no manejen autenticación, pero aún así aprovechar la 
     // información del usuario cuando esté disponible para auditorías.
-    /*
-    @PostMapping
-    public ResponseEntity<?> crearEnvio(@RequestBody EnvioRequestDTO dto, Authentication authentication) {
-        try {
-            // 1. Intentamos sacar el nombre del usuario logueado
-            String username = (authentication != null) ? authentication.getName() : null;
-            Integer idUsuarioCreador;
-
-            if (username != null) {
-                // Si hay un usuario real (vía Frontend con JWT), lo buscamos normalmente
-                Usuario usuario = usuarioRepository.findByUsername(username)
-                        .orElseThrow(() -> new RuntimeException("Usuario autenticado no existe en el sistema"));
-                idUsuarioCreador = usuario.getIdUsuario();
-            } else {
-                // ¡AQUÍ ESTÁ EL TRUCO PARA THUNDER CLIENT!
-                // Si venimos sin token, le hardcodeamos un ID de usuario que SEPAS que existe en tu BD (ej: 1L)
-                idUsuarioCreador = 1; 
-            }
-
-            // Asignarlo al DTO de forma segura antes de guardarlo
-            dto.setIdUsuarioCreador(idUsuarioCreador);
-
-            Envio envioCreado = envioService.crearNuevoEnvio(dto);
-            return new ResponseEntity<>(envioCreado, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
-    */
-
-
-
-
-
-
     // Se obtiene el envío completo esto habria que borrarlo a menos que se este
     // usando para algo
     @GetMapping("/buscar/{idEnvio}")
@@ -326,45 +268,9 @@ public class EnvioController {
         }
     }
 
-    /*
-     * // ─── PUT: ACTUALIZAR ESTADO Y PRIORIDAD ───
-     * 
-     * @PutMapping("/{idEnvio}")
-     * public ResponseEntity<?> actualizarEnvio(
-     * 
-     * @PathVariable String idEnvio,
-     * 
-     * @RequestBody UpdateEnvioDTO dto,
-     * Authentication authentication) {
-     * try {
-     * // 1. Identificar al usuario que hace el cambio
-     * String username = authentication.getName();
-     * Usuario usuario = usuarioRepository.findByUsername(username)
-     * .orElseThrow(() -> new RuntimeException("Usuario autenticado no válido"));
-     * 
-     * // 2. Aquí llamamos a tu Servicio.
-     * // NOTA PARA TI: En tu EnvioService.java deberás crear este método.
-     * // Ese método debe buscar el envío, comparar los estados, crear el registro
-     * en
-     * // HistorialEstados con el 'usuario' capturado y guardar los cambios.
-     * Envio envioActualizado = envioService.actualizarEstadoYPrioridad(
-     * idEnvio,
-     * dto.getEstado(),
-     * dto.getPrioridad(),
-     * usuario);
-     * 
-     * return ResponseEntity.ok(envioActualizado);
-     * } catch (RuntimeException e) {
-     * return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-     * }
-     * }
-     */
-
     @PatchMapping("/{idEnvio}/estado")
     @PreAuthorize("hasRole('CHOFER')")
-    public ResponseEntity<?> actualizarEstadoChofer(
-            @PathVariable String idEnvio,
-            @RequestParam String nuevoEstado,
+    public ResponseEntity<?> actualizarEstadoChofer( @PathVariable String idEnvio, @RequestParam String nuevoEstado,
             Authentication authentication) {
         try {
             // Extraemos el username del JWT
@@ -382,32 +288,6 @@ public class EnvioController {
         }
     }
 
-    // @PatchMapping("/{idEnvio}/estado")
-    // @PreAuthorize("hasRole('CHOFER')")
-    // public ResponseEntity<EstadoUpdateResponseDTO> actualizarEstado(
-
-    // @PathVariable String idEnvio,
-
-    // @RequestBody EstadoUpdateRequestDTO dto,
-    // Authentication auth) {
-
-    // // Extraemos el username del JWT
-    // String username = auth.getName();
-
-    // // Ejecutamos la lógica
-    // Envio envioActualizado = envioService.actualizarEstadoChofer(idEnvio,
-    // dto.getNuevoEstado(), username);
-
-    // // Construimos la respuesta según el contrato
-    // EstadoUpdateResponseDTO response = EstadoUpdateResponseDTO.builder()
-    // .mensaje("Estado actualizado correctamente")
-    // .estadoActual(envioActualizado.getEstadoActual().name())
-    // .fechaActualizacion(LocalDateTime.now())
-    // .build();
-
-    // return ResponseEntity.ok(response);
-    // }
-
     // endopitn cancelar envio
     @PreAuthorize("hasRole('SUPERVISOR')") // Solo el supervisor puede cancelar un envío
     @PutMapping("/{id}/cancelar")
@@ -424,8 +304,7 @@ public class EnvioController {
     // endopiont editar envio
     @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarEnvio(@PathVariable String id, @RequestBody EnvioRequestDTO dto,
-            Principal principal) {
+    public ResponseEntity<?> editarEnvio(@PathVariable String id, @RequestBody EnvioRequestDTO dto, Principal principal) {
         try {
             Envio envioEditado = envioService.editarEnvio(id, dto, principal.getName());
             return ResponseEntity.ok(envioEditado);
@@ -442,9 +321,7 @@ public class EnvioController {
 
     // PATCH — asignar chofer y camión juntos
     @PatchMapping("/{idEnvio}/asignar-transporte")
-    public ResponseEntity<?> asignarTransporte(
-            @PathVariable String idEnvio,
-            @RequestBody AsignarTransporteDTO dto) {
+    public ResponseEntity<?> asignarTransporte( @PathVariable String idEnvio, @RequestBody AsignarTransporteDTO dto) {
         try {
             Envio envio = envioService.asignarTransporte(idEnvio, dto);
             return ResponseEntity.ok(envio);
@@ -457,10 +334,7 @@ public class EnvioController {
     // operador/supervisor
     @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
     @PatchMapping("/{id}/operativo")
-    public ResponseEntity<?> actualizarOperativaEnvio(
-            @PathVariable String id,
-            @RequestBody EnvioOperativoDTO dto,
-            Authentication authentication) {
+    public ResponseEntity<?> actualizarOperativaEnvio(@PathVariable String id, @RequestBody EnvioOperativoDTO dto,Authentication authentication) {
         try {
             Envio envioActualizado = envioService.actualizarEstadoOperativo(id, dto, authentication);
             return ResponseEntity.ok(envioActualizado);
@@ -506,16 +380,14 @@ public class EnvioController {
     }
 
     @GetMapping("/reportes/granos")
-    public ResponseEntity<List<ReporteGranoDTO>> getReporteGranos(
-            @RequestParam LocalDateTime fechaInicio, 
-            @RequestParam LocalDateTime fechaFin) {
+    public ResponseEntity<List<ReporteGranoDTO>> getReporteGranos( @RequestParam LocalDateTime fechaInicio, @RequestParam LocalDateTime fechaFin) {
         return ResponseEntity.ok(envioRepository.obtenerMetricasPorGrano(fechaInicio, fechaFin));
     }
 
     @GetMapping("/reportes/a-tiempo")
-    public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo(
-            @RequestParam LocalDateTime fechaInicio, 
-            @RequestParam LocalDateTime fechaFin) {
-        return ResponseEntity.ok(envioRepository.obtenerMetricasATiempo(fechaInicio, fechaFin));
+    public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo( @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        // Llamamos al SERVICIO, no al repositorio
+        return ResponseEntity.ok(reporteService.obtenerMetricasATiempo(fechaInicio, fechaFin));
     }
+    
 }

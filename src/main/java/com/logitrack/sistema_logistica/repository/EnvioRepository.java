@@ -1,43 +1,41 @@
 package com.logitrack.sistema_logistica.repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import org.springframework.data.jpa.repository.JpaRepository;
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Query;
 import com.logitrack.sistema_logistica.model.Envio;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.stream.Stream;
+import java.util.Optional;
+import java.util.List;
+import org.springframework.data.repository.query.Param;
+import java.time.LocalDateTime;
 
 @Repository
 public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecificationExecutor<Envio> {
     
-    // Forzamos a Hibernate a buscar por el nombre exacto de la variable en el modelo
-    @Query("SELECT e FROM Envio e WHERE e.idEnvio = :idEnvio")
-    Optional<Envio> buscarPorId(@Param("idEnvio") String idEnvio);
-
-    // Buscar por el nombre exacto de la variable en el modelo
-   // @Query(value = "SELECT * FROM envios WHERE trackingCtg = :tracking", nativeQuery = true)
-       // Optional<Envio> buscarPorTracking(@Param("tracking") String tracking);
-    
+        // Forzamos a Hibernate a buscar por el nombre exacto de la variable en el modelo
+        @Query("SELECT e FROM Envio e WHERE e.idEnvio = :idEnvio")
+        Optional<Envio> buscarPorId(@Param("idEnvio") String idEnvio);
+        
+        // Buscar por el nombre exacto de la variable en el modelo
+        // @Query(value = "SELECT * FROM envios WHERE trackingCtg = :tracking", nativeQuery = true)
+        // Optional<Envio> buscarPorTracking(@Param("tracking") String tracking); 
         // Devuelve envíos que no tienen chofer NI camión asignado todavía
-    @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
+        @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
         "AND e.estadoActual NOT IN " +
         "(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.CANCELADO, " +
         "com.logitrack.sistema_logistica.model.enums.EstadoEnvio.ENTREGADO)")
         List<Envio> findEnviosSinAsignar();
 
-    // Suma simple de kilos para el reporte
-    @Query(value = "SELECT COALESCE(SUM(COALESCE(kg_destino, kg_origen)), 0) FROM envios", nativeQuery = true)
-    Long sumKilos();
+        // Suma simple de kilos para el reporte
+        @Query(value = "SELECT COALESCE(SUM(COALESCE(kg_destino, kg_origen)), 0) FROM envios", nativeQuery = true)
+        Long sumKilos();
 
         //#113
         //consulta personalizada: navegar por las relaciones (desde el Envío hasta el Username del usuario).
@@ -90,7 +88,7 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
                 "GROUP BY e.tipoGrano")
         List<ReporteGranoDTO> obtenerMetricasPorGrano(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-
+        /*
         // 2. Envíos y kilos que llegaron a tiempo
         @Query("SELECT new com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO(" +
                 "COUNT(e), COALESCE(SUM(e.kgOrigen), 0L)) " +
@@ -99,7 +97,15 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
                 "AND e.fechaLlegada <= e.fechaEstimadaLlegada " +
                 "AND e.fechaCreacion BETWEEN :inicio AND :fin")
         ReporteEficienciaDTO obtenerMetricasATiempo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+        */
 
+        // Cuenta la cantidad de envíos que llegaron a tiempo
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        long countEnviosATiempoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+        // Suma los kilos de los envíos que llegaron a tiempo
+        @Query("SELECT COALESCE(SUM(e.kgOrigen), 0L) FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin")
+        long sumKilosATiempoEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
         //Para la #238
         //Filtra estrictamente por estado 'ENTREGADO' y se asegura de que ninguna fecha sea nula
@@ -135,6 +141,30 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         @Query("SELECT e FROM Envio e WHERE e.fechaLlegada IS NOT NULL AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion BETWEEN :inicio AND :fin ORDER BY e.fechaCreacion ASC")
         Stream<Envio> obtenerEnviosATiempoComoStream(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
+        // Trae todos los envíos creados entre dos fechas para el reporte detallado (CSV y Excel)
+        List<Envio> findByFechaCreacionBetween(LocalDateTime startDate, LocalDateTime endDate);
 
+        //VERSION1
+        /* 
+        // Para la #238: Métricas de Cumplimiento
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO'")
+        long countTotalEntregados();
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada <= e.fechaEstimadaLlegada")
+        long countEntregadosATiempo();
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada > e.fechaEstimadaLlegada")
+        long countConRetraso();     
+        */   
+
+       //VERSION2
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaCreacion >= :fechaInicio AND e.fechaCreacion <= :fechaFin")
+        long countTotalEntregados(@Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada <= e.fechaEstimadaLlegada AND e.fechaCreacion >= :fechaInicio AND e.fechaCreacion <= :fechaFin")
+        long countEntregadosATiempo(@Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
+
+        @Query("SELECT COUNT(e) FROM Envio e WHERE e.estadoActual = 'ENTREGADO' AND e.fechaLlegada > e.fechaEstimadaLlegada AND e.fechaCreacion >= :fechaInicio AND e.fechaCreacion <= :fechaFin")
+        long countConRetraso(@Param("fechaInicio") LocalDateTime fechaInicio, @Param("fechaFin") LocalDateTime fechaFin);
 
 }
