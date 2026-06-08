@@ -22,6 +22,7 @@
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
         import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
         import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+        import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
         import com.logitrack.sistema_logistica.model.Camion;
         import com.logitrack.sistema_logistica.model.ChoferDetalle;
         import com.logitrack.sistema_logistica.model.Envio;
@@ -120,6 +121,7 @@
 
                         // 3. Guardar el Envío (Acá se autogenera el id "LT-XXXXXX" y la fecha)
                         nuevoEnvio = envioRepository.save(nuevoEnvio);
+                        eventPublisher.publishEvent(new EnvioNuevoEvent(this, nuevoEnvio));
 
                         // 4. Crear y guardar el Historial inicial
                         auditoriaService.registrarEvento(
@@ -468,6 +470,11 @@
         camion.setDisponible(false);
         choferDetalleRepository.save(chofer);
         camionRepository.save(camion);
+
+        //Notificacion por mail
+        Envio envioGuardado = envioRepository.save(envio);
+        eventPublisher.publishEvent(
+        new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
 
         return envioRepository.save(envio);
         }

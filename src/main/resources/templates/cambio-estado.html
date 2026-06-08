@@ -1,28 +1,166 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Actualización de envío</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="'Logitrack · Envío ' + ${idSeguimiento} + ': ' + ${estadoLabel}">Actualización — Logitrack</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body, table, td, p, a  { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-collapse: collapse; mso-table-lspace: 0; mso-table-rspace: 0; }
+    body  { margin: 0; padding: 0; background-color: #f0f4f0; }
+
+    .wrapper { width: 100%; background: #f0f4f0; padding: 32px 16px; }
+    .card    { max-width: 600px; margin: 0 auto; background: #fff;
+               border-radius: 12px; overflow: hidden;
+               box-shadow: 0 2px 12px rgba(27,67,50,.12); }
+
+    /* Header verde oscuro — idéntico al gradiente del botón del frontend */
+    .hdr {
+      background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+      padding: 22px 36px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 38px; height: 38px; background: rgba(255,255,255,.15);
+      border-radius: 8px; display: flex; align-items: center;
+      justify-content: center; font-size: 20px;
+    }
+    .logo-text      { font-family: Arial,sans-serif; font-size: 20px;
+                      font-weight: bold; color: #fff; letter-spacing: .5px; }
+    .logo-text span { color: #74c69d; }
+    .logo-sub       { font-family: Arial,sans-serif; font-size: 10px;
+                      color: rgba(255,255,255,.6); text-transform: uppercase;
+                      letter-spacing: 1px; margin-top: 2px; }
+    .hdr-badge {
+      font-family: Arial,sans-serif; font-size: 11px; font-weight: bold;
+      color: #1b4332; background: #74c69d; padding: 4px 12px;
+      border-radius: 20px; letter-spacing: .5px; text-transform: uppercase;
+    }
+
+    /* Franja de acento verde claro bajo el header */
+    .accent-bar { height: 4px; background: linear-gradient(90deg, #40916c, #74c69d, #40916c); }
+
+    /* Body */
+    .body { padding: 32px 36px 24px; }
+    .greeting { font-family: Arial,sans-serif; font-size: 15px;
+                color: #1a2e1a; margin: 0 0 6px; }
+    .intro    { font-family: Arial,sans-serif; font-size: 14px;
+                color: #555; margin: 0 0 20px; }
+
+    /* Badges de estado */
+    .badge { display: inline-block; padding: 6px 18px; border-radius: 20px;
+             font-family: Arial,sans-serif; font-size: 13px; font-weight: bold;
+             margin-bottom: 24px; }
+    .badge--transito   { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge--reparto    { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge--entregado  { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+    .badge--recoleccion{ background: #ecfdf5; color: #1b4332; border: 1px solid #a7f3d0; }
+    .badge--cancelado  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .badge--default    { background: #f1f5f9; color: #334155; }
+
+    /* Tabla de detalles */
+    .details { width: 100%; border-collapse: collapse; margin: 0 0 28px;
+               border: 1px solid #d1fae5; border-radius: 8px; overflow: hidden; }
+    .details thead td {
+      background: linear-gradient(135deg, #1b4332, #2d6a4f);
+      font-family: Arial,sans-serif; font-size: 12px; font-weight: bold;
+      color: #fff; padding: 10px 16px; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .details tbody td {
+      font-family: Arial,sans-serif; font-size: 14px;
+      padding: 10px 16px; border-bottom: 1px solid #ecfdf5; color: #333;
+    }
+    .details tbody td.lbl { color: #2d6a4f; font-weight: 600;
+                             width: 40%; background: #f0faf4; font-size: 13px; }
+    .details tbody tr:last-child td { border-bottom: none; }
+
+    .hr   { border: none; border-top: 1px solid #ecfdf5; margin: 20px 0; }
+    .note { font-family: Arial,sans-serif; font-size: 13px;
+            color: #888; line-height: 1.6; margin: 0; }
+
+    /* Footer */
+    .ftr { background: #f0faf4; border-top: 2px solid #d1fae5;
+           padding: 16px 36px; text-align: center; }
+    .ftr-logo { font-family: Arial,sans-serif; font-size: 13px;
+                font-weight: bold; color: #2d6a4f; margin-bottom: 4px; }
+    .ftr p    { font-family: Arial,sans-serif; font-size: 11px;
+                color: #aaa; margin: 2px 0; }
+
+    @media only screen and (max-width: 620px) {
+      .card { border-radius: 0 !important; }
+      .hdr, .body, .ftr { padding-left: 20px !important; padding-right: 20px !important; }
+      .details tbody td { display: block; width: 100% !important; }
+      .details tbody td.lbl { padding-bottom: 2px; }
+    }
+  </style>
 </head>
 <body>
+<div class="wrapper"><div class="card">
 
-    <h2>Actualización de envío</h2>
+  <!-- Header -->
+  <div class="hdr">
+    <div class="logo-wrap">
+      <div class="logo-icon">🌾</div>
+      <div>
+        <div class="logo-text">Logi<span>track</span></div>
+        <div class="logo-sub">Agro · Logística de Granos</div>
+      </div>
+    </div>
+    <div class="hdr-badge">Notificación</div>
+  </div>
+  <div class="accent-bar"></div>
 
-    <p>Hola <strong th:text="${nombreCliente}"></strong>,</p>
+  <!-- Body -->
+  <div class="body">
+    <p class="greeting">Hola, <strong th:text="${nombreCliente}">Cliente</strong></p>
+    <p class="intro">Tu envío ha cambiado de estado:</p>
 
-<p>Tu envío ha cambiado de estado.</p>
+    <div>
+      <span class="badge"
+        th:classappend="${estadoCssClass}"
+        th:text="${estadoLabel}">En Tránsito</span>
+    </div>
 
-<p><strong>ID de seguimiento:</strong> <span th:text="${idSeguimiento}"></span></p>
+    <!-- Tabla de datos del viaje -->
+    <table class="details">
+      <thead><tr><td colspan="2">Detalle del envío</td></tr></thead>
+      <tbody>
+        <tr>
+          <td class="lbl">ID de seguimiento</td>
+          <td th:text="${idSeguimiento}">LT-A1B2C3</td>
+        </tr>
+        <tr>
+          <td class="lbl">Origen</td>
+          <td th:text="${origen}">Rosario, Santa Fe</td>
+        </tr>
+        <tr>
+          <td class="lbl">Destino</td>
+          <td th:text="${destino}">Bahía Blanca, Bs. As.</td>
+        </tr>
+        <tr>
+          <td class="lbl">Estado</td>
+          <td><strong th:text="${estadoLabel}">En Tránsito</strong></td>
+        </tr>
+        <tr>
+          <td class="lbl">Fecha y hora</td>
+          <td th:text="${fechaHoraEvento}">02/06/2025 14:35</td>
+        </tr>
+      </tbody>
+    </table>
 
-<p><strong>Toneladas:</strong> <span th:text="${toneladas}"></span></p>
+    <hr class="hr"/>
+    <p class="note">Si tenés consultas sobre este envío, contactá a tu operador asignado en Logitrack.</p>
+  </div>
 
-<p><strong>Tipo de grano:</strong> <span th:text="${tipoGrano}"></span></p>
+  <!-- Footer -->
+  <div class="ftr">
+    <div class="ftr-logo">🌾 Logitrack Agro</div>
+    <p>Este correo fue generado automáticamente por el sistema.</p>
+    <p>Por favor no respondas directamente a esta dirección.</p>
+  </div>
 
-<p><strong>Estado:</strong> <span th:text="${estadoLabel}"></span></p>
-
-<p><strong>Fecha:</strong> <span th:text="${fechaHoraEvento}"></span></p>
-
-    <p>Gracias por utilizar Logitrack.</p>
-
+</div></div>
 </body>
 </html>

@@ -31,6 +31,7 @@ public class EnvioCambioEstadoListener {
     private static final Set<EstadoEnvio> ESTADOS_NOTIFICABLES = Set.of(
         EstadoEnvio.PENDIENTE,       // nuevo — email de confirmación de creación
         EstadoEnvio.EN_TRANSITO,
+        EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
         EstadoEnvio.EN_REPARTO,
         EstadoEnvio.ENTREGADO,
         EstadoEnvio.CANCELADO        // nuevo — email de cancelación
