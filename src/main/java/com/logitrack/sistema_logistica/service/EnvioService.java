@@ -121,7 +121,6 @@
 
                         // 3. Guardar el Envío (Acá se autogenera el id "LT-XXXXXX" y la fecha)
                         nuevoEnvio = envioRepository.save(nuevoEnvio);
-                        eventPublisher.publishEvent(new EnvioNuevoEvent(this, nuevoEnvio));
 
                         // 4. Crear y guardar el Historial inicial
                         auditoriaService.registrarEvento(
@@ -132,7 +131,10 @@
                                                 EstadoEnvio.PENDIENTE
                                         );
 
-                        // 5. Retornar el envío ya creado
+                        // 5. Publicar evento
+                        eventPublisher.publishEvent(new EnvioNuevoEvent(this, nuevoEnvio));
+                        
+                        // 6. Retornar el envío ya creado
                         return nuevoEnvio;
                 }
 
