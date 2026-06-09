@@ -338,4 +338,38 @@ public class ReporteControllerTest {
                .param("fechaFin", "2024-01-31"))
                .andExpect(status().isOk());
     }
+    // =========================================================
+    // NUEVOS TESTS PARA TICKET #365: Validación de Parámetros
+    // =========================================================
+
+    @Test
+    void reporteOperativo_SinFechas_RetornaOk() throws Exception {
+        when(reporteService.obtenerReporte(null, null)).thenReturn(new ReporteSimpleDTO());
+
+        mockMvc.perform(get("/api/reportes/operativo"))
+               .andExpect(status().isOk());
+    }
+
+    @Test
+    void exportarOperativoExcel_ConFechas_RetornaOk() throws Exception {
+        // Simulamos fechas para el export
+        when(reporteService.generarExcelOperativo(any(LocalDate.class), any(LocalDate.class)))
+            .thenReturn(new ByteArrayInputStream(new byte[0]));
+
+        mockMvc.perform(get("/api/reportes/operativo/exportar/excel")
+                .param("fechaInicio", "2024-01-01")
+                .param("fechaFin", "2024-01-31"))
+               .andExpect(status().isOk());
+    }
+
+    @Test
+    void cumplimientoMetricas_SinFechas_UsaDefault() throws Exception {
+        // Probamos que el endpoint maneje bien la falta de fechas
+        when(reporteService.exportarCumplimientoCsv(any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(new byte[0]);
+
+        mockMvc.perform(get("/api/reportes/cumplimiento/metricas/exportar"))
+               .andExpect(status().isOk());
+    }
+
 }
