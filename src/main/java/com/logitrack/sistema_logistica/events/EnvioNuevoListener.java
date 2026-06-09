@@ -22,8 +22,6 @@ public class EnvioNuevoListener {
         log.info("[LISTENER] Nuevo envío creado → disparando email de confirmación. ID: {}",
             event.getEnvio().getIdEnvio());
 
-        // Reutiliza notificarCambioEstado con PENDIENTE para que
-        // ResendNotificationService elija la plantilla envio-creado.html
         notificationService.notificarCambioEstado(
             event.getEnvio(),
             EstadoEnvio.PENDIENTE

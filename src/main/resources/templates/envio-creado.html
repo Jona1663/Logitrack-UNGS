@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Envío registrado — Logitrack Agro</title>
   <style>
+    /* (todos tus estilos se mantienen igual) */
     *, *::before, *::after { box-sizing: border-box; }
     body, table, td, p, a  { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table { border-collapse: collapse; mso-table-lspace: 0; mso-table-rspace: 0; }
@@ -121,29 +122,38 @@
 <body>
 <div class="wrapper"><div class="card">
 
-  <!-- Header -->
+  <!-- Header con imagen usando URL absoluta -->
   <div class="hdr">
-    <div class="logo-inner">
-      <img src="../templates/logo-white-100.png" 
-            alt="Logitrack Agro"
-            class="hdr-logo"
-            style="height:52px;width:auto;max-width:220px;"
-      />
-      <div>
-        <div class="logo-text">Logi<span>track</span></div>
-        <div class="logo-sub">Agro · Logística de Granos</div>
-      </div>
-    </div>
-    <div class="hdr-badge">Nuevo Envío</div>
+    <!-- Tabla de 3 columnas para alinear correctamente en emails -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+      <tr>
+        <!-- Columna 1: izquierda -->
+        <td align="left" valign="middle" style="padding:0;">
+          <img src="https://i.postimg.cc/SRF1MfZp/logo-white-100.png"
+              alt="Logitrack Agro"
+              style="height:48px; width:auto; display:block;" />
+        </td>
+
+        <!-- Columna 2: Badge "Nuevo Envío" centrado -->
+        <td align="center" valign="middle" style="padding:0;">
+          <div class="hdr-badge" style="font-family: Arial,sans-serif; font-size:11px; font-weight:bold; color:#1b4332; background:#74c69d; padding:4px 12px; border-radius:20px; letter-spacing:.5px; text-transform:uppercase; display:inline-block;">
+            Nuevo Envío
+          </div>
+        </td>
+
+        <!-- Columna 3: Texto a la derecha -->
+        <td align="right" valign="middle" style="padding:0;">
+          <div class="logo-text" style="font-family: Arial,sans-serif; font-size:20px; font-weight:bold; color:#fff; letter-spacing:.5px;">
+            Logi<span style="color:#74c69d;">track</span>
+          </div>
+          <div class="logo-sub" style="font-family: Arial,sans-serif; font-size:10px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">
+            Agro · Logística de Granos
+          </div>
+        </td>
+      </tr>
+    </table>
   </div>
   <div class="accent-bar"></div>
-
-  <!-- Banner de confirmación -->
-  <div class="success-banner">
-    <div class="success-icon">✅</div>
-    <p class="success-title">¡Envío registrado correctamente!</p>
-    <p class="success-sub">Tu pedido fue ingresado al sistema y está listo para su procesamiento</p>
-  </div>
 
   <!-- Body -->
   <div class="body">
@@ -158,10 +168,12 @@
 
     <!-- Detalle del envío -->
     <table class="details">
-      <thead class="details-head"><tr><td colspan="2">Detalle del envío</td></tr></thead>
+      <thead class="details-head">
+        <tr><td colspan="2">Detalle del envío</td></tr>
+      </thead>
       <tbody>
-        <tr><td class="lbl">Origen</td><td th:text="${origen}">Silo Norte (Dirección 01)</td></tr>
-        <tr><td class="lbl">Destino</td><td th:text="${destino}">Puerto Sur (Dirección 02)</td></tr>
+        <tr><td class="lbl">Origen</td><td th:text="${origen}">Silo Norte</td></tr>
+        <tr><td class="lbl">Destino</td><td th:text="${destino}">Puerto Sur</td></tr>
         <tr><td class="lbl">Tipo de grano</td><td th:text="${tipoGrano}">SOJA</td></tr>
         <tr><td class="lbl">Toneladas</td><td th:text="${toneladas}">30.50 Tn</td></tr>
         <tr><td class="lbl">Fecha de registro</td><td th:text="${fechaHoraEvento}">02/06/2025 09:15</td></tr>
@@ -172,7 +184,7 @@
       </tbody>
     </table>
 
-    <!-- Comentarios del operador (solo si existen) -->
+    <!-- Comentarios del operador -->
     <div class="comments-box"
          th:if="${comentarios != null and !#strings.isEmpty(comentarios)}">
       <div class="comments-label">Comentarios del operador</div>
@@ -191,16 +203,26 @@
     <p class="note">Si tenés consultas sobre este envío, contactá a tu operador asignado en Logitrack.</p>
   </div>
 
-  <!-- Footer -->
-   <div class="ftr">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <img src="../templates/logo-white-100.png" alt="Logitrack Agro logo" style="width: 30px;">
-      <span>Logitrack Agro</span>
-    </div>
-    <p>Este correo fue generado automáticamente por el sistema.</p>
-    <p>Por favor no respondas directamente a esta dirección.</p>
-  </div>
 
-</div></div>  
+  <!-- Footer -->
+  <div class="ftr">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="60" valign="middle" style="padding: 0 12px 0 0;">
+          <img src="https://i.postimg.cc/NMYr2y1S/logo-logitrack-150.png"
+              alt="Logitrack Agro logo"
+              style="width: 60px; height: auto; display: block;" />
+        </td>
+        <td valign="middle" style="padding: 0;">
+          <p style="font-family: Arial,sans-serif; font-size: 11px; color: #aaa; margin: 0 0 4px 0;">
+            Este correo fue generado automáticamente por el sistema.
+          </p>
+          <p style="font-family: Arial,sans-serif; font-size: 11px; color: #aaa; margin: 0;">
+            Por favor no respondas directamente a esta dirección.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </div>
 </body>
 </html>

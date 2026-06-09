@@ -146,15 +146,18 @@ public class ResendNotificationService implements NotificationService {
     }
 
     private String renderizarPlantilla(String nombrePlantilla, Envio envio, EstadoEnvio nuevoEstado) {
-        Establecimiento origenEstab  = envio.getOrigen();
-        Establecimiento destinoEstab = envio.getDestino();
+        Establecimiento origen  = envio.getOrigen();
+        Establecimiento destino = envio.getDestino();
 
-        String origenStr  = origenEstab  != null ? origenEstab.toString()  : "—";
-        String destinoStr = destinoEstab != null ? destinoEstab.toString() : "—";
+        String origenStr  = (origen != null && origen.getNombreLugar() != null) 
+                            ? origen.getNombreLugar() : "—";
+        String destinoStr = (destino != null && destino.getNombreLugar() != null) 
+                            ? destino.getNombreLugar() : "—";
 
-        // TODO: reemplazar por envio.getEmpresaCliente().getRazonSocial()
-        //       cuando se agregue el campo @ManyToOne EmpresaCliente a Envio
-        String nombreCliente = "Estimado cliente";
+        // Nombre del cliente a partir de la empresa asociada al origen
+        String nombreCliente = "Cliente";
+        if (origen != null && origen.getEmpresa() != null) {
+            nombreCliente = origen.getEmpresa().getRazonSocial();}
 
         Context ctx = new Context(Locale.forLanguageTag("es-AR"));
         ctx.setVariable("nombreCliente",   nombreCliente);
@@ -162,6 +165,7 @@ public class ResendNotificationService implements NotificationService {
         ctx.setVariable("origen",          origenStr);
         ctx.setVariable("destino",         destinoStr);
         ctx.setVariable("estadoLabel",     labelEstado(nuevoEstado));
+        ctx.setVariable("toneladas",     envio.getKgOrigen());
         ctx.setVariable("estadoCssClass",  cssClass(nuevoEstado));
         ctx.setVariable("fechaHoraEvento", LocalDateTime.now().format(FORMATTER));
         ctx.setVariable("tipoGrano",       envio.getTipoGrano() != null

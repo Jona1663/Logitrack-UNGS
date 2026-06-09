@@ -15,7 +15,7 @@ public class EnvioCambioEstadoEvent extends ApplicationEvent {
 
     public EnvioCambioEstadoEvent(Object source, Envio envio, EstadoEnvio nuevoEstado) {
         super(source);
-        this.envio       = envio;        // ← fix: faltaba esta asignación
-        this.nuevoEstado = nuevoEstado;  // ← fix: faltaba esta asignación
+        this.envio       = envio;        
+        this.nuevoEstado = nuevoEstado;  
     }
 }

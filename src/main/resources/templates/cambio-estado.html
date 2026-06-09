@@ -15,32 +15,36 @@
                border-radius: 12px; overflow: hidden;
                box-shadow: 0 2px 12px rgba(27,67,50,.12); }
 
-    /* Header verde oscuro — idéntico al gradiente del botón del frontend */
+    /* Header */
     .hdr {
       background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
       padding: 22px 36px;
-      display: flex; align-items: center; justify-content: space-between;
     }
-    .logo-wrap { display: flex; align-items: center; gap: 10px; }
-    .logo-icon {
-      width: 38px; height: 38px; background: rgba(255,255,255,.15);
-      border-radius: 8px; display: flex; align-items: center;
-      justify-content: center; font-size: 20px;
-    }
-    .logo-text      { font-family: Arial,sans-serif; font-size: 20px;
-                      font-weight: bold; color: #fff; letter-spacing: .5px; }
-    .logo-text span { color: #74c69d; }
-    .logo-sub       { font-family: Arial,sans-serif; font-size: 10px;
-                      color: rgba(255,255,255,.6); text-transform: uppercase;
-                      letter-spacing: 1px; margin-top: 2px; }
+    .logo-text       { font-family: Arial,sans-serif; font-size: 20px;
+                       font-weight: bold; color: #fff; letter-spacing: .5px; }
+    .logo-text span  { color: #74c69d; }
+    .logo-sub        { font-family: Arial,sans-serif; font-size: 10px;
+                       color: rgba(255,255,255,.6); text-transform: uppercase;
+                       letter-spacing: 1px; margin-top: 2px; }
     .hdr-badge {
       font-family: Arial,sans-serif; font-size: 11px; font-weight: bold;
       color: #1b4332; background: #74c69d; padding: 4px 12px;
       border-radius: 20px; letter-spacing: .5px; text-transform: uppercase;
+      display: inline-block;
     }
 
-    /* Franja de acento verde claro bajo el header */
     .accent-bar { height: 4px; background: linear-gradient(90deg, #40916c, #74c69d, #40916c); }
+
+    /* Banner de actualización */
+    .update-banner {
+      background: linear-gradient(135deg, #1b4332 0%, #40916c 100%);
+      padding: 28px 36px; text-align: center;
+    }
+    .update-icon  { font-size: 40px; margin-bottom: 10px; }
+    .update-title { font-family: Arial,sans-serif; font-size: 20px;
+                    font-weight: bold; color: #fff; margin: 0 0 4px; }
+    .update-sub   { font-family: Arial,sans-serif; font-size: 13px;
+                    color: #b7e4c7; margin: 0; }
 
     /* Body */
     .body { padding: 32px 36px 24px; }
@@ -49,7 +53,7 @@
     .intro    { font-family: Arial,sans-serif; font-size: 14px;
                 color: #555; margin: 0 0 20px; }
 
-    /* Badges de estado */
+    /* Badge de estado dinámico */
     .badge { display: inline-block; padding: 6px 18px; border-radius: 20px;
              font-family: Arial,sans-serif; font-size: 13px; font-weight: bold;
              margin-bottom: 24px; }
@@ -60,8 +64,20 @@
     .badge--cancelado  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
     .badge--default    { background: #f1f5f9; color: #334155; }
 
-    /* Tabla de detalles */
-    .details { width: 100%; border-collapse: collapse; margin: 0 0 28px;
+    /* Tracking ID box */
+    .tracking-box {
+      background: #f0faf4; border: 1.5px solid #40916c;
+      border-radius: 8px; padding: 16px 20px;
+      margin-bottom: 24px; text-align: center;
+    }
+    .tracking-label { font-family: Arial,sans-serif; font-size: 11px;
+                      color: #2d6a4f; text-transform: uppercase;
+                      letter-spacing: 1px; margin-bottom: 6px; font-weight: bold; }
+    .tracking-id    { font-family: Arial,sans-serif; font-size: 26px;
+                      font-weight: bold; color: #1b4332; letter-spacing: 3px; }
+
+    /* Tabla */
+    .details { width: 100%; border-collapse: collapse; margin: 0 0 24px;
                border: 1px solid #d1fae5; border-radius: 8px; overflow: hidden; }
     .details thead td {
       background: linear-gradient(135deg, #1b4332, #2d6a4f);
@@ -72,9 +88,27 @@
       font-family: Arial,sans-serif; font-size: 14px;
       padding: 10px 16px; border-bottom: 1px solid #ecfdf5; color: #333;
     }
-    .details tbody td.lbl { color: #2d6a4f; font-weight: 600;
-                             width: 40%; background: #f0faf4; font-size: 13px; }
+    .details tbody td.lbl { color: #2d6a4f; font-weight: 600; width: 40%;
+                             background: #f0faf4; font-size: 13px; }
     .details tbody tr:last-child td { border-bottom: none; }
+
+    /* Comentarios (si los hay) */
+    .comments-box {
+      background: #fffbeb; border-left: 3px solid #f59e0b;
+      border-radius: 0 6px 6px 0; padding: 12px 14px; margin-bottom: 24px;
+    }
+    .comments-label { font-family: Arial,sans-serif; font-size: 11px;
+                      font-weight: bold; color: #92400e; text-transform: uppercase;
+                      letter-spacing: .5px; margin-bottom: 4px; }
+    .comments-text  { font-family: Arial,sans-serif; font-size: 13px; color: #44403c; }
+
+    /* Info box */
+    .info-box {
+      background: #ecfdf5; border-left: 3px solid #40916c;
+      border-radius: 0 6px 6px 0; padding: 12px 14px; margin-bottom: 20px;
+    }
+    .info-text { font-family: Arial,sans-serif; font-size: 13px;
+                 color: #1b4332; line-height: 1.6; }
 
     .hr   { border: none; border-top: 1px solid #ecfdf5; margin: 20px 0; }
     .note { font-family: Arial,sans-serif; font-size: 13px;
@@ -83,84 +117,118 @@
     /* Footer */
     .ftr { background: #f0faf4; border-top: 2px solid #d1fae5;
            padding: 16px 36px; text-align: center; }
-    .ftr-logo { font-family: Arial,sans-serif; font-size: 13px;
-                font-weight: bold; color: #2d6a4f; margin-bottom: 4px; }
     .ftr p    { font-family: Arial,sans-serif; font-size: 11px;
                 color: #aaa; margin: 2px 0; }
 
     @media only screen and (max-width: 620px) {
       .card { border-radius: 0 !important; }
-      .hdr, .body, .ftr { padding-left: 20px !important; padding-right: 20px !important; }
+      .hdr, .update-banner, .body, .ftr { padding-left: 20px !important; padding-right: 20px !important; }
       .details tbody td { display: block; width: 100% !important; }
-      .details tbody td.lbl { padding-bottom: 2px; }
     }
   </style>
 </head>
 <body>
 <div class="wrapper"><div class="card">
 
-  <!-- Header -->
+  <!-- Header con tabla de 3 columnas -->
   <div class="hdr">
-    <div class="logo-wrap">
-      <div class="logo-icon">🌾</div>
-      <div>
-        <div class="logo-text">Logi<span>track</span></div>
-        <div class="logo-sub">Agro · Logística de Granos</div>
-      </div>
-    </div>
-    <div class="hdr-badge">Notificación</div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding:0;">
+          <img src="https://i.postimg.cc/SRF1MfZp/logo-white-100.png"
+               alt="Logitrack Agro"
+               style="height:48px; width:auto; display:block;" />
+        </td>
+        <td align="center" valign="middle" style="padding:0;">
+          <div class="hdr-badge">Actualización</div>
+        </td>
+        <td align="right" valign="middle" style="padding:0;">
+          <div class="logo-text">Logi<span>track</span></div>
+          <div class="logo-sub">Agro · Logística de Granos</div>
+        </td>
+      </tr>
+    </table>
   </div>
   <div class="accent-bar"></div>
+
+  <!-- Banner de actualización de estado -->
+  <div class="update-banner">
+    <div class="update-icon">🔄</div>
+    <p class="update-title">¡Estado actualizado!</p>
+    <p class="update-sub">Tu envío ha cambiado de estado en el sistema Logitrack</p>
+  </div>
 
   <!-- Body -->
   <div class="body">
     <p class="greeting">Hola, <strong th:text="${nombreCliente}">Cliente</strong></p>
-    <p class="intro">Tu envío ha cambiado de estado:</p>
+    <p class="intro">El estado de tu envío ahora es:</p>
 
     <div>
       <span class="badge"
-        th:classappend="${estadoCssClass}"
-        th:text="${estadoLabel}">En Tránsito</span>
+            th:classappend="${estadoCssClass}"
+            th:text="${estadoLabel}">En Tránsito</span>
     </div>
 
-    <!-- Tabla de datos del viaje -->
+    <!-- ID de seguimiento destacado -->
+    <div class="tracking-box">
+      <div class="tracking-label">🔍 ID de Seguimiento</div>
+      <div class="tracking-id" th:text="${idSeguimiento}">LT-A1B2C3</div>
+    </div>
+
+    <!-- Tabla de detalles -->
     <table class="details">
-      <thead><tr><td colspan="2">Detalle del envío</td></tr></thead>
+      <thead>
+        <tr><td colspan="2">Detalle del envío</td>
+      </tr>
+      </thead>
       <tbody>
-        <tr>
-          <td class="lbl">ID de seguimiento</td>
-          <td th:text="${idSeguimiento}">LT-A1B2C3</td>
-        </tr>
-        <tr>
-          <td class="lbl">Origen</td>
-          <td th:text="${origen}">Rosario, Santa Fe</td>
-        </tr>
-        <tr>
-          <td class="lbl">Destino</td>
-          <td th:text="${destino}">Bahía Blanca, Bs. As.</td>
-        </tr>
-        <tr>
-          <td class="lbl">Estado</td>
-          <td><strong th:text="${estadoLabel}">En Tránsito</strong></td>
-        </tr>
-        <tr>
-          <td class="lbl">Fecha y hora</td>
-          <td th:text="${fechaHoraEvento}">02/06/2025 14:35</td>
-        </tr>
+        <tr><td class="lbl">Origen</td><td th:text="${origen}">Rosario, Santa Fe</td></tr>
+        <tr><td class="lbl">Destino</td><td th:text="${destino}">Bahía Blanca, Bs. As.</td></tr>
+        <tr><td class="lbl">Tipo de grano</td><td th:text="${tipoGrano}">SOJA</td></tr>
+        <tr><td class="lbl">Kilos</td><td th:text="${toneladas}">3050 kg</td></tr>
+        <tr><td class="lbl">Fecha y hora del cambio</td><td th:text="${fechaHoraEvento}">02/06/2025 14:35</td></tr>
+        <tr><td class="lbl">Estado actual</td><td th:text="${estadoLabel}">En Tránsito</td></tr>
       </tbody>
     </table>
+
+    <!-- Comentarios del operador -->
+    <div class="comments-box"
+         th:if="${comentarios != null and !#strings.isEmpty(comentarios)}">
+      <div class="comments-label">Comentarios del operador</div>
+      <div class="comments-text" th:text="${comentarios}"></div>
+    </div>
+
+    <!-- Info box -->
+    <div class="info-box">
+      <div class="info-text">
+        📧 Recibirás notificaciones automáticas por email cada vez que el estado
+        de tu envío cambie. Guardá el ID de seguimiento para consultas futuras.
+      </div>
+    </div>
 
     <hr class="hr"/>
     <p class="note">Si tenés consultas sobre este envío, contactá a tu operador asignado en Logitrack.</p>
   </div>
-
-  <!-- Footer -->
+      
+  <!-- Footer con solo el logo -->
   <div class="ftr">
-    <div class="ftr-logo">🌾 Logitrack Agro</div>
-    <p>Este correo fue generado automáticamente por el sistema.</p>
-    <p>Por favor no respondas directamente a esta dirección.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="60" valign="middle" style="padding: 0 12px 0 0;">
+          <img src="https://i.postimg.cc/NMYr2y1S/logo-logitrack-150.png"
+              alt="Logitrack Agro logo"
+              style="width: 60px; height: auto; display: block;" />
+        </td>
+        <td valign="middle" style="padding: 0;">
+          <p style="font-family: Arial,sans-serif; font-size: 11px; color: #aaa; margin: 0 0 4px 0;">
+            Este correo fue generado automáticamente por el sistema.
+          </p>
+          <p style="font-family: Arial,sans-serif; font-size: 11px; color: #aaa; margin: 0;">
+            Por favor no respondas directamente a esta dirección.
+          </p>
+        </td>
+      </tr>
+    </table>
   </div>
-
-</div></div>
 </body>
 </html>

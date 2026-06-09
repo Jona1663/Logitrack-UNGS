@@ -15,31 +15,28 @@
                border-radius: 12px; overflow: hidden;
                box-shadow: 0 2px 12px rgba(27,67,50,.12); }
 
-    /* Header — mismo header de marca verde que las otras plantillas */
+    /* Header (mismo verde de marca) */
     .hdr {
       background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
       padding: 22px 36px;
-      display: flex; align-items: center; justify-content: space-between;
     }
-    .logo-wrap { display: flex; align-items: center; gap: 10px; }
-    .logo-icon { width: 38px; height: 38px; background: rgba(255,255,255,.15);
-                 border-radius: 8px; display: flex; align-items: center;
-                 justify-content: center; font-size: 20px; }
     .logo-text       { font-family: Arial,sans-serif; font-size: 20px;
                        font-weight: bold; color: #fff; letter-spacing: .5px; }
     .logo-text span  { color: #74c69d; }
     .logo-sub        { font-family: Arial,sans-serif; font-size: 10px;
                        color: rgba(255,255,255,.6); text-transform: uppercase;
                        letter-spacing: 1px; margin-top: 2px; }
-    /* Badge diferente — naranja para cancelación */
-    .hdr-badge { font-family: Arial,sans-serif; font-size: 11px; font-weight: bold;
-                 color: #fff; background: rgba(239,68,68,.8); padding: 4px 12px;
-                 border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; }
+    .hdr-badge {
+      font-family: Arial,sans-serif; font-size: 11px; font-weight: bold;
+      color: #fff; background: rgba(239,68,68,.8); padding: 4px 12px;
+      border-radius: 20px; letter-spacing: .5px; text-transform: uppercase;
+      display: inline-block;
+    }
 
-    /* Franja de acento — rojo suave para reflejar cancelación pero manteniendo la marca */
+    /* Franja de acento rojo (manteniendo el estilo de cancelación) */
     .accent-bar { height: 4px; background: linear-gradient(90deg, #1b4332, #ef4444, #1b4332); }
 
-    /* Banner de cancelación */
+    /* Banner de cancelación (rojo) */
     .cancel-banner {
       background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
       padding: 28px 36px; text-align: center;
@@ -57,13 +54,25 @@
     .intro    { font-family: Arial,sans-serif; font-size: 14px;
                 color: #555; margin: 0 0 20px; }
 
-    /* Badge */
+    /* Badge de cancelado */
     .badge { display: inline-block; padding: 6px 18px; border-radius: 20px;
              font-family: Arial,sans-serif; font-size: 13px; font-weight: bold;
              margin-bottom: 24px; background: #fee2e2; color: #991b1b;
              border: 1px solid #fca5a5; }
 
-    /* Tabla — misma estructura que las otras pero con acento rojo en el header */
+    /* Tracking ID box (con borde rojo suave) */
+    .tracking-box {
+      background: #fff5f5; border: 1.5px solid #f87171;
+      border-radius: 8px; padding: 16px 20px;
+      margin-bottom: 24px; text-align: center;
+    }
+    .tracking-label { font-family: Arial,sans-serif; font-size: 11px;
+                      color: #991b1b; text-transform: uppercase;
+                      letter-spacing: 1px; margin-bottom: 6px; font-weight: bold; }
+    .tracking-id    { font-family: Arial,sans-serif; font-size: 26px;
+                      font-weight: bold; color: #7f1d1d; letter-spacing: 3px; }
+
+    /* Tabla con acento rojo */
     .details { width: 100%; border-collapse: collapse; margin: 0 0 24px;
                border: 1px solid #fee2e2; border-radius: 8px; overflow: hidden; }
     .details thead td {
@@ -79,7 +88,7 @@
                              background: #fff5f5; font-size: 13px; }
     .details tbody tr:last-child td { border-bottom: none; }
 
-    /* Caja de motivo */
+    /* Motivo de cancelación */
     .motivo-box {
       background: #fff5f5; border-left: 3px solid #ef4444;
       border-radius: 0 6px 6px 0; padding: 12px 14px; margin-bottom: 24px;
@@ -89,7 +98,7 @@
                     letter-spacing: .5px; margin-bottom: 4px; }
     .motivo-text  { font-family: Arial,sans-serif; font-size: 13px; color: #450a0a; }
 
-    /* Caja de contacto — vuelve al verde de la marca */
+    /* Caja de contacto (verde, como en el original) */
     .contact-box {
       background: #ecfdf5; border-left: 3px solid #40916c;
       border-radius: 0 6px 6px 0; padding: 12px 14px; margin-bottom: 20px;
@@ -101,11 +110,9 @@
     .note { font-family: Arial,sans-serif; font-size: 13px;
             color: #888; line-height: 1.6; margin: 0; }
 
-    /* Footer — siempre verde de marca */
+    /* Footer (verde, con solo logo) */
     .ftr { background: #f0faf4; border-top: 2px solid #d1fae5;
            padding: 16px 36px; text-align: center; }
-    .ftr-logo { font-family: Arial,sans-serif; font-size: 13px;
-                font-weight: bold; color: #2d6a4f; margin-bottom: 4px; }
     .ftr p    { font-family: Arial,sans-serif; font-size: 11px;
                 color: #aaa; margin: 2px 0; }
 
@@ -119,16 +126,24 @@
 <body>
 <div class="wrapper"><div class="card">
 
-  <!-- Header de marca (siempre verde) -->
+  <!-- Header con tabla de 3 columnas -->
   <div class="hdr">
-    <div class="logo-wrap">
-      <div class="logo-icon">🌾</div>
-      <div>
-        <div class="logo-text">Logi<span>track</span></div>
-        <div class="logo-sub">Agro · Logística de Granos</div>
-      </div>
-    </div>
-    <div class="hdr-badge">Cancelado</div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding:0;">
+          <img src="https://i.postimg.cc/SRF1MfZp/logo-white-100.png"
+               alt="Logitrack Agro"
+               style="height:48px; width:auto; display:block;" />
+        </td>
+        <td align="center" valign="middle" style="padding:0;">
+          <div class="hdr-badge">Cancelación</div>
+        </td>
+        <td align="right" valign="middle" style="padding:0;">
+          <div class="logo-text">Logi<span>track</span></div>
+          <div class="logo-sub">Agro · Logística de Granos</div>
+        </td>
+      </tr>
+    </table>
   </div>
   <div class="accent-bar"></div>
 
@@ -141,46 +156,41 @@
 
   <!-- Body -->
   <div class="body">
-
     <p class="greeting">Hola, <strong th:text="${nombreCliente}">Cliente</strong></p>
+
+    <!-- Badge de estado -->
     <div><span class="badge">Cancelado</span></div>
     <p class="intro">Te informamos que el siguiente envío fue cancelado:</p>
 
-    <!-- Tabla de datos -->
+    <!-- ID de seguimiento destacado (con fondo rojo suave) -->
+    <div class="tracking-box">
+      <div class="tracking-label">🔍 ID de Seguimiento</div>
+      <div class="tracking-id" th:text="${idSeguimiento}">LT-A1B2C3</div>
+    </div>
+
+    <!-- Tabla de detalles -->
     <table class="details">
-      <thead><tr><td colspan="2">Detalle del envío cancelado</td></tr></thead>
+      <thead>
+        <tr><td colspan="2">Detalle del envío cancelado</td>
+      </tr>
+      </thead>
       <tbody>
-        <tr>
-          <td class="lbl">ID de seguimiento</td>
-          <td><strong th:text="${idSeguimiento}">LT-A1B2C3</strong></td>
-        </tr>
-        <tr>
-          <td class="lbl">Origen</td>
-          <td th:text="${origen}">Rosario, Santa Fe</td>
-        </tr>
-        <tr>
-          <td class="lbl">Destino</td>
-          <td th:text="${destino}">Bahía Blanca, Bs. As.</td>
-        </tr>
-        <tr>
-          <td class="lbl">Tipo de grano</td>
-          <td th:text="${tipoGrano}">SOJA</td>
-        </tr>
-        <tr>
-          <td class="lbl">Fecha de cancelación</td>
-          <td th:text="${fechaHoraEvento}">02/06/2025 11:30</td>
-        </tr>
+        <tr><td class="lbl">Origen</td><td th:text="${origen}">Rosario, Santa Fe</td></tr>
+        <tr><td class="lbl">Destino</td><td th:text="${destino}">Bahía Blanca, Bs. As.</td></tr>
+        <tr><td class="lbl">Tipo de grano</td><td th:text="${tipoGrano}">SOJA</td></tr>
+        <tr><td class="lbl">Toneladas</td><td th:text="${toneladas}">30.50 Tn</td></tr>
+        <tr><td class="lbl">Fecha de cancelación</td><td th:text="${fechaHoraEvento}">02/06/2025 11:30</td></tr>
       </tbody>
     </table>
 
-    <!-- Motivo (si hay comentarios) -->
+    <!-- Motivo de cancelación (si hay comentarios) -->
     <div class="motivo-box"
          th:if="${comentarios != null and !#strings.isEmpty(comentarios)}">
       <div class="motivo-label">Motivo de la cancelación</div>
       <div class="motivo-text" th:text="${comentarios}"></div>
     </div>
 
-    <!-- Caja de contacto — verde de marca para volver a la identidad positiva -->
+    <!-- Caja de contacto (verde marca) -->
     <div class="contact-box">
       <div class="contact-text">
         🌾 Si creés que se trata de un error o necesitás registrar un nuevo envío,
@@ -195,13 +205,25 @@
     </p>
   </div>
 
-  <!-- Footer siempre verde de marca -->
+  <!-- Footer con solo el logo -->
   <div class="ftr">
-    <div class="ftr-logo">🌾 Logitrack Agro</div>
-    <p>Este correo fue generado automáticamente por el sistema.</p>
-    <p>Por favor no respondas directamente a esta dirección.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="60" valign="middle" style="padding: 0 12px 0 0;">
+          <img src="https://i.postimg.cc/NMYr2y1S/logo-logitrack-150.png"
+              alt="Logitrack Agro logo"
+              style="width: 60px; height: auto; display: block;" />
+        </td>
+        <td valign="middle" style="padding: 0;">
+          <p style="font-family: Arial,sans-serif; font-size: 11px; color: #aaa; margin: 0 0 4px 0;">
+            Este correo fue generado automáticamente por el sistema.
+          </p>
+          <p style="font-family: Arial,sans-serif; font-size: 11px; color: #aaa; margin: 0;">
+            Por favor no respondas directamente a esta dirección.
+          </p>
+        </td>
+      </tr>
+    </table>
   </div>
-
-</div></div>
 </body>
 </html>
