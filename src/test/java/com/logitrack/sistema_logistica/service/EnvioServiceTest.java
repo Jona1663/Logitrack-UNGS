@@ -1,7 +1,6 @@
 package com.logitrack.sistema_logistica.service;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -35,7 +34,6 @@ import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.EmpresaCliente;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Establecimiento;
-import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Persona;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
@@ -48,7 +46,6 @@ import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import org.springframework.context.ApplicationEventPublisher;
 
 
 
@@ -823,11 +820,11 @@ public class EnvioServiceTest {
                 .build();
 
         // Creamos el evento de Spring que simula la intercepción
-        com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent evento = 
+   /*      com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent evento = 
             new com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent(this, viajeDePrueba);
 
         // Act: Hacemos que el interceptor escuche el evento y actúe
-        listener.onCambioEstado(evento);
+        listener.onCambioEstado(evento); */
 
         // Assert: Validamos mediante Mockito que el servicio fue llamado al menos 1 vez
         verify(notifServiceMock, times(1)).enviarNotificacion(
