@@ -1,38 +1,41 @@
         package com.logitrack.sistema_logistica.service;
 
-        import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-        import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
-        import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
-        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
-        import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-        import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
-        import com.logitrack.sistema_logistica.repository.CamionRepository;
-        import com.logitrack.sistema_logistica.repository.EnvioRepository;
-        import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-        import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
-        import org.springframework.transaction.annotation.Transactional;
-        import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
-        import org.springframework.beans.factory.annotation.Autowired;
-        import com.logitrack.sistema_logistica.model.enums.TipoEvento;
-        import org.springframework.context.ApplicationEventPublisher;
-        import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
-        import com.logitrack.sistema_logistica.model.Establecimiento;
-        import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
-        import com.logitrack.sistema_logistica.model.ChoferDetalle;
-        import org.springframework.data.jpa.domain.Specification;
-        import org.springframework.security.core.Authentication;
-        import com.logitrack.sistema_logistica.model.Usuario;   
-        import com.logitrack.sistema_logistica.model.Camion;
-        import com.logitrack.sistema_logistica.model.Envio;
-        import org.springframework.data.domain.Pageable;
-        import com.fasterxml.jackson.databind.JsonNode;
-        import org.springframework.stereotype.Service;
-        import org.springframework.data.domain.Page;
-        import java.time.LocalDateTime;
         import java.time.LocalDate;
+        import java.time.LocalDateTime;
         import java.util.Arrays;
         import java.util.List;
         import java.util.Map;
+
+        import org.springframework.beans.factory.annotation.Autowired;
+        import org.springframework.context.ApplicationEventPublisher;
+        import org.springframework.data.domain.Page;
+        import org.springframework.data.domain.Pageable;
+        import org.springframework.data.jpa.domain.Specification;
+        import org.springframework.security.core.Authentication;
+        import org.springframework.stereotype.Service;
+        import org.springframework.transaction.annotation.Transactional;
+
+        import com.fasterxml.jackson.databind.JsonNode;
+        import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
+        import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
+        import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
+        import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+        import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+        import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
+        import com.logitrack.sistema_logistica.model.Camion;
+        import com.logitrack.sistema_logistica.model.ChoferDetalle;
+        import com.logitrack.sistema_logistica.model.Envio;
+        import com.logitrack.sistema_logistica.model.Establecimiento;
+        import com.logitrack.sistema_logistica.model.Usuario;
+        import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+        import com.logitrack.sistema_logistica.model.enums.TipoEvento;
+        import com.logitrack.sistema_logistica.repository.CamionRepository;
+        import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
+        import com.logitrack.sistema_logistica.repository.EnvioRepository;
+        import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
+        import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+        import com.logitrack.sistema_logistica.repository.UsuarioRepository;
         
         @Service
         public class EnvioService {
@@ -108,7 +111,10 @@
                                                 EstadoEnvio.PENDIENTE
                                         );
 
-                        // 5. Retornar el envío ya creado
+                        // 5. Publicar evento
+                        eventPublisher.publishEvent(new EnvioNuevoEvent(this, nuevoEnvio));
+                        
+                        // 6. Retornar el envío ya creado
                         return nuevoEnvio;
                 }
 
@@ -263,7 +269,7 @@
                                                 estadoAnterior, 
                                                 estadoNuevo
                                         );
-                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado, estadoNuevo));
 
                 return envioGuardado;
         }
@@ -353,6 +359,7 @@
                                         estadoActual, 
                                         estadoActual
                 );
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado, estadoActual));
                 return envioGuardado;
         }
 
@@ -375,7 +382,6 @@
                 envio.setFechaSalida(fechaSalida);
                 envio.setChofer(chofer);
                 envioRepository.save(envio);
-                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
 
         }
 
@@ -453,7 +459,11 @@
         camion.setDisponible(false);
         choferDetalleRepository.save(chofer);
         camionRepository.save(camion);
-        eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
+
+        //Notificacion por mail
+        Envio envioGuardado = envioRepository.save(envio);
+        eventPublisher.publishEvent(
+        new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
 
         return envioRepository.save(envio);
         

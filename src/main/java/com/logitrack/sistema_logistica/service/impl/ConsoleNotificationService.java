@@ -1,29 +1,51 @@
 package com.logitrack.sistema_logistica.service.impl;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.service.NotificationService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
+@ConditionalOnProperty(name = "resend.enabled", havingValue = "false")
 public class ConsoleNotificationService implements NotificationService {
 
-    private static final Logger log = LoggerFactory.getLogger(ConsoleNotificationService.class);
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    // ── Método 1 — notificación al supervisor por incidencia ─────────────
 
     @Override
     public void enviarNotificacion(String destinatario, String asunto, String mensaje) {
-        log.info("╔══════════════════════════════════════════════════╗");
-        log.info("║            NOTIFICACION SIMULADA                 ║");
-        log.info("╠══════════════════════════════════════════════════╣");
-        log.info("║ Para:    {}", destinatario);
-        log.info("║ Asunto:  {}", asunto);
-        log.info("║ Mensaje: {}", mensaje);
-        log.info("║ Hora:    {}", LocalDateTime.now().format(FORMATTER));
-        log.info("╚══════════════════════════════════════════════════╝");
+        log.info("""
+            [MAIL-CONSOLE] Notificación simulada
+              → Para   : {}
+              → Asunto : {}
+              → Mensaje: {}
+            """,
+            destinatario, asunto, mensaje
+        );
+    }
+
+    // ── Método 2 — notificación al cliente por cambio de estado ─────────
+
+    @Override
+    public void notificarCambioEstado(Envio envio, EstadoEnvio nuevoEstado) {
+        String origenNombre  = envio.getOrigen()  != null ? envio.getOrigen().toString()  : "—";
+        String destinoNombre = envio.getDestino() != null ? envio.getDestino().toString() : "—";
+
+        log.info("""
+            [MAIL-CONSOLE] Notificación simulada (Resend desactivado)
+              → Envío ID : {}
+              → Estado   : {}
+              → Origen   : {}
+              → Destino  : {}
+            """,
+            envio.getIdEnvio(),
+            nuevoEstado,
+            origenNombre,
+            destinoNombre
+        );
     }
 }
