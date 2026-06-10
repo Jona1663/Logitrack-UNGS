@@ -1,0 +1,160 @@
+
+═══════════════════════════════════════════════════════════════════════════════
+BUG #336 - CSV DE REPORTE OPERATIVO INCOMPLETO (Faltan Criterios 3 y 4)
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+
+OBJETIVO:
+Solucionar el error reportado donde el archivo CSV generado por el backend solo contenía los datos de Métricas Globales y Estados (Criterios 1 y 2), omitiendo por completo la información de Granos y Eficiencia de Entregas (Criterios 3 y 4). El archivo final debía reflejar la totalidad del dashboard gerencial.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CLASE MODIFICADA: ReporteService.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/service/ReporteService.java
+
+QUE HABÍA ANTES:
+
+El método exportarReporteOperativoCsv terminaba la escritura del archivo inmediatamente después de imprimir los estados (Cancelados).
+
+No existían llamadas a los servicios de granos ni de eficiencia.
+
+CÓDIGO COMPLETAMENTE REESCRITO PARA ESTE MÉTODO:
+
+Java
+@Transactional(readOnly = true)
+public void exportarReporteOperativoCsv(LocalDate fechaInicio, LocalDate fechaFin, java.io.Writer writer) throws java.io.IOException {
+        
+        // ... (Código previo Criterios 1 y 2) ...
+
+        // --- CRITERIOS 3 y 4: Granos y Eficiencia ---
+        LocalDate inicioSeguro = (fechaInicio != null) ? fechaInicio : LocalDate.of(2000, 1, 1);
+        LocalDate finSeguro = (fechaFin != null) ? fechaFin : LocalDate.now();
+
+        List<ReporteGranoDTO> granos = obtenerReportePorGrano(inicioSeguro, finSeguro);
+        ReporteEficienciaDTO eficiencia = obtenerMetricasATiempo(inicioSeguro, finSeguro);
+
+        // ... (Configuración del CSVPrinter) ...
+
+        try (org.apache.commons.csv.CSVPrinter printer = new org.apache.commons.csv.CSVPrinter(writer, formato)) {
+                
+                // ... (Impresión Criterios 1 y 2) ...
+
+                // Imprimir Criterio 3
+                printer.printRecord("--- DESGLOSE POR TIPO DE GRANO ---", "");
+                if (granos != null && !granos.isEmpty()) {
+                        for (ReporteGranoDTO grano : granos) {
+                                printer.printRecord("Grano: " + grano.getTipoGrano(), grano.getCantidadEnvios());
+                        }
+                } else {
+                        printer.printRecord("Sin datos de granos", 0);
+                }
+
+                // Imprimir Criterio 4
+                printer.printRecord("--- EFICIENCIA DE ENTREGAS ---", "");
+                if (eficiencia != null) {
+                        printer.printRecord("Viajes a tiempo", eficiencia.getCantidadEnviosATiempo());
+                        printer.printRecord("Kilos a tiempo (kg)", eficiencia.getTotalKilosEnTiempo());
+                        printer.printRecord("Porcentaje a tiempo (%)", eficiencia.getPorcentajeATiempo());
+                } else {
+                        printer.printRecord("Viajes a tiempo", 0);
+                        printer.printRecord("Kilos a tiempo (kg)", 0);
+                        printer.printRecord("Porcentaje a tiempo (%)", 0.0);
+                }
+                printer.flush();
+        }
+}
+EXPLICACIÓN LÍNEA POR LÍNEA:
+
+LocalDate inicioSeguro = (fechaInicio != null) ? fechaInicio : LocalDate.of(2000, 1, 1);
+
+Validación para evitar NullPointerException. Si el usuario solicita el histórico completo (sin fechas), se asigna una fecha antigua segura, ya que las queries de granos y eficiencia requieren parámetros de fecha obligatorios.
+
+List<ReporteGranoDTO> granos = obtenerReportePorGrano(...) y ReporteEficienciaDTO eficiencia = obtenerMetricasATiempo(...)
+
+Reutilización de los métodos internos del servicio para traer la información calculada faltante.
+
+printer.printRecord("--- DESGLOSE POR TIPO DE GRANO ---", "");
+
+Se imprimen separadores visuales en el CSV para que los datos queden ordenados en bloques semánticos legibles.
+
+eficiencia.getCantidadEnviosATiempo() y eficiencia.getTotalKilosEnTiempo()
+
+Corrección del mapeo de atributos invocando los getters reales generados por Lombok que coinciden con los nombres de variables del ReporteEficienciaDTO.
+
+POR QUE:
+
+Soluciona el error de datos faltantes reciclando consultas que ya estaban optimizadas, sin necesidad de agregar nuevas queries nativas a la base de datos.
+
+Protege al servidor de posibles Errores 500 al lidiar con parámetros nulos provenientes de los filtros del frontend.
+
+═══════════════════════════════════════════════════════════════════════════════
+FLUJO COMPLETO DE EJECUCIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+Usuario llama (desde el Dashboard):
+GET http://localhost:8080/api/reportes/operativo/exportar?fechaInicio=2026-06-01&fechaFin=2026-06-30
+
+ReporteController recibe la petición y llama a reporteService.exportarReporteOperativoCsv().
+
+El servicio consulta y valida el Criterio 1 (Métricas Globales). Si da 0, lanza excepción EMPTY_STATE.
+
+El servicio consulta el Criterio 2 (Estados).
+
+El servicio asigna las fechas seguras, consulta Criterio 3 (Granos) y Criterio 4 (Eficiencia).
+
+Apache Commons CSV inicializa el escritor en memoria.
+
+Imprime secuencialmente los 4 bloques de datos, con sus respectivos encabezados y separadores visuales.
+
+El controlador retorna el archivo completo adjunto para descarga.
+
+═══════════════════════════════════════════════════════════════════════════════
+CÓMO PROBAR
+═══════════════════════════════════════════════════════════════════════════════
+
+Asegúrate de que la aplicación está corriendo y obtén un Token JWT válido.
+
+En Thunder Client, crea un request GET a:
+http://localhost:8080/api/reportes/operativo/exportar?fechaInicio=2026-06-01&fechaFin=2026-06-30
+
+Pestaña Auth -> Bearer -> Pegar Token.
+
+Presiona Send.
+
+Verificar en el panel de texto de respuesta que aparezcan explícitamente los apartados:
+
+--- MÉTRICAS GLOBALES ---
+
+--- DESGLOSE POR ESTADOS ---
+
+--- DESGLOSE POR TIPO DE GRANO ---
+
+--- EFICIENCIA DE ENTREGAS ---
+
+═══════════════════════════════════════════════════════════════════════════════
+RESUMEN DE CAMBIOS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ MODIFICADO:
+
+ReporteService.java: Extensión de la escritura del archivo dentro de exportarReporteOperativoCsv.
+
+✅ CORREGIDO:
+
+Se solucionó el error de compilación mapeando los getters correctos de Lombok para el objeto de eficiencia.
+
+Se previnieron errores de tipo NullPointerException implementando fechas por defecto para el rango histórico.
+
+═══════════════════════════════════════════════════════════════════════════════
+VENTAJAS DE ESTA IMPLEMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Completitud: El archivo exportado es ahora un reflejo fiel 1:1 del Dashboard Gerencial.
+✓ Legibilidad: Los separadores visuales de bloque estructuran la lectura al abrir el documento en hojas de cálculo.
+✓ Robustez: Capacidad para procesar y exportar históricos globales seguros cuando no se envían filtros de fecha.
+✓ DRY (Don't Repeat Yourself): Reutiliza la lógica de negocio y consultas que ya estaban testeadas en los otros endpoints de datos.
+
+═══════════════════════════════════════════════════════════════════════════════

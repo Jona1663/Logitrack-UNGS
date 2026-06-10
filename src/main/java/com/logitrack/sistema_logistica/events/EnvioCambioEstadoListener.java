@@ -3,6 +3,7 @@ package com.logitrack.sistema_logistica.events;
 import java.util.Set;
 
 import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
