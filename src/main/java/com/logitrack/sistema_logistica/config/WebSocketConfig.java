@@ -13,7 +13,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-logistica")
-                .setAllowedOriginPatterns("*") // Soluciona errores de CORS en Spring Boot 3
+                .setAllowedOrigins(
+                        "http://localhost:3000", // Permiso para probar en Local
+                        "https://logitrackagro.vercel.app" // Permiso para Producción online
+                )
                 .withSockJS(); // Vital para que el frontend se pueda conectar sin problemas
     }
 
