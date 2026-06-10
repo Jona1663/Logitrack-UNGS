@@ -22,6 +22,7 @@
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
         import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
         import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEventNotificaciones;
         import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
         import com.logitrack.sistema_logistica.model.Camion;
         import com.logitrack.sistema_logistica.model.ChoferDetalle;
@@ -383,6 +384,7 @@
                 envio.setChofer(chofer);
                 envioRepository.save(envio);
 
+                eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
         }
 
 
@@ -459,6 +461,7 @@
         camion.setDisponible(false);
         choferDetalleRepository.save(chofer);
         camionRepository.save(camion);
+        eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
 
         //Notificacion por mail
         Envio envioGuardado = envioRepository.save(envio);
