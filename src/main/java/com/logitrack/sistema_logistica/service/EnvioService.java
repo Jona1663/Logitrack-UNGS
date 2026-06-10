@@ -18,6 +18,10 @@
         import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
         import com.logitrack.sistema_logistica.model.Establecimiento;
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
+        import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+        import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
+        import com.logitrack.sistema_logistica.model.Camion;
         import com.logitrack.sistema_logistica.model.ChoferDetalle;
         import org.springframework.data.jpa.domain.Specification;
         import org.springframework.security.core.Authentication;
@@ -108,7 +112,10 @@
                                                 EstadoEnvio.PENDIENTE
                                         );
 
-                        // 5. Retornar el envío ya creado
+                        // 5. Publicar evento
+                        eventPublisher.publishEvent(new EnvioNuevoEvent(this, nuevoEnvio));
+                        
+                        // 6. Retornar el envío ya creado
                         return nuevoEnvio;
                 }
 
@@ -263,7 +270,7 @@
                                                 estadoAnterior, 
                                                 estadoNuevo
                                         );
-                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado, estadoNuevo));
 
                 return envioGuardado;
         }
@@ -454,6 +461,11 @@
         choferDetalleRepository.save(chofer);
         camionRepository.save(camion);
         eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
+
+        //Notificacion por mail
+        Envio envioGuardado = envioRepository.save(envio);
+        eventPublisher.publishEvent(
+        new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
 
         return envioRepository.save(envio);
         
