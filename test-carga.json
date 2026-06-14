@@ -1,0 +1,24 @@
+{
+  "config": {
+    "target": "http://localhost:8080",
+    "phases": [
+      {
+        "duration": 10,
+        "arrivalRate": 5,
+        "name": "Prueba de calentamiento"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Consultar HealthCheck",
+      "flow": [
+        {
+          "get": {
+            "url": "/api/health"
+          }
+        }
+      ]
+    }
+  ]
+}
