@@ -1,23 +1,32 @@
 package com.logitrack.sistema_logistica.controller;
 
 import java.security.Principal;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.format.annotation.DateTimeFormat;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,7 +39,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
+import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
@@ -38,18 +49,23 @@ import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
+
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+
+import com.logitrack.sistema_logistica.service.CartaPorteService;
 import com.logitrack.sistema_logistica.service.EnvioService;
 import com.logitrack.sistema_logistica.service.ReporteService;
 
 @RestController
 @RequestMapping("/api/envios")
+@RequiredArgsConstructor
 public class EnvioController {
 
     @Autowired
@@ -57,6 +73,9 @@ public class EnvioController {
 
     @Autowired
     private EnvioRepository envioRepository;
+
+
+    private final CartaPorteService cartaPorteService;
 
     @Autowired
     private UsuarioRepository usuarioRepository; // Inyectar repositorio -> Necesario para no enviar el ID de usuario
@@ -388,6 +407,13 @@ public class EnvioController {
     public ResponseEntity<ReporteEficienciaDTO> getReporteATiempo( @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
         // Llamamos al SERVICIO, no al repositorio
         return ResponseEntity.ok(reporteService.obtenerMetricasATiempo(fechaInicio, fechaFin));
+    }
+
+    //PARA LA TAREA #460
+    @GetMapping("/{id}/carta-porte")
+    public ResponseEntity<CartaPorteDTO> obtenerCartaPorteQR(@PathVariable String id) {
+        CartaPorteDTO cartaPorte = cartaPorteService.obtenerCartaPorte(id);
+        return ResponseEntity.ok(cartaPorte);
     }
     
 }
