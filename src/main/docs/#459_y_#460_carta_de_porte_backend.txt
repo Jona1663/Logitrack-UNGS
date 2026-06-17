@@ -3,7 +3,7 @@ TAREAS #459 y #460 - ENDPOINT Y DTO PARA CARTA DE PORTE ELECTRÓNICA (QR)
 ═══════════════════════════════════════════════════════════════════════════════
 
 Integrante a cargo: Jonatan
-
+s
 OBJETIVO:
 Crear un DTO específico y un endpoint REST dedicado para proveer los datos legales 
 y operativos de un envío, permitiendo que la aplicación PWA del chofer genere 

@@ -76,6 +76,8 @@ public class IncidenciaService {
                 .fechaReporte(LocalDateTime.now())
                 .lugarIncidencia(ubicacionFormateada) 
                 .creadoPor(usuarioActual)
+                .latitud(dto.getLatitud()) 
+                .longitud(dto.getLongitud())
                 .build();
 
         incidenciaRepository.save(nuevaIncidencia);
