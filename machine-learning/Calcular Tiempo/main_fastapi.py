@@ -35,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Carga del modelo al startup ────────────────────────────────────────────
+# Carga del modelo
 model = None
 model_metadata = {}
 
@@ -52,7 +52,7 @@ async def load_model():
         raise RuntimeError(f"No se pudo cargar el modelo: {e}")
 
 
-# ── Schemas ────────────────────────────────────────────────────────────────
+# Schemas 
 class ETARequest(BaseModel):
     distancia_km: float = Field(..., gt=0, le=5000, description="Distancia del trayecto en kilómetros")
     tipo_ruta: Literal["urbana", "rural", "autopista", "mixta"] = Field(..., description="Tipo de ruta")
@@ -104,7 +104,7 @@ class HealthResponse(BaseModel):
     metricas: dict
 
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
+# Helpers 
 def format_eta(hours: float) -> str:
     total_minutes = int(round(hours * 60))
     h = total_minutes // 60
@@ -129,7 +129,7 @@ def get_confidence(distancia_km: float, condicion_climatica: str) -> str:
     return "alta"
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────
+# ── Endpoints
 @app.get("/health", response_model=HealthResponse, tags=["Sistema"])
 async def health_check():
     """Verifica el estado del microservicio y del modelo cargado."""

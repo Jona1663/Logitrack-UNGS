@@ -1,13 +1,3 @@
-"""
-Integración del microservicio de ETA con el módulo de asignación - Tarea #387
-
-IMPORTANTE: NO se agregan métodos a EnvioService.
-La petición HTTP al microservicio de IA se invoca ÚNICAMENTE en el momento
-de asignar camión y chofer (endpoint/método de asignación existente).
-
-Patrón: ETAClient → llama al microservicio → resultado se inyecta en la asignación.
-"""
-
 import httpx
 import logging
 from dataclasses import dataclass

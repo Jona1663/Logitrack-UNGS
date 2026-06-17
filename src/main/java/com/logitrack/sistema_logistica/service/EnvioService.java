@@ -461,6 +461,7 @@
         envio.setCamion(camion);
         envio.setEstadoActual(estadosActivos.get(0));
         envio.setPrioridadIa("ALTA");//hardcodeado por bug .
+        envio.setFechaEstimadaLlegada(trackingService.calcularETAConML(envio, camion));
         trackingService.generarYGuardarRuta(envio);
 
 
