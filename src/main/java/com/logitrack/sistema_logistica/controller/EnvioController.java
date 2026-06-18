@@ -58,7 +58,7 @@ import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-
+import com.logitrack.sistema_logistica.service.CartaPortePdfService;
 import com.logitrack.sistema_logistica.service.CartaPorteService;
 import com.logitrack.sistema_logistica.service.EnvioService;
 import com.logitrack.sistema_logistica.service.ReporteService;
@@ -76,6 +76,8 @@ public class EnvioController {
 
 
     private final CartaPorteService cartaPorteService;
+
+    private final CartaPortePdfService cartaPortePdfService;
 
     @Autowired
     private UsuarioRepository usuarioRepository; // Inyectar repositorio -> Necesario para no enviar el ID de usuario
@@ -414,6 +416,26 @@ public class EnvioController {
     public ResponseEntity<CartaPorteDTO> obtenerCartaPorteQR(@PathVariable String id) {
         CartaPorteDTO cartaPorte = cartaPorteService.obtenerCartaPorte(id);
         return ResponseEntity.ok(cartaPorte);
+    }
+
+    // Endpoint para descargar la Carta de Porte en formato PDF
+    @GetMapping("/{id}/pdf-carta-porte")
+    public ResponseEntity<byte[]> descargarPdfCartaPorte(@PathVariable String id) {
+        
+        // 1. Llamamos al servicio para que nos de los bytes del PDF
+        byte[] pdfBytes = cartaPortePdfService.generarPdf(id);
+
+        // 2. Configuramos las cabeceras HTTP para indicarle al navegador que esto es un archivo descargable
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        // attachment; filename="..." fuerza al navegador a descargarlo como archivo con ese nombre
+        headers.setContentDispositionFormData("attachment", "Carta_Porte_" + id + ".pdf");
+
+        // 3. Retornamos el archivo
+        return org.springframework.http.ResponseEntity
+                .ok()
+                .headers(headers)
+                .body(pdfBytes);
     }
     
 }

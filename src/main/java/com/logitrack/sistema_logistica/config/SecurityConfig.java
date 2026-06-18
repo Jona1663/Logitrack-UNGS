@@ -42,6 +42,9 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/health").permitAll()
 
+                        // Endpoint para obtener PDF de Carta Porte (puede ser público o restringido según tu decisión)
+                        .requestMatchers(HttpMethod.GET, "/api/envios/*/pdf-carta-porte").permitAll()
+
                         // Admin 
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
                         // Chofer 
