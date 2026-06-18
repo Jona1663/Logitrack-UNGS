@@ -30,13 +30,16 @@
         import com.logitrack.sistema_logistica.model.Establecimiento;
         import com.logitrack.sistema_logistica.model.Usuario;
         import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+        import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
         import com.logitrack.sistema_logistica.model.enums.TipoEvento;
         import com.logitrack.sistema_logistica.repository.CamionRepository;
         import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
         import com.logitrack.sistema_logistica.repository.EnvioRepository;
         import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
         import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-        import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+
         
         @Service
         public class EnvioService {
@@ -58,6 +61,8 @@
                 private AuditoriaService auditoriaService;
                 @Autowired
                 private ApplicationEventPublisher eventPublisher;
+                @Autowired
+                private EvaluacionPsicomotoraRepository evaluacionRepository;
 
                 @Transactional // Si algo falla, no se guarda ni el envío ni el historial
                 public Envio crearNuevoEnvio(EnvioRequestDTO dto) {
@@ -225,6 +230,17 @@
                         EstadoEnvio estadoAnterior = envio.getEstadoActual();
                         EstadoEnvio estadoNuevo = EstadoEnvio.valueOf(nuevoEstadoStr);
     
+                        // --- BLOQUE NUEVO (Tarea #601) ---
+                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO) {
+                                boolean tieneRechazo = evaluacionRepository.existsByEnvioIdEnvioAndEstadoBloqueo(
+                                        idEnvio, EstadoEvaluacionEnum.RECHAZADO);
+                                        
+                                if (tieneRechazo) {
+                                        throw new RuntimeException("Acción bloqueada: El chofer tiene una evaluación de fatiga rechazada y ACTIVA.");
+                                }
+                        }
+
+
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
                         if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
@@ -412,6 +428,15 @@
                 Envio envio = envioRepository.findById(idEnvio)
                         .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
+                // --- BLOQUE NUEVA VALIDACIÓN DE FATIGA (Tarea #601) ---
+                if (evaluacionRepository.existsByEnvioIdEnvioAndEstadoBloqueo(idEnvio, EstadoEvaluacionEnum.RECHAZADO)) {
+                        throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.FORBIDDEN, 
+                        "El viaje no puede iniciar: Existe una evaluación de fatiga rechazada y pendiente de revisión."
+                        );
+                }
+
+
                 // 2. Verificar que no tenga ya transporte asignado
                 if (envio.getChofer() != null || envio.getCamion() != null) {
                         throw new RuntimeException("El envío ya tiene transporte asignado");
@@ -456,19 +481,19 @@
                 // Ahora generamos la ruta (el mapa)
                 trackingService.generarYGuardarRuta(envio);                
 
-        // 7. Marcar como no disponibles (#222)
-        chofer.setDisponible(false);
-        camion.setDisponible(false);
-        choferDetalleRepository.save(chofer);
-        camionRepository.save(camion);
-        eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
+                // 7. Marcar como no disponibles (#222)
+                chofer.setDisponible(false);
+                camion.setDisponible(false);
+                choferDetalleRepository.save(chofer);
+                camionRepository.save(camion);
+                eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
 
-        //Notificacion por mail
-        Envio envioGuardado = envioRepository.save(envio);
-        eventPublisher.publishEvent(
-        new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
+                //Notificacion por mail
+                Envio envioGuardado = envioRepository.save(envio);
+                eventPublisher.publishEvent(
+                new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
 
-        return envioRepository.save(envio);
+                return envioRepository.save(envio);
         
         }
 
