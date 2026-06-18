@@ -42,4 +42,7 @@ public class EmpresaCliente {
 
     @Column(name = "email", length = 100)
     private String email;
+
+    @Column(name = "es_prioritario")
+    private Boolean esPrioritario = false;
 }

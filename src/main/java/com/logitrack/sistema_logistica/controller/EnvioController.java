@@ -43,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
+import com.logitrack.sistema_logistica.dto.EnvioListadoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
@@ -92,10 +93,26 @@ public class EnvioController {
                                             // Estos métodos a su vez llaman a consultas
 
 
+    /*
+    //Versiion 1
     // GET para listar (siempre es útil tenerlo)
     @GetMapping
     public List<Envio> listarEnvios() {
         return envioRepository.findAll();
+    }
+    */
+
+    //Version2
+    // GET para listar (siempre es útil tenerlo)
+    @GetMapping
+    public ResponseEntity<List<EnvioListadoDTO>> listarEnvios() {
+        List<Envio> enviosCrudos = envioRepository.findAll();
+        
+        List<EnvioListadoDTO> enviosParaFrontend = enviosCrudos.stream()
+                .map(envio -> new EnvioListadoDTO(envio))
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(enviosParaFrontend);
     }
 
     // GET para buscar envíos con filtros opcionales por fecha, estado y paginación
@@ -123,11 +140,29 @@ public class EnvioController {
             }
 
             String termino = (query != null && !query.isBlank()) ? query.trim() : null;
+            /* 
             Pageable pageable = PageRequest.of(page, size);
             Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
                     tipoGrano,
                     pageable);
             return ResponseEntity.ok(envios);
+            */
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
+                    tipoGrano,
+                    pageable);
+            
+            // Transformamos la página de Envio a una página de EnvioListadoDTO usando .map()
+            Page<EnvioListadoDTO> enviosDTO = envios.map(envio -> new EnvioListadoDTO(envio));
+            
+            return ResponseEntity.ok(enviosDTO);
+
+
+
+
+
+
         } catch (DateTimeParseException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
             error.setMessage("Formato de fecha inválido. Use dd/MM/yyyy.");

@@ -1,0 +1,187 @@
+═══════════════════════════════════════════════════════════════════════════════
+TAREA US 54 y US 454 - DISTINCIÓN DE CLIENTE PRIORITARIO (Wrapper Pattern)
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+
+OBJETIVO:
+Agregar una marca visual para clientes VIP en el listado de envíos del frontend.
+Restricción técnica principal: Implementar la solución usando Java puro (Patrón Wrapper/DTO) sin alterar la serialización de la entidad Envio original ni agregar anotaciones de Jackson, para evitar bucles infinitos y caídas del servidor (HttpMessageNotWritableException e IllegalStateException).
+
+═══════════════════════════════════════════════════════════════════════════════
+
+CLASE MODIFICADA: EmpresaCliente.java (Modelo)
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/model/EmpresaCliente.java
+
+QUE SE AGREGÓ:
+Se agregó el campo físico en la base de datos para registrar si una empresa es prioritaria o no.
+
+CÓDIGO AGREGADO:
+
+Java
+@Column(name = "es_prioritario")
+private Boolean esPrioritario = false;
+EXPLICACIÓN:
+
+@Column(name = "es_prioritario"): Mapea el atributo directamente a la columna de la tabla en la base de datos.
+
+Boolean (Clase wrapper): Permite valores nulos en caso de registros antiguos.
+
+= false: Valor por defecto para que las empresas nuevas no sean VIP accidentalmente.
+
+Nota arquitectónica: No se utilizó ninguna anotación de Jackson (@JsonProperty, etc.) para mantener la entidad limpia y acoplada solo a Hibernate.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. CLASE CREADA: EnvioListadoDTO.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/dto/EnvioListadoDTO.java
+
+QUE SE HIZO:
+Se creó una clase envoltorio (Wrapper) para estructurar la respuesta hacia el frontend.
+
+CÓDIGO:
+
+Java
+@Getter
+@Setter
+public class EnvioListadoDTO {
+    
+    private Envio envio;
+    private Boolean clientePrioritario;
+
+    public EnvioListadoDTO(Envio envio) {
+        this.envio = envio;
+        
+        // Lógica de negocio: La prioridad la define la empresa de ORIGEN
+        if (this.envio.getOrigen() != null && this.envio.getOrigen().getEmpresa() != null) {
+            this.clientePrioritario = Boolean.TRUE.equals(this.envio.getOrigen().getEmpresa().getEsPrioritario());
+        } else {
+            this.clientePrioritario = false;
+        }
+    }
+}
+EXPLICACIÓN:
+
+Envio envio: Contiene la entidad cruda y completa generada por Hibernate.
+
+Boolean clientePrioritario: Bandera procesada en el backend específicamente para la UI.
+
+Constructor: Evalúa de forma segura (evitando NullPointerExceptions) si el origen del envío pertenece a una empresa VIP y asigna el booleano.
+
+POR QUÉ:
+
+Desacopla la lógica de presentación de la capa de persistencia de datos.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. CLASE MODIFICADA: EnvioController.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/controller/EnvioController.java
+
+QUE SE MODIFICÓ:
+Se actualizaron los endpoints listarEnvios (GET general) y buscarEnvios (GET con filtros/paginación) para interceptar los datos de la base de datos y envolverlos en el nuevo DTO.
+
+CÓDIGO MODIFICADO (Ejemplo de listarEnvios):
+Antes:
+
+Java
+@GetMapping
+public List<Envio> listarEnvios() {
+    return envioRepository.findAll();
+}
+Después:
+
+Java
+@GetMapping
+public ResponseEntity<List<EnvioListadoDTO>> listarEnvios() {
+    List<Envio> enviosCrudos = envioRepository.findAll();
+    
+    List<EnvioListadoDTO> enviosParaFrontend = enviosCrudos.stream()
+            .map(envio -> new EnvioListadoDTO(envio))
+            .collect(Collectors.toList());
+            
+    return ResponseEntity.ok(enviosParaFrontend);
+}
+(Se aplicó una lógica equivalente en el endpoint /search utilizando Page.map(...)).
+
+EXPLICACIÓN:
+
+.stream().map(...): Itera sobre cada entidad Envio proveniente de la base de datos y crea una nueva instancia de EnvioListadoDTO, ejecutando la lógica del constructor.
+
+ResponseEntity.ok(...): Retorna el HTTP 200 con la lista ya envuelta y segura.
+
+═══════════════════════════════════════════════════════════════════════════════
+FLUJO COMPLETO DE EJECUCIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+El Frontend se llama:
+GET http://localhost:8080/api/envios
+
+EnvioController recibe la petición.
+
+Llama a envioRepository.findAll() o usa el EnvioService para paginación.
+
+Hibernate trae las entidades completas de la base de datos.
+
+El controlador toma esa lista y, mediante Java Streams, envuelve cada Envio en un EnvioListadoDTO.
+
+Durante la creación del DTO, se calcula automáticamente clientePrioritario leyendo el CUIT/Empresa del origen.
+
+Spring serializa el DTO a JSON (sin errores) y devuelve la respuesta al cliente.
+
+ESTRUCTURA DE RESPUESTA:
+
+JSON
+[
+  {
+    "clientePrioritario": true,
+    "envio": {
+      "idEnvio": "LT-AE08D3",
+      "origen": { ... },
+      "destino": { ... }
+    }
+  }
+]
+═══════════════════════════════════════════════════════════════════════════════
+CÓMO PROBAR
+═══════════════════════════════════════════════════════════════════════════════
+
+Levantar el servidor de Spring Boot.
+
+Hacer un GET desde Thunder Client o Postman a http://localhost:8080/api/envios.
+
+Revisar el JSON de salida: verificar que la propiedad clientePrioritario aparezca al mismo nivel que envio.
+
+En el Frontend, modificar la lógica de renderizado de la tabla para acceder a item.envio.idEnvio y pintar el distintivo visual basándose en item.clientePrioritario === true.
+
+═══════════════════════════════════════════════════════════════════════════════
+RESUMEN DE CAMBIOS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ CREADO:
+
+EnvioListadoDTO.java (Capa de transporte UI).
+
+✅ MODIFICADO:
+
+EmpresaCliente.java (Se agregó la columna de base de datos).
+
+EnvioController.java (Se envolvieron los métodos de listado y búsqueda).
+
+✅ CORREGIDO/ELIMINADO:
+
+Se removió cualquier intento de usar @JsonProperty u otra anotación de serialización bidireccional dentro del modelo Envio que causara fallos con Jackson.
+
+═══════════════════════════════════════════════════════════════════════════════
+VENTAJAS DE ESTA IMPLEMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Estabilidad del Servidor: Se erradicó el error getWriter() has already been called.
+✓ Desacoplamiento: El modelo de base de datos (Envio) no sabe de la existencia de lógicas de frontend.
+✓ Seguridad de Serialización: Jackson convierte objetos simples (DTOs) en lugar de entidades complejas con referencias anidadas, evitando bucles infinitos.
+✓ Experiencia Frontend: El equipo de UI recibe la información pre-procesada, requiriendo solo un simple if para aplicar estilos.
+✓ Escalabilidad: Si a futuro la prioridad se calcula por destino en lugar de origen, solo se modifica el constructor del DTO sin tocar las bases de datos ni el controlador.
+═══════════════════════════════════════════════════════════════════════════════
