@@ -51,5 +51,11 @@ public class Incidencia {
     @Column(nullable = false, updatable = false)
     private String creadoPor;
 
+    @Column(name = "latitud")
+    private Double latitud;
+
+    @Column(name = "longitud")
+    private Double longitud;
+
 
 }
