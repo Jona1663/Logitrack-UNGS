@@ -1,19 +1,19 @@
 package com.logitrack.sistema_logistica.model;
 
 import com.logitrack.sistema_logistica.model.enums.RolUsuario;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import jakarta.persistence.Id;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "usuarios")
@@ -40,4 +40,23 @@ public class Usuario {
     @Builder.Default
     @Column(columnDefinition = "boolean default true")
     private Boolean activo = true;
+    
+    // --- NUEVOS CAMPOS DE SEGURIDAD ---
+
+    @Builder.Default
+    @Column(name = "intentos_fallidos", columnDefinition = "integer default 0")
+    private Integer intentosFallidos = 0;
+
+    @Builder.Default
+    @Column(columnDefinition = "boolean default false")
+    private Boolean bloqueado = false;
+
+    @Column(name = "codigo_desbloqueo", length = 6)
+    private String codigoDesbloqueo;
+
+    @Column(name = "vencimiento_codigo")
+    private LocalDateTime vencimientoCodigo;
+
+    @Column(name = "ultimo_acceso")
+    private LocalDateTime ultimoAcceso;
 }
