@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import com.logitrack.sistema_logistica.model.EvaluacionPsicomotora;
+import com.logitrack.sistema_logistica.dto.AlertaFatigaDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaRequestDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaResponseDTO;
 import com.logitrack.sistema_logistica.model.ChoferDetalle;
@@ -12,6 +13,7 @@ import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
 import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -24,6 +26,9 @@ public class EvaluacionFatigaService {
     @Autowired private EnvioRepository envioRepository; // Necesario para buscar el envío
     @Autowired private ChoferDetalleRepository choferDetalleRepository; // Necesario para buscar el chofer
     @Autowired private SimpMessagingTemplate messagingTemplate;
+
+    @Value("${logitrack.fatiga.umbral-ms}")
+    private long umbralFatiga;
 
     @Transactional
     public EvaluacionFatigaResponseDTO procesarEvaluacion(EvaluacionFatigaRequestDTO dto, String username) {
@@ -44,15 +49,22 @@ public class EvaluacionFatigaService {
         eval.setFechaCreacion(LocalDateTime.now());
 
         // 3. Lógica de Validación (Criterio 2 y 3)
-        if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > 600) {
+        if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
             // Falló: Marcamos resultado RECHAZADO y el bloqueo queda ACTIVO
             eval.setResultado(EstadoEvaluacionEnum.RECHAZADO);
             eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
-            eval.setMensaje("Test no superado: Fatiga detectada o error de ejecución.");
+            //eval.setMensaje("Test no superado: Fatiga detectada o error de ejecución.");
+
+            // Nueva lógica de WebSocket:
+            AlertaFatigaDTO alerta = new AlertaFatigaDTO(
+                envio.getIdEnvio(),
+                chofer.getPersonaAsociada().getIdUsuario().getUsername(), // O el nombre que tengas en la entidad Chofer/Persona
+                "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms"
+            );
 
             // Alerta WebSocket
-            messagingTemplate.convertAndSend("/topic/alertas-supervisores", 
-            "Alerta: Chofer " + username + " falló test de fatiga.");
+            //System.out.println("DEBUG: Disparando alerta WebSocket al canal /topic/alertas para el chofer: " + username);
+            messagingTemplate.convertAndSend("/topic/alertas-supervisores", alerta);
 
         } else {
             // Aprobó: Marcamos resultado APROBADO y el bloqueo como APROBADO (o LIBERADO)
