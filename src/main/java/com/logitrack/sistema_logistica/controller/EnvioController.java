@@ -66,7 +66,7 @@ import com.logitrack.sistema_logistica.service.ReporteService;
 
 @RestController
 @RequestMapping("/api/envios")
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class EnvioController {
 
     @Autowired
@@ -75,10 +75,11 @@ public class EnvioController {
     @Autowired
     private EnvioRepository envioRepository;
 
+    @Autowired
+    private CartaPorteService cartaPorteService;
 
-    private final CartaPorteService cartaPorteService;
-
-    private final CartaPortePdfService cartaPortePdfService;
+    @Autowired
+    private CartaPortePdfService cartaPortePdfService;
 
     @Autowired
     private UsuarioRepository usuarioRepository; // Inyectar repositorio -> Necesario para no enviar el ID de usuario
