@@ -23,11 +23,10 @@ import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import lombok.RequiredArgsConstructor;
 
 @Service
+//@RequiredArgsConstructor
 
 public class CartaPortePdfService {
     // Inyectamos el servicio que ya tiene los datos limpios y listos para mostrar
-    
-    
     @Autowired
     private CartaPorteService cartaPorteService;
 

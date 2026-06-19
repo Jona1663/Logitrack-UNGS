@@ -101,7 +101,6 @@ public class EnvioController {
         return envioRepository.findAll();
     }
 
-
     // GET para buscar envíos con filtros opcionales por fecha, estado y paginación
     @GetMapping("/search")
     public ResponseEntity<?> buscarEnvios( @RequestParam(required = false) String query, @RequestParam(required = false) String estado, @RequestParam(required = false) String fecha, @RequestParam(required = false) String tipoGrano, @RequestParam(defaultValue = "0") int page,@RequestParam(defaultValue = "10") int size) {
@@ -127,14 +126,12 @@ public class EnvioController {
             }
 
             String termino = (query != null && !query.isBlank()) ? query.trim() : null;
-            
             Pageable pageable = PageRequest.of(page, size);
             Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
                     tipoGrano,
                     pageable);
             return ResponseEntity.ok(envios);
-
-
+        
         } catch (DateTimeParseException e) {
             ErrorResponseDTO error = new ErrorResponseDTO();
             error.setMessage("Formato de fecha inválido. Use dd/MM/yyyy.");

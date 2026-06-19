@@ -15,12 +15,12 @@ import java.util.Random;
 
 @Slf4j
 @Service
+//@RequiredArgsConstructor
 
 public class SeguridadCuentaService {
-
     @Autowired
     private UsuarioRepository usuarioRepository;
-    
+
     @Autowired
     private NotificationService notificationService; // ¡Usamos la interfaz de tu compañero!
     

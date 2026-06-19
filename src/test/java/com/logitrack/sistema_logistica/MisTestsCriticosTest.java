@@ -57,7 +57,7 @@ public class MisTestsCriticosTest {
     private JwtService jwtService;
 
     @Mock
-    private SeguridadCuentaService seguridadService;
+    private SeguridadCuentaService seguridadCuentaService;
     
 // --- MOCKS PARA US 3 2 5 ---
     @Mock
