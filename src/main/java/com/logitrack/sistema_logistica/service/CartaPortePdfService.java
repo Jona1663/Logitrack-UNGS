@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.lowagie.text.Document;
@@ -22,11 +23,13 @@ import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 
 public class CartaPortePdfService {
     // Inyectamos el servicio que ya tiene los datos limpios y listos para mostrar
-    private final CartaPorteService cartaPorteService;
+    
+    
+    @Autowired
+    private CartaPorteService cartaPorteService;
 
     public byte[] generarPdf(String idEnvio) {
         // 1. Obtenemos los datos limpios que ya preparaste
