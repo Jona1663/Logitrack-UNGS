@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,6 +19,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -43,6 +47,7 @@ import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
@@ -62,6 +67,8 @@ public class EnvioServiceTest {
     @Mock private RutaEnvioRepository rutaEnvioRepository;
     @Mock private HistorialEstadosRepository historialRepository;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock
+    private EvaluacionPsicomotoraRepository evaluacionRepository;
     
     // NUEVOS SERVICIOS (Reemplazan a GraphHopper y RestTemplate)
     @Mock private ValidacionExternaService validacionExternaService;
@@ -70,6 +77,11 @@ public class EnvioServiceTest {
 
     @InjectMocks
     private EnvioService envioService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     // YA NO HAY setUp() con mockBaseUrl porque eso ahora vive en ValidacionExternaService
 

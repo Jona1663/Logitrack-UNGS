@@ -32,6 +32,7 @@ import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 
 import com.logitrack.sistema_logistica.service.EnvioService;
+import com.logitrack.sistema_logistica.service.SeguridadCuentaService;
 import com.logitrack.sistema_logistica.controller.AuthController;
 import com.logitrack.sistema_logistica.dto.LoginRequestDTO;
 import com.logitrack.sistema_logistica.dto.LoginResponseDTO;
@@ -54,6 +55,9 @@ public class MisTestsCriticosTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private SeguridadCuentaService seguridadCuentaService;
     
 // --- MOCKS PARA US 3 2 5 ---
     @Mock

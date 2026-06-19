@@ -4,6 +4,8 @@ import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 import org.springframework.transaction.annotation.Transactional;
 import com.logitrack.sistema_logistica.model.enums.RolUsuario;
 import com.logitrack.sistema_logistica.model.Usuario;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +15,17 @@ import java.util.Random;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 
 public class SeguridadCuentaService {
-    private final UsuarioRepository usuarioRepository;
-    private final NotificationService notificationService; // ¡Usamos la interfaz de tu compañero!
-    private final AlertaWebService alertaWebService;       // ¡Usamos las alertas web de tu compañero!
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private NotificationService notificationService; // ¡Usamos la interfaz de tu compañero!
+    
+    @Autowired
+    private AlertaWebService alertaWebService;       // ¡Usamos las alertas web de tu compañero!
 
     @Transactional
     public void manejarIntentoFallido(String username) {
