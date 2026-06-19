@@ -3,9 +3,12 @@ package com.logitrack.sistema_logistica.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,18 +19,25 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.logitrack.sistema_logistica.dto.AlertaListadoDTO;
 import com.logitrack.sistema_logistica.dto.IncidenciaDTO;
+import com.logitrack.sistema_logistica.dto.IncidenciaMapaDTO;
 import com.logitrack.sistema_logistica.dto.ResolverIncidenciaDTO;
+
 import com.logitrack.sistema_logistica.service.IncidenciaService;
+import com.logitrack.sistema_logistica.service.IncidenciaMapaService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api")
 public class IncidenciaController {
 
+    // US 34 ENDPOINTS DEL MAPA HISTÓRICO
     @Autowired
-    private IncidenciaService incidenciaService;
-
+    private IncidenciaMapaService incidenciaMapaService;
 
     //#us 32 ENDPOINTS DEL CHOFER 
+    @Autowired
+    private IncidenciaService incidenciaService;
 
     @PostMapping("/envios/{idEnvio}/incidencias")
     @PreAuthorize("hasRole('CHOFER')")
@@ -84,4 +94,13 @@ public class IncidenciaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"message\": \"Incidencia no encontrada.\"}");
         }
     }
+    
+    // US 63 ENDPOINT PARA EL MAPA DE INCIDENCIAS (SUPERVISOR)
+    @GetMapping("/incidencias/mapa")
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    public ResponseEntity<List<IncidenciaMapaDTO>> obtenerMapaIncidencias() {
+        List<IncidenciaMapaDTO> incidencias = incidenciaMapaService.obtenerDatosMapaHistorico();
+        return ResponseEntity.ok(incidencias); // 200 OK
+    }
+
 }

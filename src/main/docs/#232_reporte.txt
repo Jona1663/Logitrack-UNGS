@@ -2,6 +2,8 @@
 TAREA #232 - ENDPOINT DE REPORTE OPERATIVO (Viajes y Kilos)
 ═══════════════════════════════════════════════════════════════════════════════
 
+Integrante a cargo: Jonatan
+
 OBJETIVO:
 Crear un endpoint REST que devuelva dos métricas simples:
 1. Cantidad total de viajes (envíos) registrados

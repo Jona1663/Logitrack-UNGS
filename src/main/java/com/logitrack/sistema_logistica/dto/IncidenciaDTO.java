@@ -7,4 +7,6 @@ import lombok.Data;
 public class IncidenciaDTO {
     private TipoIncidencia tipoIncidencia;
     private String descripcion;
+    private Double latitud;
+    private Double longitud;
 }

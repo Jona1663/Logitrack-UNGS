@@ -1,0 +1,220 @@
+═══════════════════════════════════════════════════════════════════════════════
+TAREAS #459 y #460 - ENDPOINT Y DTO PARA CARTA DE PORTE ELECTRÓNICA (QR)
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+s
+OBJETIVO:
+Crear un DTO específico y un endpoint REST dedicado para proveer los datos legales 
+y operativos de un envío, permitiendo que la aplicación PWA del chofer genere 
+un código QR escaneable para agilizar controles policiales o en puertos.
+
+═══════════════════════════════════════════════════════════════════════════════
+1. CLASE CREADA: CartaPorteDTO.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/dto/CartaPorteDTO.java
+
+Propósito: 
+- Unificar estrictamente los datos legales del viaje necesarios para el control.
+- Evitar enviar todo el objeto Envio (que tiene datos innecesarios para el QR).
+- Ser serializado automáticamente a JSON por Spring.
+
+Código:
+```java
+package com.logitrack.sistema_logistica.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CartaPorteDTO {
+    private String idEnvio;
+    private String cpe;
+    private String autorizacionArca; 
+    private String patenteCamion;
+    private String nombreChofer;
+    private String cuilChofer; 
+    private String licenciaChofer;
+    private String tipoGrano;
+    private Integer pesoEstimadoKg;
+    private String origen;
+    private String destino;
+}
+Explicación:
+
+@Builder: Permite construir el objeto paso a paso en el servicio.
+
+El DTO actúa como un "contrato" de datos entre el backend y la librería generadora de QR en React.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. CLASE CREADA: CartaPorteService.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/service/CartaPorteService.java
+
+Propósito:
+
+Centralizar la lógica de armado de la Carta de Porte separada del EnvioService principal (Principio de Responsabilidad Única - SRP).
+
+Manejar valores nulos (Null-Safety) para evitar que la app falle si falta algún dato temporalmente.
+
+Código:
+
+Java
+package com.logitrack.sistema_logistica.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
+import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.repository.EnvioRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class CartaPorteService {
+
+    private final EnvioRepository envioRepository;
+
+    @Transactional(readOnly = true)
+    public CartaPorteDTO obtenerCartaPorte(String idEnvio) {
+        Envio envio = envioRepository.findById(idEnvio)
+                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+
+        String patente = (envio.getCamion() != null) ? envio.getCamion().getPatente() : "S/D";
+        String nombreChofer = "S/D";
+        String cuil = "S/D";
+        String licencia = "S/D";
+        
+        if (envio.getChofer() != null && envio.getChofer().getPersonaAsociada() != null) {
+            nombreChofer = envio.getChofer().getPersonaAsociada().getNombre() + " " + envio.getChofer().getPersonaAsociada().getApellido();
+            cuil = envio.getChofer().getPersonaAsociada().getCuil(); 
+            licencia = envio.getChofer().getNroLicencia(); 
+        }
+
+        String nombreOrigen = (envio.getOrigen() != null) ? envio.getOrigen().getNombreLugar() : "S/D";
+        String nombreDestino = (envio.getDestino() != null) ? envio.getDestino().getNombreLugar() : "S/D";
+
+        return CartaPorteDTO.builder()
+                .idEnvio(envio.getIdEnvio())
+                .cpe(envio.getCpe() != null ? envio.getCpe() : "Pendiente de ARCA")
+                .autorizacionArca(envio.getAutorizacionARCA() != null ? envio.getAutorizacionARCA() : "Pendiente")
+                .patenteCamion(patente)
+                .nombreChofer(nombreChofer)
+                .cuilChofer(cuil)
+                .licenciaChofer(licencia)
+                .tipoGrano(envio.getTipoGrano() != null ? envio.getTipoGrano().name() : "S/D")
+                .pesoEstimadoKg(envio.getKgOrigen()) 
+                .origen(nombreOrigen)
+                .destino(nombreDestino)
+                .build();
+    }
+}
+POR QUE:
+
+SRP: Evita que EnvioService siga creciendo y se vuelva inmanejable ("God Class").
+
+Null-Safety: Los chequeos != null y la asignación "S/D" garantizan que la API siempre devuelva un JSON válido, evitando que la PWA móvil colapse en medio de la ruta.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. CLASE MODIFICADA: EnvioController.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/controller/EnvioController.java
+
+QUE SE AGREGÓ:
+Se inyectó el nuevo servicio y se creó un endpoint GET dedicado.
+
+CÓDIGO MODIFICADO Y AGREGADO:
+
+Java
+    // ... imports y anotaciones previas ...
+    private final CartaPorteService cartaPorteService; // Inyección de dependencias
+
+    @GetMapping("/{id}/carta-porte")
+    public ResponseEntity<CartaPorteDTO> obtenerCartaPorteQR(@PathVariable String id) {
+        CartaPorteDTO cartaPorte = cartaPorteService.obtenerCartaPorte(id);
+        return ResponseEntity.ok(cartaPorte);
+    }
+EXPLICACIÓN:
+
+@GetMapping("/{id}/carta-porte"): Crea una sub-ruta semántica, indicando claramente que se solicita el documento anexo de un envío específico.
+
+@PathVariable: Captura el ID de la URL y se lo transfiere al servicio.
+
+═══════════════════════════════════════════════════════════════════════════════
+FLUJO COMPLETO DE EJECUCIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+El chofer presiona "Ver Carta de Porte" en la PWA.
+
+React ejecuta un fetch GET a /api/envios/LT-XXXXX/carta-porte.
+
+EnvioController recibe la petición y delega la tarea a CartaPorteService.
+
+El servicio extrae el envío de la BD, cruza los datos con las tablas de Camion y Persona, validando posibles nulos.
+
+Se ensambla el CartaPorteDTO estructurado y se retorna al controlador.
+
+Spring serializa el DTO y envía un JSON limpio con status 200 OK.
+
+(A desarrollar en frontend): React recibe el JSON, lo persiste en IndexedDB (para offline) y dibuja el código QR.
+
+═══════════════════════════════════════════════════════════════════════════════
+CÓMO PROBAR
+═══════════════════════════════════════════════════════════════════════════════
+
+Obtener un ID válido ejecutando en pgAdmin: SELECT id_envio FROM envios;
+
+Abrir Thunder Client.
+
+Método: GET
+
+URL: http://localhost:8080/api/envios/{ID_OBTENIDO}/carta-porte
+
+Al presionar "Send", la respuesta será:
+
+JSON
+{
+  "idEnvio": "...",
+  "cpe": "...",
+  "autorizacionArca": "...",
+  "patenteCamion": "...",
+  "nombreChofer": "...",
+  "cuilChofer": "...",
+  "licenciaChofer": "...",
+  "tipoGrano": "...",
+  "pesoEstimadoKg": 30000,
+  "origen": "...",
+  "destino": "..."
+}
+═══════════════════════════════════════════════════════════════════════════════
+RESUMEN DE CAMBIOS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ CREADO:
+
+CartaPorteDTO.java (Estructura de datos unificada)
+
+CartaPorteService.java (Lógica de extracción de datos robusta y modular)
+
+✅ MODIFICADO:
+
+EnvioController.java (Nuevo endpoint dedicado para consumo de la PWA)
+
+═══════════════════════════════════════════════════════════════════════════════
+VENTAJAS DE ESTA IMPLEMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Modularidad: Código altamente mantenible gracias a la separación de responsabilidades.
+✓ Resiliencia: La lógica preventiva contra nulos protege a la aplicación móvil en campo.
+✓ Optimización de Red: Se transfiere al celular únicamente la información estrictamente necesaria, ahorrando ancho de banda en zonas rurales.
+═══════════════════════════════════════════════════════════════════════════════

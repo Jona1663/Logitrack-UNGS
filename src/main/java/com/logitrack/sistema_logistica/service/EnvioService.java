@@ -22,28 +22,27 @@
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
         import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
         import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEventNotificaciones;
+        import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
         import com.logitrack.sistema_logistica.model.Camion;
         import com.logitrack.sistema_logistica.model.ChoferDetalle;
         import com.logitrack.sistema_logistica.model.Envio;
         import com.logitrack.sistema_logistica.model.Establecimiento;
         import com.logitrack.sistema_logistica.model.Usuario;
         import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+        import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
         import com.logitrack.sistema_logistica.model.enums.TipoEvento;
         import com.logitrack.sistema_logistica.repository.CamionRepository;
         import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
-        import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
         import com.logitrack.sistema_logistica.repository.EnvioRepository;
         import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
         import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-        import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
-        import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
-        import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
 
+        
         @Service
         public class EnvioService {
-
-                @Autowired
-                private HistorialEstadosRepository historialRepository;
                 @Autowired
                 private EnvioRepository envioRepository;
                 @Autowired
@@ -53,29 +52,17 @@
                 @Autowired
                 private CamionRepository camionRepository;
                 @Autowired
-                private HistorialEstadosRepository historialEstadosRepository;
-                @Autowired
                 private UsuarioRepository usuarioRepository;
-                @Autowired
-                private EmpresaClienteRepository empresaClienteRepository;
-
                 @Autowired
                 private ValidacionExternaService validacionExternaService;
                 @Autowired
                 private TrackingGeospatialService trackingService;
-
-                @Autowired
-                private GraphHopperService graphHopperService;
-                @Autowired
-                private RutaEnvioRepository rutaEnvioRepository;
-
                 @Autowired 
                 private AuditoriaService auditoriaService;
-
                 @Autowired
                 private ApplicationEventPublisher eventPublisher;
-
-
+                @Autowired
+                private EvaluacionPsicomotoraRepository evaluacionRepository;
 
                 @Transactional // Si algo falla, no se guarda ni el envío ni el historial
                 public Envio crearNuevoEnvio(EnvioRequestDTO dto) {
@@ -130,7 +117,10 @@
                                                 EstadoEnvio.PENDIENTE
                                         );
 
-                        // 5. Retornar el envío ya creado
+                        // 5. Publicar evento
+                        eventPublisher.publishEvent(new EnvioNuevoEvent(this, nuevoEnvio));
+                        
+                        // 6. Retornar el envío ya creado
                         return nuevoEnvio;
                 }
 
@@ -239,12 +229,29 @@
                                         
                         EstadoEnvio estadoAnterior = envio.getEstadoActual();
                         EstadoEnvio estadoNuevo = EstadoEnvio.valueOf(nuevoEstadoStr);
+    
+                        // --- BLOQUE NUEVO (Tarea #601) ---
+                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO) {
+                                boolean tieneRechazo = evaluacionRepository.existsByEnvioIdEnvioAndEstadoBloqueo(
+                                        idEnvio, EstadoEvaluacionEnum.RECHAZADO);
+                                        
+                                if (tieneRechazo) {
+                                        throw new RuntimeException("Acción bloqueada: El chofer tiene una evaluación de fatiga rechazada y ACTIVA.");
+                                }
+                        }
+
 
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
                         if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
+                                try {
                                         trackingService.generarYGuardarRuta(envio);
+                                } catch (Exception e) {
+                                        // Si la API de mapas falla o las coordenadas son inválidas, atrapamos el error.
+                                        // El estado del viaje se actualizará igual, previniendo que se bloquee el sistema.
+                                        System.err.println("Advertencia de Ruteo: " + e.getMessage());
                                 }
+                        }
 
                         // 2. Actualizamos los campos en la entidad
                         envio.setEstadoActual(estadoNuevo);
@@ -279,7 +286,7 @@
                                                 estadoAnterior, 
                                                 estadoNuevo
                                         );
-                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado));
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado, estadoNuevo));
 
                 return envioGuardado;
         }
@@ -298,7 +305,6 @@
                                         "Validación fallida: No se puede cancelar un envío que ya está en ruta (Estado: "
                                                         + envio.getEstadoActual() + ").");
                 }
-
                 Usuario usuarioModificador = usuarioRepository.findByUsername(username)
                                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -361,8 +367,7 @@
                 // Construimos el historial de auditoría
                 // Buscamos el usuario operador/supervisor que edita el envio
                 Usuario usuarioModificador = usuarioRepository.findByUsername(username)
-                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado para auditoría"));
-                
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado para auditoría"));              
                 // construimos el historial
                 auditoriaService.registrarEvento(
                                         envioGuardado, 
@@ -371,6 +376,7 @@
                                         estadoActual, 
                                         estadoActual
                 );
+                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envioGuardado, estadoActual));
                 return envioGuardado;
         }
 
@@ -378,7 +384,6 @@
         * #121: Método calcular el ETA (Tiempo Estimado de Llegada) de un envío,
         * Velocidad promedio fija: 65 km/h
         */
-
         @Transactional
         public void asignarChoferCamion(EnvioRequestDTO dto) {
                 Envio envio = envioRepository.findById(dto.getIdEnvio())
@@ -387,7 +392,6 @@
                                 .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
                 ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
                                 .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
-
                 LocalDateTime fechaSalida = LocalDateTime.now();
 
                 envio.setCamion(camion);
@@ -395,8 +399,8 @@
                 envio.setFechaSalida(fechaSalida);
                 envio.setChofer(chofer);
                 envioRepository.save(envio);
-                eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
 
+                eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
         }
 
 
@@ -404,57 +408,62 @@
          * #122 — OBTENER DETALLE CON ETA
          * Usado por el endpoint GET /api/envios/{id}
          */
-
         @Transactional(readOnly = true)
         public EnvioDetalleResponseDTO obtenerDetalleConETA(String idEnvio) {
                 Envio envio = envioRepository.findById(idEnvio)
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
-
                 LocalDateTime eta = trackingService.calcularETA(envio.getDistanciaKm(), envio.getFechaSalida());
-
                 return EnvioDetalleResponseDTO.fromEntity(envio, eta);
         }
 
         @Transactional
         public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
+                List<EstadoEnvio> estadosActivos = Arrays.asList(
+                        EstadoEnvio.EN_TRANSITO,
+                        EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
+                        EstadoEnvio.EN_REPARTO
+                );
 
-        List<EstadoEnvio> estadosActivos = Arrays.asList(
-                EstadoEnvio.EN_TRANSITO,
-                EstadoEnvio.EN_PUNTO_DE_RECOLECCION,
-                EstadoEnvio.EN_REPARTO
-        );
+                // 1. Verificar que el envío existe
+                Envio envio = envioRepository.findById(idEnvio)
+                        .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-        // 1. Verificar que el envío existe
-        Envio envio = envioRepository.findById(idEnvio)
-                .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
+                // --- BLOQUE NUEVA VALIDACIÓN DE FATIGA (Tarea #601) ---
+                if (evaluacionRepository.existsByEnvioIdEnvioAndEstadoBloqueo(idEnvio, EstadoEvaluacionEnum.RECHAZADO)) {
+                        throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.FORBIDDEN, 
+                        "El viaje no puede iniciar: Existe una evaluación de fatiga rechazada y pendiente de revisión."
+                        );
+                }
 
-        // 2. Verificar que no tenga ya transporte asignado
-        if (envio.getChofer() != null || envio.getCamion() != null) {
-                throw new RuntimeException("El envío ya tiene transporte asignado");
-        }
 
-        // 3. Buscar chofer y camión
-        ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
-                .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+                // 2. Verificar que no tenga ya transporte asignado
+                if (envio.getChofer() != null || envio.getCamion() != null) {
+                        throw new RuntimeException("El envío ya tiene transporte asignado");
+                }
 
-        Camion camion = camionRepository.findById(dto.getPatenteCamion())
-                .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
+                // 3. Buscar chofer y camión
+                ChoferDetalle chofer = choferDetalleRepository.findById(dto.getIdChofer())
+                        .orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
 
-        // 4. Validar licencia y SENASA
-        LocalDate hoy = LocalDate.now();
-        validacionExternaService.verificarLicenciaChofer(hoy, chofer);
-        validacionExternaService.verificarHabilitacionSenasa(hoy, camion);
+                Camion camion = camionRepository.findById(dto.getPatenteCamion())
+                        .orElseThrow(() -> new RuntimeException("Camión no encontrado"));
 
-        // 5. Validar disponibilidad concurrente (#213)
-        boolean choferOcupado = envioRepository.existsByChoferAndEstadoActualIn(chofer, estadosActivos);
-        if (choferOcupado) {
-                throw new RuntimeException("El chofer acaba de ser asignado a otro viaje y ya no está disponible.");
-        }
+                // 4. Validar licencia y SENASA
+                LocalDate hoy = LocalDate.now();
+                validacionExternaService.verificarLicenciaChofer(hoy, chofer);
+                validacionExternaService.verificarHabilitacionSenasa(hoy, camion);
 
-        boolean camionOcupado = envioRepository.existsByCamionAndEstadoActualIn(camion, estadosActivos);
-        if (camionOcupado) {
-                throw new RuntimeException("El camión acaba de ser asignado a otro viaje y ya no está disponible.");
-        }
+                // 5. Validar disponibilidad concurrente (#213)
+                boolean choferOcupado = envioRepository.existsByChoferAndEstadoActualIn(chofer, estadosActivos);
+                if (choferOcupado) {
+                        throw new RuntimeException("El chofer acaba de ser asignado a otro viaje y ya no está disponible.");
+                }
+
+                boolean camionOcupado = envioRepository.existsByCamionAndEstadoActualIn(camion, estadosActivos);
+                if (camionOcupado) {
+                        throw new RuntimeException("El camión acaba de ser asignado a otro viaje y ya no está disponible.");
+                }
 
         // 6. Asignar y guardar
         envio.setChofer(chofer);
@@ -464,15 +473,19 @@
         envio.setFechaEstimadaLlegada(trackingService.calcularETAConML(envio, camion));
         trackingService.generarYGuardarRuta(envio);
 
+                // 7. Marcar como no disponibles (#222)
+                chofer.setDisponible(false);
+                camion.setDisponible(false);
+                choferDetalleRepository.save(chofer);
+                camionRepository.save(camion);
+                eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
 
-        // 7. Marcar como no disponibles (#222)
-        chofer.setDisponible(false);
-        camion.setDisponible(false);
-        choferDetalleRepository.save(chofer);
-        camionRepository.save(camion);
-        eventPublisher.publishEvent(new EnvioCambioEstadoEvent(this, envio));
+                //Notificacion por mail
+                Envio envioGuardado = envioRepository.save(envio);
+                eventPublisher.publishEvent(
+                new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
 
-        return envioRepository.save(envio);
+                return envioRepository.save(envio);
         
         }
 
@@ -484,70 +497,54 @@
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
                 EstadoEnvio estadoAnterior = envioExistente.getEstadoActual();
-                boolean estadoCambiado = false;
+                boolean estadoCambiado = (dto.getEstado() != null && dto.getEstado() != estadoAnterior);
+                String prioridadFinal = envioExistente.getPrioridadIa();
+                boolean prioridadCambiada = false;
 
-                // 1. Actualización de Estado (Permitido para Operador y Supervisor)
-                if (dto.getEstado() != null && dto.getEstado() != estadoAnterior) {
-                        envioExistente.setEstadoActual(dto.getEstado());
-                        estadoCambiado = true;
-                }
-
-                // 2. Actualización de Prioridad (Estrictamente restringido a Supervisor)
+                // 1. Validación de Prioridad (Estrictamente restringido a Supervisor)
                 if (dto.getPrioridadIa() != null && !dto.getPrioridadIa().equals(envioExistente.getPrioridadIa())) {
                         boolean esSupervisor = auth.getAuthorities().stream()
                                         .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERVISOR"));
 
                         if (!esSupervisor) {
-                                throw new RuntimeException(
-                                                "La prioridad del envío solo puede ser modificada por un supervisor.");
+                                throw new RuntimeException("La prioridad del envío solo puede ser modificada por un supervisor.");
                         }
-                        envioExistente.setPrioridadIa(dto.getPrioridadIa());
+                        prioridadFinal = dto.getPrioridadIa();
+                        prioridadCambiada = true;
                 }
 
-                Envio envioGuardado = envioRepository.save(envioExistente);
+                Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName())
+                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-                // 3. Generar el historial solo si el estado realmente cambió
+                // 2. Si el estado cambió, delegamos TODO al método centralizado
+                // (Ese método ya se encarga de guardar el envío, generar el historial y recalcular rutas)
                 if (estadoCambiado) {
-                        Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName())
-                                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-                        /*
-                        * HistorialEstados historial = HistorialEstados.builder()
-                        * .envio(envioGuardado)
-                        * .usuario(usuarioModificador)
-                        * .estadoAnterior(estadoAnterior)
-                        * .estadoNuevo(envioGuardado.getEstadoActual())
-                        * .build();
-                        * 
-                        * historialEstadosRepository.save(historial);
-                        */
                         return actualizarEstadoYPrioridad(
                                         idEnvio,
                                         dto.getEstado().name(),
-                                        envioExistente.getPrioridadIa(),
+                                        prioridadFinal,
                                         usuarioModificador,
                                         TipoEvento.CAMBIO_ESTADO);
                 }
 
-                // ... (lógica anterior de actualizarEstadoOperativo)
+                // 3. Si NO cambió el estado, pero SÍ cambió la prioridad, guardamos y auditamos acá
+                if (prioridadCambiada) {
+                        envioExistente.setPrioridadIa(prioridadFinal);
+                        Envio envioGuardado = envioRepository.save(envioExistente);
 
-                // Si el estado no cambió, verificamos si AL MENOS cambió la prioridad para
-                // auditarlo
-                if (!estadoCambiado && dto.getPrioridadIa() != null
-                        && !dto.getPrioridadIa().equals(estadoAnterior.name())) {
-                Usuario usuarioModificador = usuarioRepository.findByUsername(auth.getName()).get();
+                        auditoriaService.registrarEvento(
+                                        envioGuardado, 
+                                        usuarioModificador, 
+                                        TipoEvento.CAMBIO_PRIORIDAD, 
+                                        estadoAnterior, 
+                                        estadoAnterior
+                        );
+                        return envioGuardado;
+                }
 
-                auditoriaService.registrarEvento(
-                        envioGuardado, 
-                        usuarioModificador, 
-                        TipoEvento.CAMBIO_PRIORIDAD, 
-                        estadoAnterior, 
-                        estadoAnterior
-                );
-        }
-
-                return envioGuardado;
-        }
+                // Si no cambió ni el estado ni la prioridad, simplemente retornamos el envío intacto
+                return envioExistente;
+        }       
 
         // Calcula y devuelve la ubicación exacta del camión en base al tiempo
         // transcurrido

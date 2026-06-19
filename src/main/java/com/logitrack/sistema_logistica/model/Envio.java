@@ -1,17 +1,30 @@
 package com.logitrack.sistema_logistica.model;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.model.enums.TipoGrano;
-import java.util.UUID;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.time.LocalDateTime;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "envios")
@@ -96,6 +109,11 @@ public class Envio {
             String randomParte = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
             this.idEnvio = "LT-" + randomParte;
         }
+    }
+
+    public void setEstadoEnvio(EstadoEnvio enTransito) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setEstadoEnvio'");
     }
 
 }

@@ -1,7 +1,6 @@
 package com.logitrack.sistema_logistica.service;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -10,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +19,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,7 +38,6 @@ import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.EmpresaCliente;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Establecimiento;
-import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Persona;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
@@ -45,10 +47,10 @@ import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.RutaEnvioRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import org.springframework.context.ApplicationEventPublisher;
 
 
 
@@ -65,6 +67,8 @@ public class EnvioServiceTest {
     @Mock private RutaEnvioRepository rutaEnvioRepository;
     @Mock private HistorialEstadosRepository historialRepository;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock
+    private EvaluacionPsicomotoraRepository evaluacionRepository;
     
     // NUEVOS SERVICIOS (Reemplazan a GraphHopper y RestTemplate)
     @Mock private ValidacionExternaService validacionExternaService;
@@ -73,6 +77,11 @@ public class EnvioServiceTest {
 
     @InjectMocks
     private EnvioService envioService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     // YA NO HAY setUp() con mockBaseUrl porque eso ahora vive en ValidacionExternaService
 
@@ -796,46 +805,47 @@ public class EnvioServiceTest {
         assertThrows(RuntimeException.class, () -> envioService.actualizarEstadoChofer("4", "PENDIENTE", "chofer1"));
     }
 
-    // =========================================================
+   // =========================================================
     // TICKET #258: Pruebas de intercepción (Notificaciones)
     // =========================================================
-    @Test
-    public void cambiarEstado_DeberiaInterceptarYLlamarNotificacion() {
-        // Arrange: Creamos el servicio de notificaciones falso acá mismo
-        com.logitrack.sistema_logistica.service.NotificationService notifServiceMock = 
-            mock(com.logitrack.sistema_logistica.service.NotificationService.class);
+     @Test
+     public void cambiarEstado_DeberiaInterceptarYLlamarNotificacion() {
+         // Arrange
+         com.logitrack.sistema_logistica.service.NotificationService notifServiceMock = 
+             mock(com.logitrack.sistema_logistica.service.NotificationService.class);
             
-        // Instanciamos el "escuchador" (listener) pasándole nuestro mock
-        com.logitrack.sistema_logistica.events.EnvioCambioEstadoListener listener = 
-            new com.logitrack.sistema_logistica.events.EnvioCambioEstadoListener(notifServiceMock);
+         com.logitrack.sistema_logistica.events.EnvioCambioEstadoListenerNotificaciones listener = 
+             new com.logitrack.sistema_logistica.events.EnvioCambioEstadoListenerNotificaciones(notifServiceMock);
 
-        // Armamos el viaje de prueba con los datos mínimos que necesita el listener
-        com.logitrack.sistema_logistica.model.EmpresaCliente empresa = new com.logitrack.sistema_logistica.model.EmpresaCliente();
-        empresa.setRazonSocial("LogiCorp SRL");
+         com.logitrack.sistema_logistica.model.EmpresaCliente empresa = new com.logitrack.sistema_logistica.model.EmpresaCliente();
+         empresa.setRazonSocial("LogiCorp SRL");
 
-        com.logitrack.sistema_logistica.model.Establecimiento origen = new com.logitrack.sistema_logistica.model.Establecimiento();
-        origen.setEmpresa(empresa);
+         com.logitrack.sistema_logistica.model.Establecimiento origen = new com.logitrack.sistema_logistica.model.Establecimiento();
+         origen.setEmpresa(empresa);
 
-        com.logitrack.sistema_logistica.model.Envio viajeDePrueba = com.logitrack.sistema_logistica.model.Envio.builder()
-                .idEnvio("LT-NOTIF-001")
-                .estadoActual(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.EN_TRANSITO) // Estado simulado
-                .origen(origen)
-                .build();
+         com.logitrack.sistema_logistica.model.Envio viajeDePrueba = com.logitrack.sistema_logistica.model.Envio.builder()
+                 .idEnvio("LT-NOTIF-001")
+                 .estadoActual(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.EN_TRANSITO) 
+                 .origen(origen)
+                 .build();
 
-        // Creamos el evento de Spring que simula la intercepción
-        com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent evento = 
-            new com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent(this, viajeDePrueba);
+         // LA MAGIA ACÁ: Simulamos el evento viejo con Mockito para esquivar errores de constructores
+         com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent eventoMock = 
+             mock(com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent.class);
+         
+         // Le decimos al mock que cuando el listener le pida el viaje, le entregue el nuestro
+         when(eventoMock.getEnvio()).thenReturn(viajeDePrueba);
 
-        // Act: Hacemos que el interceptor escuche el evento y actúe
-        listener.onCambioEstado(evento);
+         // Act
+         listener.onCambioEstado(eventoMock); 
 
-        // Assert: Validamos mediante Mockito que el servicio fue llamado al menos 1 vez
-        verify(notifServiceMock, times(1)).enviarNotificacion(
-                anyString(), // No nos importa a qué mail
-                anyString(), // No nos importa el asunto
-                anyString()  // No nos importa el cuerpo del mensaje
-        );
-    }
+         // Assert
+         verify(notifServiceMock, times(1)).enviarNotificacion(
+                 anyString(), 
+                 anyString(), 
+                 anyString()  
+         );
+     }
     // =========================================================
     // TICKET #223: Pruebas de validación de disponibilidad 
     // =========================================================

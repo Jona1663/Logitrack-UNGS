@@ -1,0 +1,28 @@
+{
+  "config": {
+    "target": "http://localhost:8080",
+    "phases": [
+      {
+        "duration": 30,
+        "arrivalRate": 5,
+        "rampTo": 20
+      }
+    ],
+    "headers": {
+      "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjaG9mZXIxQGxvZ2l0cmFjay5jb20iLCJyb2wiOiJDSE9GRVIiLCJpYXQiOjE3ODE4OTMyNzN9.NZD86qBLFM9XE_Otr8re4fUiB6q-MR8xHhyFAkEXqxI",
+      "Content-Type": "application/json"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "Chofer actualizando estado",
+      "flow": [
+        {
+          "patch": {
+            "url": "/api/envios/LT-HIST-0001/estado?nuevoEstado=EN_TRANSITO"
+          }
+        }
+      ]
+    }
+  ]
+}

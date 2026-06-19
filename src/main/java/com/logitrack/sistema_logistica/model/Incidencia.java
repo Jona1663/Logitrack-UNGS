@@ -1,15 +1,12 @@
 package com.logitrack.sistema_logistica.model;
 
-import java.time.LocalDateTime;
-
-import com.logitrack.sistema_logistica.model.enums.Categoria;
 import com.logitrack.sistema_logistica.model.enums.EstadoIncidencia;
 import com.logitrack.sistema_logistica.model.enums.TipoIncidencia;
-
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Entity
@@ -53,6 +50,12 @@ public class Incidencia {
 
     @Column(nullable = false, updatable = false)
     private String creadoPor;
+
+    @Column(name = "latitud")
+    private Double latitud;
+
+    @Column(name = "longitud")
+    private Double longitud;
 
 
 }
