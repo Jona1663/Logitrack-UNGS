@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -16,10 +17,12 @@ import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.EmpresaCliente;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.Establecimiento;
+import com.logitrack.sistema_logistica.model.EvaluacionPsicomotora;
 import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Persona;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
 import com.logitrack.sistema_logistica.model.enums.RolUsuario;
 import com.logitrack.sistema_logistica.model.enums.TipoEmpresa;
 import com.logitrack.sistema_logistica.model.enums.TipoEvento;
@@ -29,9 +32,12 @@ import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EmpresaClienteRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
+import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.PersonaRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+import java.util.Random;
+import org.springframework.beans.factory.annotation.Value;
 
 @Component
 public class DataSeed implements CommandLineRunner {
@@ -52,18 +58,22 @@ public class DataSeed implements CommandLineRunner {
         private EnvioRepository envioRepository;
         @Autowired
         private HistorialEstadosRepository historialEstadosRepository;
-
         @Autowired
         private PasswordEncoder passwordEncoder;
+        @Autowired
+        private EvaluacionPsicomotoraRepository evaluacionRepository;
+
+        @Value("${logitrack.fatiga.umbral-ms}")
+        private long umbralFatiga;
 
         @Override
         public void run(String... args) throws Exception {
                 // Solo insertamos datos si la tabla de usuarios está vacía
                 if (usuarioRepository.count() == 0) {
                         cargarDatosSemilla();
-                        System.out.println("🌱 DATOS SEMILLA CARGADOS CON ÉXITO 🌱");
+                        System.out.println("DATOS SEMILLA CARGADOS CON ÉXITO ");
                 } else {
-                        System.out.println("✅ La base de datos ya contiene información. Se omite el DataSeed.");
+                        System.out.println("La base de datos ya contiene información. Se omite el DataSeed.");
                 }
         }
 
@@ -423,10 +433,71 @@ LocalDate futuro = LocalDate.now().plusYears(1);
                 .build());
             }
 
-            System.out.println("✅ DATOS SEMILLA CARGADOS EXITOSAMENTE");
+            System.out.println("DATOS SEMILLA CARGADOS EXITOSAMENTE");
  */
+
+                // VERSION 1
+                /* *
+                // =========================================================================
+                // 8. HISTORIAL DE EVALUACIONES (Tarea #614 - Para la DEMO)
+                // =========================================================================
+                System.out.println("Cargando evaluaciones históricas para la demo...");
+
+                // Buscamos un chofer existente (usamos cd1 creado en el punto 3)
+                ChoferDetalle choferDemo = choferDetalleRepository.findAll().get(0);
+                // Buscamos el primer envío creado en el bucle (el que terminó en la variable env)
+                Envio envioDemo = envioRepository.findAll().get(0);
+
+                for (int i = 1; i <= 12; i++) {
+                EvaluacionPsicomotora eval = EvaluacionPsicomotora.builder()
+                        .tiempoReaccionMs(350L) // Tiempo normal
+                        .resultado(EstadoEvaluacionEnum.APROBADO)
+                        .estadoBloqueo(EstadoEvaluacionEnum.APROBADO)
+                        .mensaje("Test superado correctamente (Historial inicial).")
+                        .fechaCreacion(LocalDateTime.now().minusDays(i))
+                        // Vinculamos con las entidades reales:
+                        .choferId(choferDemo) 
+                        .idEnvio(envioDemo)
+                        .build();
+                
+                evaluacionRepository.save(eval);
+                }
+                System.out.println("EVALUACIONES HISTÓRICAS CARGADAS");
+                */
+
+                //VERSION 2
+                // =========================================================================
+                // 8. HISTORIAL DE EVALUACIONES (Tarea #614 - Para la DEMO)
+                // =========================================================================
+                System.out.println("Cargando evaluaciones históricas para la demo...");
+                List<ChoferDetalle> todosLosChoferes = choferDetalleRepository.findAll();
+                List<Envio> todosLosEnvios = envioRepository.findAll();
+
+                Random random = new Random(); // 2. Instancia el generador
+
+
+                for (int i = 0; i < 12; i++) {
+                        // Usamos el operador módulo (%) para rotar entre los choferes y envíos disponibles
+                        ChoferDetalle choferActual = todosLosChoferes.get(i % todosLosChoferes.size());
+                        Envio envioActual = todosLosEnvios.get(i % todosLosEnvios.size());
+                        long tiempoAleatorio = 100 + (long)(random.nextDouble() * (umbralFatiga - 100));
+
+                        EvaluacionPsicomotora eval = EvaluacionPsicomotora.builder()
+                                .tiempoReaccionMs(tiempoAleatorio)
+                                .resultado(EstadoEvaluacionEnum.APROBADO)
+                                .estadoBloqueo(EstadoEvaluacionEnum.APROBADO)
+                                .mensaje("Test superado correctamente (Historial inicial).")
+                                .fechaCreacion(LocalDateTime.now().minusDays(i))
+                                .choferId(choferActual) 
+                                .idEnvio(envioActual)
+                                .build();
+                        
+                        evaluacionRepository.save(eval);
+                }
+                System.out.println("EVALUACIONES HISTÓRICAS CARGADAS");
+
         } catch (Exception e) {
-            throw new RuntimeException("❌ ERROR EN DATA SEED: " + e.getMessage(), e);
+            throw new RuntimeException("ERROR EN DATA SEED: " + e.getMessage(), e);
         }
 }
         private Establecimiento crearEstablecimiento(String nombre, String direccion, Double lat, Double lon, EmpresaCliente empresa) {
@@ -440,5 +511,3 @@ LocalDate futuro = LocalDate.now().plusYears(1);
         }
 
 }
-
-

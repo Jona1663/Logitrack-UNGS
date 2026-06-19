@@ -4,16 +4,16 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*; // Cambiado a jakarta
 import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
 import com.logitrack.sistema_logistica.model.enums.TipoJuegoEnum;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+
+import lombok.*;
 
 
 @Entity
 @Getter 
 @Setter
 @NoArgsConstructor
-
+@AllArgsConstructor
+@Builder    
 public class EvaluacionPsicomotora {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
