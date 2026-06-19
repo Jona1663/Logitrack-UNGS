@@ -41,6 +41,26 @@ import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.model.enums.RolUsuario;
+
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import com.logitrack.sistema_logistica.dto.EnvioResumenDTO;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
+import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+
+import com.logitrack.sistema_logistica.service.EnvioService;
+import com.logitrack.sistema_logistica.service.SeguridadCuentaService;
+import com.logitrack.sistema_logistica.controller.AuthController;
+import com.logitrack.sistema_logistica.dto.LoginRequestDTO;
+import com.logitrack.sistema_logistica.dto.LoginResponseDTO;
+import com.logitrack.sistema_logistica.model.Usuario;
+
+//>>>>>>> dce710658a3c8f8d570a7d195872343d33a24781
 import com.logitrack.sistema_logistica.model.enums.TipoGrano;
 import com.logitrack.sistema_logistica.dto.LoginRequestDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
@@ -58,8 +78,14 @@ public class MisTestsCriticosTest {
     private JwtService jwtService;
 
     @Mock
+//<<<<<<< HEAD
     private SeguridadCuentaService seguridadService;
 
+
+    private SeguridadCuentaService seguridadCuentaService;
+    
+// --- MOCKS PARA US 3 2 5 ---
+//>>>>>>> dce710658a3c8f8d570a7d195872343d33a24781
     @Mock
     private EnvioRepository envioRepository;
     

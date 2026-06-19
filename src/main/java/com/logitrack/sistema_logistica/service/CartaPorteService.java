@@ -4,14 +4,16 @@ import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import org.springframework.transaction.annotation.Transactional;
 import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import com.logitrack.sistema_logistica.model.Envio;
-import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+//@RequiredArgsConstructor
 @Service
 
 public class CartaPorteService {
-    private final EnvioRepository envioRepository;
+    @Autowired
+    private  EnvioRepository envioRepository;
 
     @Transactional(readOnly = true)
     public CartaPorteDTO obtenerCartaPorte(String idEnvio) {
