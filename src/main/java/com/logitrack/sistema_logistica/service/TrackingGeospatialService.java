@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logitrack.sistema_logistica.model.Camion;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.RutaEnvio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
@@ -27,6 +28,12 @@ public class TrackingGeospatialService {
     private final GraphHopperService graphHopperService;
     private final RutaEnvioRepository rutaEnvioRepository;
 
+    // US-45 Servicios para ML 
+    // Se inyectan los clientes para obtener datos de clima, tráfico y el microservicio de ML.
+    private final ETAClientService etaClientService;
+    private final ClimaService climaService;
+    private final TraficoService traficoService;
+
     private static final double VELOCIDAD_PROMEDIO_KMH = 65.0;
 
     /**
@@ -40,19 +47,16 @@ public class TrackingGeospatialService {
 
         if (envio.getEstadoActual() == EstadoEnvio.EN_TRANSITO) {
             // TRAMO 1: UNGS -> Origen
-            latInicio = -34.522881; // Coordenada UNGS
-            lonInicio = -58.700085; // Coordenada UNGS
+            latInicio = -34.522881;
+            lonInicio = -58.700085;
             latFin = envio.getOrigen().getLatitud();
             lonFin = envio.getOrigen().getLongitud();
         } else {
-            // TRAMO 2: Origen -> Destino (Yendo a entregar)
-                        // TRAMO 2: Origen -> Destino (Yendo a entregar)
+            // TRAMO 2: Origen -> Destino
             if (envio.getRutaEnvio() != null) {
-                // 1. La borramos de la base de datos
                 rutaEnvioRepository.delete(envio.getRutaEnvio());
                 rutaEnvioRepository.flush();
-                // 2. La desvinculamos del objeto en memoria para que JPA no intente volver a guardarla
-                envio.setRutaEnvio(null);                 
+                envio.setRutaEnvio(null);
             }
             latInicio = envio.getOrigen().getLatitud();
             lonInicio = envio.getOrigen().getLongitud();
@@ -60,10 +64,8 @@ public class TrackingGeospatialService {
             lonFin = envio.getDestino().getLongitud();
         }
 
-        // 1. Le pedimos el JSON a GraphHopper con las coordenadas
         JsonNode pathData = graphHopperService.obtenerRuta(latInicio, lonInicio, latFin, lonFin);
 
-        // 2. Extraemos la info
         Double distanciaKm = pathData.path("distance").asDouble() / 1000.0;
         Long tiempoSegundos = pathData.path("time").asLong() / 1000L;
         String polylineJson = pathData.path("points").path("coordinates").toString();
@@ -71,7 +73,6 @@ public class TrackingGeospatialService {
         RutaEnvio ruta = rutaEnvioRepository.findByEnvio(envio).orElse(null);
 
         if (ruta == null) {
-            // Si el envío no tiene ruta (Ej: primer tramo), creamos una nueva
             ruta = RutaEnvio.builder()
                     .envio(envio)
                     .polylineJson(polylineJson)
@@ -79,22 +80,45 @@ public class TrackingGeospatialService {
                     .duracionTotalSegundos(tiempoSegundos)
                     .build();
         } else {
-            // Si el envío YA tiene ruta (Ej: segundo tramo), le pisamos los datos (UPDATE)
             ruta.setPolylineJson(polylineJson);
             ruta.setDistanciaTotalKm(distanciaKm);
             ruta.setDuracionTotalSegundos(tiempoSegundos);
         }
         rutaEnvioRepository.save(ruta);
 
-        // 4. Actualizamos el objeto Envio en memoria
         envio.setRutaEnvio(ruta);
         envio.setFechaSalida(LocalDateTime.now());
-        envio.setFechaEstimadaLlegada(LocalDateTime.now().plusSeconds(tiempoSegundos));
+
+        // Antes: envio.setFechaEstimadaLlegada(LocalDateTime.now().plusSeconds(tiempoSegundos));
+        // Ahora: la fecha estimada se asigna desde EnvioService usando el modelo ML
     }
 
-    /**
-     * Calcula la ubicación exacta en tiempo real simulado (interpolación sobre el LineString).
-     */
+    public LocalDateTime calcularETAConML(Envio envio, Camion camion) {
+        LocalDateTime fechaSalida = LocalDateTime.now();
+
+        // Obtener condiciones actuales (clima y tráfico) desde las coordenadas del origen
+        String clima = climaService.obtenerCondicionClimatica(
+                envio.getOrigen().getLatitud(),
+                envio.getOrigen().getLongitud()
+        );
+        String trafico = traficoService.obtenerNivelTrafico(
+                envio.getOrigen().getLatitud(),
+                envio.getOrigen().getLongitud()
+        );
+
+        // Llamar al microservicio de ML
+        ETAClientService.ETAResult result = etaClientService.calcularEta(envio, camion, clima, trafico);
+
+        if (result.disponible) {
+            return fechaSalida.plusMinutes(result.etaMinutos);
+        }
+
+        // microservicio caído -> usar velocidad fija 65 km/h
+        return calcularETA(envio.getDistanciaKm(), fechaSalida);
+    }
+
+    // Calcula la ubicación exacta en tiempo real simulado (interpolación sobre el LineString)
+
     public Map<String, Object> calcularUbicacionInterpolada(Envio envio) {
         if (envio.getEstadoActual() != EstadoEnvio.EN_TRANSITO
                 && envio.getEstadoActual() != EstadoEnvio.EN_REPARTO) {
@@ -113,14 +137,12 @@ public class TrackingGeospatialService {
 
             long segundosTranscurridos = Duration.between(salida, ahora).getSeconds();
 
-            // Evitamos que el porcentaje supere el 100%
             if (segundosTranscurridos > duracionTotal) {
                 segundosTranscurridos = duracionTotal;
             }
 
             double porcentaje = (double) segundosTranscurridos / duracionTotal;
 
-            // Procesamiento espacial JTS
             ObjectMapper mapper = new ObjectMapper();
             JsonNode arrayCoordenadas = mapper.readTree(ruta.getPolylineJson());
 
@@ -141,8 +163,8 @@ public class TrackingGeospatialService {
             response.put("idEnvio", envio.getIdEnvio());
             response.put("estadoActual", envio.getEstadoActual().name());
             response.put("porcentajeCompletado", porcentaje * 100.0);
-            response.put("latitudActual", puntoActual.y); // Y es Latitud en JTS para nuestro caso
-            response.put("longitudActual", puntoActual.x); // X es Longitud
+            response.put("latitudActual", puntoActual.y);
+            response.put("longitudActual", puntoActual.x);
 
             return response;
 
@@ -151,9 +173,7 @@ public class TrackingGeospatialService {
         }
     }
 
-    /**
-     * Parsea la ruta a un formato apto para devolver al frontend.
-     */
+    // Parsea la ruta a un formato apto para devolver al frontend
     public JsonNode extraerGeometriaRuta(RutaEnvio ruta) {
         if (ruta == null || ruta.getPolylineJson() == null || ruta.getPolylineJson().isBlank()) {
             throw new RuntimeException("El envío no tiene una ruta generada aún.");

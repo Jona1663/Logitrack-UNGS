@@ -465,21 +465,13 @@ import com.logitrack.sistema_logistica.repository.UsuarioRepository;
                         throw new RuntimeException("El camión acaba de ser asignado a otro viaje y ya no está disponible.");
                 }
 
-                // 6. Asignar y guardar
-                envio.setChofer(chofer);
-                envio.setCamion(camion);
-                envio.setEstadoActual(estadosActivos.get(0));
-                envio.setPrioridadIa("ALTA");//hardcodeado por bug .
-                
-                // --- NUEVA LÓGICA DE ETA ---
-                LocalDateTime fechaSalida = LocalDateTime.now();
-                envio.setFechaSalida(fechaSalida);
-                // Calculamos el ETA basándonos en la distancia y el momento de salida
-                envio.setFechaEstimadaLlegada(trackingService.calcularETA(envio.getDistanciaKm(), fechaSalida));
-                // ----------------------------
-
-                // Ahora generamos la ruta (el mapa)
-                trackingService.generarYGuardarRuta(envio);                
+        // 6. Asignar y guardar
+        envio.setChofer(chofer);
+        envio.setCamion(camion);
+        envio.setEstadoActual(estadosActivos.get(0));
+        envio.setPrioridadIa("ALTA");//hardcodeado por bug .
+        envio.setFechaEstimadaLlegada(trackingService.calcularETAConML(envio, camion));
+        trackingService.generarYGuardarRuta(envio);
 
                 // 7. Marcar como no disponibles (#222)
                 chofer.setDisponible(false);
