@@ -29,7 +29,7 @@ public class EvaluacionFatigaService {
     public EvaluacionFatigaResponseDTO procesarEvaluacion(EvaluacionFatigaRequestDTO dto, String username) {
         
         // 1. Buscar las entidades reales a partir de los IDs proporcionados en el DTO
-        Envio envio = envioRepository.findById(dto.getEnvioId())
+        Envio envio = envioRepository.findById(dto.getIdEnvio())
                 .orElseThrow(() -> new RuntimeException("El envío no existe"));
         
         ChoferDetalle chofer = choferDetalleRepository.findByUsername(username)
@@ -62,7 +62,7 @@ public class EvaluacionFatigaService {
             
             // Disparar Alerta WebSocket al supervisor
             messagingTemplate.convertAndSend("/topic/alertas-supervisores", 
-                "Alerta: Chofer " + username + " aprobó el test de fatiga en el envío " + dto.getEnvioId());
+                "Alerta: Chofer " + username + " aprobó el test de fatiga en el envío " + dto.getIdEnvio());
         } 
 
         // 4. Guardar en base de datos
@@ -70,6 +70,7 @@ public class EvaluacionFatigaService {
 
         // 5. Retornar respuesta estructurada
         return new EvaluacionFatigaResponseDTO(
+            eval.getId(),
             eval.getResultado() == EstadoEvaluacionEnum.APROBADO, 
             eval.getMensaje()
         );

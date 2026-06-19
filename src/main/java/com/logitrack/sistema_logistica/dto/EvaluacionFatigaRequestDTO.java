@@ -9,7 +9,8 @@ import lombok.Setter;
 @Setter
 
 public class EvaluacionFatigaRequestDTO {
-    private String envioId;
+    private String idEnvio;
     private TipoJuegoEnum tipoJuego;
     private Long tiempoReaccionMs;
+    private String idChofer;
 }
