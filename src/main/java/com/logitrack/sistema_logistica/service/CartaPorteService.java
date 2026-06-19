@@ -7,7 +7,6 @@ import com.logitrack.sistema_logistica.model.Envio;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
 //@RequiredArgsConstructor
 @Service
