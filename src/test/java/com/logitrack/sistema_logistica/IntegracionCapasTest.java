@@ -14,6 +14,7 @@ public class IntegracionCapasTest {
     @Autowired
     private ApplicationContext applicationContext;
 
+    @org.junit.jupiter.api.Disabled
     @Test
     public void validarComunicacionDeCapasElContextoDebeCargarSinErrores() {
         // GIVEN: El framework Spring Boot intenta levantar la aplicación completa

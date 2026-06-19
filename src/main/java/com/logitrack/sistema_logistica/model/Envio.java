@@ -111,4 +111,9 @@ public class Envio {
         }
     }
 
+    public void setEstadoEnvio(EstadoEnvio enTransito) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setEstadoEnvio'");
+    }
+
 }

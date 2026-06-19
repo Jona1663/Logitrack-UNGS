@@ -1,13 +1,19 @@
 package com.logitrack.sistema_logistica.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import org.springframework.http.MediaType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -15,11 +21,15 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-
+import org.springframework.test.util.ReflectionTestUtils; 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.service.AuditoriaService;
 import com.logitrack.sistema_logistica.service.EnvioService;
 
@@ -30,11 +40,9 @@ import java.util.Collections;
 
 public class EnvioControllerTest {
 
-    // Instancia del Postman "fantasma"
     private org.springframework.test.web.servlet.MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
-    // Usamos @Mock nativo de Mockito en lugar de @MockBean
     @Mock
     private EnvioService envioService;
 
@@ -46,81 +54,52 @@ public class EnvioControllerTest {
 
     @Mock
     private com.logitrack.sistema_logistica.repository.HistorialEstadosRepository historialEstadosRepository;
+    
     @Mock
     private AuditoriaService auditoriaService;
 
-    // Inyectamos los mocks directamente en el controlador limpio
+    @Mock
+    private com.logitrack.sistema_logistica.service.CartaPorteService cartaPorteService;
+
+    @Mock
+    private com.logitrack.sistema_logistica.service.CartaPortePdfService cartaPortePdfService;
+
+    @Mock
+    private com.logitrack.sistema_logistica.service.ReporteService reporteService;
+
     @InjectMocks
     private EnvioController envioController;
 
     @BeforeEach
     void setUp() {
-        // Inicializamos los mocks antes de cada test
         MockitoAnnotations.openMocks(this);
         
-        // Configuramos el MockMvc de forma "standalone" como hicieron tus compañeros
+        // --- EL TRUCO DEL TESTER PARA QUE NO TIRE 404/400 ---
+        ReflectionTestUtils.setField(envioController, "envioService", envioService);
+        ReflectionTestUtils.setField(envioController, "envioRepository", envioRepository);
+        ReflectionTestUtils.setField(envioController, "usuarioRepository", usuarioRepository);
+        ReflectionTestUtils.setField(envioController, "historialEstadosRepository", historialEstadosRepository);
+        ReflectionTestUtils.setField(envioController, "reporteService", reporteService);
+        ReflectionTestUtils.setField(envioController, "cartaPorteService", cartaPorteService);
+        ReflectionTestUtils.setField(envioController, "cartaPortePdfService", cartaPortePdfService);
+
         this.mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(envioController).build();
         this.objectMapper = new ObjectMapper();
-    }
-
-    // ==========================================
-    // TESTS DEL CONTROLADOR
-    // ==========================================
-
-  /*  @Test
-    public void crearEnvio_DeberiaRetornar201() throws Exception {
-        // Arrange
-        EnvioRequestDTO dto = new EnvioRequestDTO();
-        dto.setCpe("12345678");
-
-        Envio envioMock = Envio.builder().idEnvio("LT-001").build();
-
-        // Como no usamos @WithMockUser, simulamos la autenticación manualmente
-        Authentication authenticationMock = mock(Authentication.class);
-        when(authenticationMock.getName()).thenReturn("operador_juan");
-
-        when(envioService.crearNuevoEnvio(any(EnvioRequestDTO.class))).thenReturn(envioMock);
-
-        // Act & Assert
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/envios")
-                .principal(authenticationMock) // Pasamos el usuario simulado aquí
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.idEnvio").value("LT-001"));
-    }*/
-
-   /*  @Test
-    public void listarEnvios_DeberiaRetornar200() throws Exception {
-        // Arrange
-        Envio envio1 = Envio.builder().idEnvio("LT-111").build();
-        Envio envio2 = Envio.builder().idEnvio("LT-222").build();
-        
-        when(envioService.obtenerTodos()).thenReturn(List.of(envio1, envio2));
-
-        // Act & Assert
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.length()").value(2));
-    }*/
+    }   
 
     @Test
     public void actualizarEstadoChofer_DeberiaRetornar200() throws Exception {
-        // Arrange
         String idEnvio = "LT-333";
         Envio envioMock = Envio.builder().idEnvio(idEnvio).build();
 
-        // Simulamos la autenticación del chofer
         Authentication authenticationMock = mock(Authentication.class);
         when(authenticationMock.getName()).thenReturn("chofer_test");
 
         when(envioService.actualizarEstadoChofer(eq(idEnvio), eq("EN_TRANSITO"), eq("chofer_test")))
                 .thenReturn(envioMock);
 
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/envios/" + idEnvio + "/estado")
-                .principal(authenticationMock) // Inyectamos la sesión
+                .principal(authenticationMock)
                 .param("nuevoEstado", "EN_TRANSITO"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.idEnvio").value(idEnvio));
@@ -128,7 +107,6 @@ public class EnvioControllerTest {
 
     @Test
     public void obtenerTrackingTiempoReal_DeberiaRetornar200() throws Exception {
-        // Arrange
         String idEnvio = "LT-444";
         Map<String, Object> trackingData = Map.of(
                 "porcentajeCompletado", 50.0,
@@ -138,68 +116,52 @@ public class EnvioControllerTest {
 
         when(envioService.obtenerUbicacionActual(idEnvio)).thenReturn(trackingData);
 
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/" + idEnvio + "/tracking")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.porcentajeCompletado").value(50.0));
     }
 
-        @Test
-        public void buscarEnvios_DatosValidos_Retorna200() throws Exception {
-            // Arrange
-
-            Page<Envio> pageMock = new PageImpl<>(
+    @Test
+    public void buscarEnvios_DatosValidos_Retorna200() throws Exception {
+        Page<Envio> pageMock = new PageImpl<>(
             Collections.emptyList(), 
-            PageRequest.of(0, 10), // Esto crea un Pageable real con tamaño 10
+            PageRequest.of(0, 10), 
             0
         );
 
         when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(), any()))
             .thenReturn(pageMock);
-          //  when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(), any()))
-           //     .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
 
-            // Act & Assert
-            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/search")
-                    .param("estado", "PENDIENTE")
-                    .contentType(MediaType.APPLICATION_JSON))
-                    // Esta línea captura la excepción resuelta y la tira a System.err
-                    .andDo(result -> {
-                        if (result.getResolvedException() != null) {
-                            System.err.println("--- ERROR CAPTURADO ---");
-                            result.getResolvedException().printStackTrace();
-                        }
-                    })
-                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
-        }
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/search")
+                .param("estado", "PENDIENTE")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
 
     @Test
     public void buscarEnvios_FechaInvalida_Retorna400() throws Exception {
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/search")
-                .param("fecha", "2026-05-23")) // Formato incorrecto (espera dd/MM/yyyy)
+                .param("fecha", "2026-05-23"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message").value("Formato de fecha inválido. Use dd/MM/yyyy."));
     }
 
     @Test
     public void buscarEnvios_EstadoInvalido_Retorna400() throws Exception {
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/search")
                 .param("estado", "ESTADO_INEXISTENTE"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message").value("Estado inválido. Use uno de los valores permitidos: PENDIENTE, EN_TRANSITO, ENTREGADO, CANCELADO"));
     }
+
     @Test
     public void consultarHistorial_EnvioExistente_Retorna200() throws Exception {
-        // Arrange
         String idEnvio = "LT-123";
         HistorialResponseDTO dto = new HistorialResponseDTO();
         dto.setEstadoNuevo("PENDIENTE");
         when(envioService.obtenerHistorialPorEnvio(idEnvio)).thenReturn(List.of(dto));
 
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/{idEnvio}/historial", idEnvio))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].estadoNuevo").value("PENDIENTE"));
@@ -207,11 +169,9 @@ public class EnvioControllerTest {
 
     @Test
     public void consultarHistorial_EnvioNoExiste_Retorna404() throws Exception {
-        // Arrange
         String idEnvio = "LT-999";
         when(envioService.obtenerHistorialPorEnvio(idEnvio)).thenThrow(new RuntimeException("Envío no encontrado"));
 
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/{idEnvio}/historial", idEnvio))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message").value("Envío no encontrado"));
@@ -219,22 +179,15 @@ public class EnvioControllerTest {
 
     @Test
     public void consultarHistorial_ErrorInesperado_Retorna500() throws Exception {
-        // Arrange
         String idEnvio = "LT-123";
-        // Simulamos un error genérico que no es RuntimeException
         when(envioService.obtenerHistorialPorEnvio(idEnvio)).thenAnswer(inv -> {
             throw new Exception("Error de base de datos inesperado");
         });
 
-        // Act & Assert
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/{idEnvio}/historial", idEnvio))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isInternalServerError())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message").value("Error al obtener el historial: Error de base de datos inesperado"));
     }
-
-    // ==========================================
-    // TESTS ADICIONALES DE COBERTURA
-    // ==========================================
 
     @Test
     public void listarEnvios_DeberiaRetornarListaVaciaYStatus200() throws Exception {
@@ -276,6 +229,7 @@ public class EnvioControllerTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/buscar/LT-999"))
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
     }
+    
     @Test
     public void cancelarEnvio_ConIdValido_DeberiaRetornar200() throws Exception {
         java.security.Principal principalMock = mock(java.security.Principal.class);
@@ -330,21 +284,21 @@ public class EnvioControllerTest {
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
-@org.junit.jupiter.api.Test
+    @Test
     public void cobertura_listarEnviosVacio() throws Exception {
         org.mockito.Mockito.when(envioRepository.findAll()).thenReturn(java.util.Collections.emptyList());
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios"))
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void cobertura_historialCompleto() throws Exception {
         org.mockito.Mockito.when(historialEstadosRepository.findAll()).thenReturn(java.util.Collections.emptyList());
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/historial-completo"))
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void cobertura_buscarEnvioError() throws Exception {
         org.mockito.Mockito.when(envioService.buscarPorId(org.mockito.ArgumentMatchers.anyString()))
                .thenThrow(new RuntimeException("No existe"));
@@ -352,7 +306,7 @@ public class EnvioControllerTest {
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void cobertura_cancelarEnvioError() throws Exception {
         java.security.Principal principal = org.mockito.Mockito.mock(java.security.Principal.class);
         org.mockito.Mockito.when(principal.getName()).thenReturn("admin");
@@ -364,7 +318,7 @@ public class EnvioControllerTest {
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void cobertura_asignarTransporteError() throws Exception {
         org.mockito.Mockito.when(envioService.asignarTransporte(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any()))
                .thenThrow(new RuntimeException("Fallo al asignar"));
@@ -375,7 +329,7 @@ public class EnvioControllerTest {
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void cobertura_operativoError() throws Exception {
         org.springframework.security.core.Authentication auth = org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
         org.mockito.Mockito.when(envioService.actualizarEstadoOperativo(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
@@ -387,5 +341,65 @@ public class EnvioControllerTest {
                .content("{}"))
                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
     }
-    
+// ==========================================
+    //              #624 
+    // ==========================================
+
+    /*
+    @Test
+    public void sanitizacionAPI_alConsultarEnvioPublico_noDebeFiltrarDatosSensibles_Issue624() throws Exception {
+        // Configuramos el MockMvc para simular la petición web
+        org.springframework.test.web.servlet.MockMvc mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(envioController).build();
+
+        // GIVEN: Un envío que internamente tiene datos sensibles asignados (como el camión y su patente)
+        Envio envioSensible = new Envio();
+        envioSensible.setIdEnvio("TRK-SEC-123");
+        envioSensible.setEstadoActual(EstadoEnvio.EN_TRANSITO);
+        
+        com.logitrack.sistema_logistica.model.Camion camionMock = new com.logitrack.sistema_logistica.model.Camion();
+        camionMock.setPatente("AB123CD");
+        
+        // ACÁ ESTÁ LA CORRECCIÓN: Usamos setCamion() como dice tu modelo
+        envioSensible.setCamion(camionMock); 
+        
+        // Simulamos que el servicio devuelve este envío al controlador
+        when(envioService.buscarPorId("TRK-SEC-123")).thenReturn(envioSensible);
+
+        // WHEN & THEN: Simulamos la consulta del cliente externo
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/buscar/TRK-SEC-123")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                // Verificamos que el estado sí se devuelva al cliente
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.estadoActual").value("EN_TRANSITO"))
+                // AUDITORÍA DE SEGURIDAD (#624): Exigimos que el JSON NO contenga la patente del camión
+                // ACÁ TAMBIÉN CORREGIDO: Buscamos $.camion.patente en lugar de camionAsignado
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.camion.patente").doesNotExist());
+    }
+    */
+
+
+    // ==========================================
+    //             #623
+    // ==========================================
+
+    @Test
+    public void privacidadAPI_alConsultarConCuitIncorrecto_debeBloquearAcceso_Issue623() throws Exception {
+        // Configuramos el MockMvc
+        org.springframework.test.web.servlet.MockMvc mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(envioController).build();
+
+        // GIVEN: Un Tracking ID válido, pero el atacante usa un CUIT que no le pertenece
+        String trackingValido = "TRK-VALIDO-999";
+        String cuitInvalido = "20-00000000-0"; 
+
+        // Simulamos que el backend detecta el robo de identidad y lanza una excepción
+        when(envioService.buscarPorId(trackingValido)) 
+            .thenThrow(new SecurityException("Acceso denegado: El CUIT no coincide con el envío"));
+
+        // WHEN & THEN: El sistema debe rechazar la petición y proteger la privacidad
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/buscar/" + trackingValido)
+                .header("X-CUIT-Cliente", cuitInvalido) // Simulamos que el CUIT viaja en los headers
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON))
+                // AUDITORÍA (#623): Verificamos que se devuelva un error HTTP de cliente (4xx) en lugar de los datos
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().is4xxClientError());
+    }
 }
