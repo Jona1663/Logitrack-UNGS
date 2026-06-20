@@ -26,7 +26,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -449,10 +449,14 @@ public class EnvioController {
     @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
     public ResponseEntity<String> reasignarViaje(
             @PathVariable String id, 
-            @Valid @RequestBody ReasignacionViajeRequestDTO request) {
-        
-        envioService.procesarReasignacion(id, request);
-        return ResponseEntity.ok("Viaje reasignado correctamente.");
+            @RequestBody ReasignacionViajeRequestDTO request) {
+                
+        // Aquí obtenemos el nombre de usuario del "carnet de identidad" de la sesión
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        envioService.procesarReasignacion(id, request, username);
+
+        return ResponseEntity.ok().build();
     }
     
 }

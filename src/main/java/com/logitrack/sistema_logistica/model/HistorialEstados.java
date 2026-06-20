@@ -45,6 +45,9 @@ public class HistorialEstados {
     @Column(name = "fecha_hora", updatable = false)
     private LocalDateTime fechaHora;
 
+    @Column(name = "detalle", length = 255) // Agrega esta línea
+    private String detalle;
+
     @PrePersist
     protected void onCreate() {
         this.fechaHora = LocalDateTime.now();

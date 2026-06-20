@@ -540,7 +540,8 @@ import com.logitrack.sistema_logistica.model.Usuario;
                                         usuarioModificador, 
                                         TipoEvento.CAMBIO_PRIORIDAD, 
                                         estadoAnterior, 
-                                        estadoAnterior
+                                        estadoAnterior,
+                                        "Actualización manual de prioridad por usuario autorizado"
                         );
                         return envioGuardado;
                 }
@@ -570,7 +571,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 return trackingService.extraerGeometriaRuta(envio.getRutaEnvio());
         }
 
-        public void procesarReasignacion(String viajeId, ReasignacionViajeRequestDTO request) {
+        public void procesarReasignacion(String viajeId, ReasignacionViajeRequestDTO request, String username) {
                 // 1. Buscar el viaje actual
                 Envio envio = envioRepository.findById(viajeId)
                         .orElseThrow(() -> new EntityNotFoundException("Viaje no encontrado: " + viajeId));
@@ -626,6 +627,26 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 choferDetalleRepository.save(nuevoChofer);
                 camionRepository.save(camionViejo);
                 camionRepository.save(nuevoCamion);
+
+                // 8. REGISTRO DE AUDITORÍA INMUTABLE (#589)
+                Usuario usuarioModificador = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado para auditoría"));
+
+
+                String mensajeAuditoria = "Viaje reasignado. Chofer anterior: " + 
+                (choferViejo != null ? choferViejo.getPersonaAsociada().getNombre() : "N/A") + 
+                ". Nuevo Chofer: " + nuevoChofer.getPersonaAsociada().getNombre() + 
+                ". Motivo: " + request.getMotivoReasignacion();
+
+                auditoriaService.registrarEvento(
+                envio, 
+                usuarioModificador, 
+                TipoEvento.REASIGNACION, // Asegúrate de tener este evento en tu Enum
+                envio.getEstadoActual(), // Estado al momento del cambio
+                EstadoEnvio.PENDIENTE,   // Estado resultante (al reasignar, lo pusiste en PENDIENTE)
+                mensajeAuditoria
+        );
+
         }
         
 
