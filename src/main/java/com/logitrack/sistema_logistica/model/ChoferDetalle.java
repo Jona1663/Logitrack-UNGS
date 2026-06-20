@@ -41,5 +41,5 @@ public class ChoferDetalle {
     private LocalDate vtoLinti;
 
     @Column(name = "disponible", nullable = false)
-    private Boolean disponible = true;
+    private boolean disponible = true;
 }

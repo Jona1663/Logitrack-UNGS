@@ -21,8 +21,8 @@
         import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
         import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
-import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+        import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
+        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
         import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEventNotificaciones;
         import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
         import com.logitrack.sistema_logistica.model.Camion;
@@ -38,8 +38,9 @@ import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
         import com.logitrack.sistema_logistica.repository.EnvioRepository;
         import com.logitrack.sistema_logistica.repository.EnvioSpecifications;
         import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
-import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
-import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+        import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
+        import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+        import jakarta.persistence.EntityNotFoundException;
 
         
         @Service
@@ -568,9 +569,45 @@ import com.logitrack.sistema_logistica.repository.UsuarioRepository;
                 return trackingService.extraerGeometriaRuta(envio.getRutaEnvio());
         }
 
-        public void procesarReasignacion(Long id, ReasignacionViajeRequestDTO request) {
-                // Por ahora déjalo vacío o con un log para probar que el endpoint responde
-                System.out.println("Procesando reasignación para viaje: " + id);
+        public void procesarReasignacion(String viajeId, ReasignacionViajeRequestDTO request) {
+                // 1. Buscar el viaje actual
+                Envio envio = envioRepository.findById(viajeId)
+                        .orElseThrow(() -> new EntityNotFoundException("Viaje no encontrado: " + viajeId));
+
+                // 2. Buscar nuevos recursos
+                ChoferDetalle nuevoChofer = choferDetalleRepository.findById(request.getNuevoChoferId().intValue())
+                        .orElseThrow(() -> new EntityNotFoundException("Chofer no encontrado"));
+                
+                Camion nuevoCamion = camionRepository.findById(request.getNuevoCamionId())
+                        .orElseThrow(() -> new EntityNotFoundException("Camión no encontrado"));
+
+                // 3. Validar disponibilidad (Criterio 1)
+                if (!nuevoChofer.isDisponible() || !nuevoCamion.isDisponible()) {
+                        throw new IllegalStateException("El chofer o camión seleccionado no está disponible.");
+                }
+
+                // 4. Liberar recursos anteriores
+                ChoferDetalle choferViejo = envio.getChofer();
+                Camion camionViejo = envio.getCamion();
+                
+                if (choferViejo != null) choferViejo.setDisponible(true);
+                if (camionViejo != null) camionViejo.setDisponible(true);
+
+                // 5. Asignar nuevos recursos
+                envio.setChofer(nuevoChofer);
+                envio.setCamion(nuevoCamion);
+                nuevoChofer.setDisponible(false);
+                nuevoCamion.setDisponible(false);
+
+                // 6. Cambiar estado del viaje
+                envio.setEstadoActual(EstadoEnvio.PENDIENTE);
+
+                // 7. Guardar cambios
+                envioRepository.save(envio);
+                choferDetalleRepository.save(choferViejo);
+                choferDetalleRepository.save(nuevoChofer);
+                camionRepository.save(camionViejo);
+                camionRepository.save(nuevoCamion);
         }
         
 
