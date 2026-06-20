@@ -21,7 +21,8 @@
         import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
         import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
         import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
-        import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
+import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
+import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEvent;
         import com.logitrack.sistema_logistica.events.EnvioCambioEstadoEventNotificaciones;
         import com.logitrack.sistema_logistica.events.EnvioNuevoEvent;
         import com.logitrack.sistema_logistica.model.Camion;
@@ -565,6 +566,11 @@ import com.logitrack.sistema_logistica.repository.UsuarioRepository;
                                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
                 return trackingService.extraerGeometriaRuta(envio.getRutaEnvio());
+        }
+
+        public void procesarReasignacion(Long id, ReasignacionViajeRequestDTO request) {
+                // Por ahora déjalo vacío o con un log para probar que el endpoint responde
+                System.out.println("Procesando reasignación para viaje: " + id);
         }
         
 

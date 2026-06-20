@@ -48,6 +48,7 @@ import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 
@@ -63,6 +64,8 @@ import com.logitrack.sistema_logistica.service.CartaPortePdfService;
 import com.logitrack.sistema_logistica.service.CartaPorteService;
 import com.logitrack.sistema_logistica.service.EnvioService;
 import com.logitrack.sistema_logistica.service.ReporteService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -440,6 +443,16 @@ public class EnvioController {
                 .ok()
                 .headers(headers)
                 .body(pdfBytes);
+    }
+
+    @PutMapping("/{id}/reasignar")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
+    public ResponseEntity<String> reasignarViaje(
+            @PathVariable Long id, 
+            @Valid @RequestBody ReasignacionViajeRequestDTO request) {
+        
+        envioService.procesarReasignacion(id, request);
+        return ResponseEntity.ok("Viaje reasignado correctamente.");
     }
     
 }
