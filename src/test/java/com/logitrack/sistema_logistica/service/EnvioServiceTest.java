@@ -28,6 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
@@ -69,6 +70,8 @@ public class EnvioServiceTest {
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @Mock
     private EvaluacionPsicomotoraRepository evaluacionRepository;
+    @Mock
+    private SimpMessagingTemplate messagingTemplate; 
     
     // NUEVOS SERVICIOS (Reemplazan a GraphHopper y RestTemplate)
     @Mock private ValidacionExternaService validacionExternaService;

@@ -1,0 +1,92 @@
+═══════════════════════════════════════════════════════════════════════════════
+TAREA #612 - PARAMETRIZACIÓN DEL UMBRAL DE TIEMPO DE FATIGA
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+
+OBJETIVO:
+Modificar la lógica de detección de fatiga para eliminar el valor hardcodeado del umbral de tiempo (por ejemplo, 600 ms) y leerlo desde configuración externa, permitiendo ajustar el sistema para la demo sin recompilar el código.
+
+═══════════════════════════════════════════════════════════════════════════════
+1. CLASE MODIFICADA: EvaluacionFatigaService.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/service/EvaluacionFatigaService.java
+
+QUE SE MODIFICÓ:
+Se agregó inyección de la propiedad de configuración de Spring para leer el umbral de fatiga desde el archivo de propiedades en lugar de usar un valor fijo en el código.
+
+CÓDIGO RELEVANTE:
+```java
+@Service
+public class EvaluacionFatigaService {
+    @Autowired private EvaluacionPsicomotoraRepository repo;
+    @Autowired private EnvioRepository envioRepository;
+    @Autowired private ChoferDetalleRepository choferDetalleRepository;
+    @Autowired private SimpMessagingTemplate messagingTemplate;
+
+    @Value("${logitrack.fatiga.umbral-ms}")
+    private long umbralFatiga;
+
+    @Transactional
+    public EvaluacionFatigaResponseDTO procesarEvaluacion(EvaluacionFatigaRequestDTO dto, String username) {
+        ...
+        if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
+            eval.setResultado(EstadoEvaluacionEnum.RECHAZADO);
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
+            ...
+        } else {
+            eval.setResultado(EstadoEvaluacionEnum.APROBADO);
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.APROBADO);
+            ...
+        }
+        ...
+    }
+    ...
+}
+```
+
+EXPLICACIÓN:
+- `@Value("${logitrack.fatiga.umbral-ms}")` extrae el umbral desde la configuración de Spring.
+- `umbralFatiga` se usa en la regla de validación de `procesarEvaluacion(...)`.
+- El valor ya no está quemado en el código Java; depende de la propiedad externa.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. ARCHIVO DE CONFIGURACIÓN: application.properties
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/resources/application.properties
+
+QUE SE AGREGO/USÓ:
+Se definió la propiedad `logitrack.fatiga.umbral-ms` en el archivo de configuración principal.
+
+CÓDIGO:
+```properties
+#Tarea #612
+logitrack.fatiga.umbral-ms=600
+```
+
+EXPLICACIÓN:
+- La aplicación carga este valor al iniciar.
+- Para la demo, el valor puede ajustarse en `application.properties` sin recompilar.
+- Spring Boot también permite que esta propiedad sea sobreescrita desde variables de entorno en tiempo de ejecución (por ejemplo, `LOGITRACK_FATIGA_UMBRAL_MS`), gracias al mecanismo estándar de propiedades de Spring.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. RESULTADO DEL CAMBIO
+═══════════════════════════════════════════════════════════════════════════════
+
+- El umbral de tiempo de fatiga ya no está hardcodeado en el servicio Java.
+- La regla de detección de fatiga usa `umbralFatiga` inyectado desde la configuración.
+- El valor 600 ms permanece como el valor por defecto en `application.properties`.
+- Se habilita la flexibilidad para ajuste durante el despliegue o demo sin recompilar.
+
+═══════════════════════════════════════════════════════════════════════════════
+4. CÓMO AJUSTAR EL UMBRAL PARA LA DEMO
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Modificar `logitrack.fatiga.umbral-ms` en `src/main/resources/application.properties`.
+2. Reiniciar la aplicación para que Spring recargue la nueva configuración.
+3. Alternativamente, usar una variable de entorno compatible con Spring Boot como:
+   - `LOGITRACK_FATIGA_UMBRAL_MS=800`
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,50 @@
+#601 - Modificación de Inicio de Viaje
+
+Resumen del cambio real implementado en el repositorio:
+
+- Se agregó validación de bloqueo para el inicio de viaje cuando el envío entra en estado `EN_TRANSITO`.
+- La lógica se basa en la existencia de una evaluación psicomotora con `estadoBloqueo = EstadoEvaluacionEnum.RECHAZADO` para el envío.
+
+Archivos modificados / implicados:
+
+1. `src/main/java/com/logitrack/sistema_logistica/repository/EvaluacionPsicomotoraRepository.java`
+   - Se definió el método:
+     `boolean existsByEnvioIdEnvioAndEstadoBloqueo(String idEnvio, EstadoEvaluacionEnum estadoBloqueo);`
+   - Este método usa una consulta JPQL para verificar si el envío tiene una evaluación de fatiga rechazada y activa.
+
+2. `src/main/java/com/logitrack/sistema_logistica/service/EnvioService.java`
+   - En `actualizarEstadoYPrioridad(...)` se añadió el bloque de validación #601:
+     ```java
+     if (estadoNuevo == EstadoEnvio.EN_TRANSITO) {
+         boolean tieneRechazo = evaluacionRepository.existsByEnvioIdEnvioAndEstadoBloqueo(
+                 idEnvio, EstadoEvaluacionEnum.RECHAZADO);
+
+         if (tieneRechazo) {
+             throw new RuntimeException("Acción bloqueada: El chofer tiene una evaluación de fatiga rechazada y ACTIVA.");
+         }
+     }
+     ```
+   - Esto impide que el envío avance a `EN_TRANSITO` si hay un rechazo activo.
+
+   - En `asignarTransporte(...)` también se incluyó la misma verificación antes de asignar chofer y camión:
+     ```java
+     if (evaluacionRepository.existsByEnvioIdEnvioAndEstadoBloqueo(idEnvio, EstadoEvaluacionEnum.RECHAZADO)) {
+         throw new org.springframework.web.server.ResponseStatusException(
+                 org.springframework.http.HttpStatus.FORBIDDEN,
+                 "El viaje no puede iniciar: Existe una evaluación de fatiga rechazada y pendiente de revisión."
+         );
+     }
+     ```
+   - Esta excepción específicamente devuelve un `403 FORBIDDEN` cuando se intenta iniciar la asignación de transporte con bloqueo de fatiga.
+
+Comportamiento resultante:
+
+- El flujo de inicio de viaje queda bloqueado en el punto de transición a `EN_TRANSITO` si existe un rechazo activo de fatiga.
+- La validación es consistente con la tarea #601 y se apoya en la entidad `EvaluacionPsicomotora` y su estado de bloqueo.
+- El código actual no utiliza un DTO o controlador exclusivo para esta tarea; la validación está implementada en el servicio de envíos.
+
+Notas:
+
+- El cambio está documentado en el servicio de transporte (`EnvioService`) y en el repositorio de evaluaciones.
+- La política de bloqueo se basa en `EstadoEvaluacionEnum.RECHAZADO`, que representa una evaluación de fatiga negativa.
+- El servicio de asignación de transporte lanza un `ResponseStatusException` con `HttpStatus.FORBIDDEN` para exponer el bloqueo de inicio de viaje en la capa HTTP.

@@ -1,0 +1,151 @@
+═══════════════════════════════════════════════════════════════════════════════
+TAREA #600 - ENDPOINTS DE INTERVENCIÓN DEL SUPERVISOR
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+
+OBJETIVO:
+Crear dos endpoints nuevos protegidos por rol:
+- POST `/api/evaluaciones/{id}/resetear` (cambia el estado a `RESETEADO` para habilitar un nuevo intento)
+- POST `/api/evaluaciones/{id}/autorizar-fuerza-mayor` (recibe un texto obligatorio, actualiza el estado a `OVERRIDE_AUTORIZADO` y guarda el supervisor responsable)
+
+═══════════════════════════════════════════════════════════════════════════════
+1. CONTROLADOR MODIFICADO: EvaluacionFatigaController.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/controller/EvaluacionFatigaController.java
+
+Propósito:
+- Exponer los endpoints de intervención de supervisor dentro del controlador existente de evaluación de fatiga.
+- Mantener la lógica de autorización ligada al mismo recurso `/api/evaluaciones`.
+- Garantizar que solo usuarios con rol `SUPERVISOR` puedan invocarlos.
+
+Código real en el repo:
+```java
+@PostMapping("/{id}/resetear")
+@PreAuthorize("hasRole('SUPERVISOR')")
+public ResponseEntity<?> resetear(@PathVariable Long id) {
+    service.resetearEvaluacion(id);
+    return ResponseEntity.ok().build();
+}
+
+@PostMapping("/{id}/autorizar-fuerza-mayor")
+@PreAuthorize("hasRole('SUPERVISOR')")
+public ResponseEntity<?> autorizar(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    String motivo = body.get("motivo");
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    service.autorizarForzado(id, motivo, username);
+    return ResponseEntity.ok().build();
+}
+```
+
+Explicación:
+- `@PostMapping("/{id}/resetear")`: endpoint POST para resetear la evaluación.
+- `@PostMapping("/{id}/autorizar-fuerza-mayor")`: endpoint POST para autorizar un override por fuerza mayor.
+- `@PreAuthorize("hasRole('SUPERVISOR')")`: protege ambos endpoints para que solo supervisores puedan ejecutarlos.
+- El body de autorización se lee como `Map<String, String>` y extrae `motivo`.
+- El nombre de usuario del supervisor se obtiene del `SecurityContextHolder`.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. MÉTODOS IMPLEMENTADOS EN EL SERVICIO: EvaluacionFatigaService.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/service/EvaluacionFatigaService.java
+
+Qué se hizo:
+- Se agregó `resetearEvaluacion(Long id)`.
+- Se agregó `autorizarForzado(Long id, String motivo, String usernameSupervisor)`.
+- Ambos métodos son transaccionales con `@Transactional`.
+
+Código real en el repo:
+```java
+@Transactional
+public void resetearEvaluacion(Long id) {
+    EvaluacionPsicomotora eval = repo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
+    eval.setEstadoBloqueo(EstadoEvaluacionEnum.RESETEADO);
+    repo.save(eval);
+}
+
+@Transactional
+public void autorizarForzado(Long id, String motivo, String usernameSupervisor) {
+    EvaluacionPsicomotora eval = repo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
+    if (motivo == null || motivo.trim().isEmpty()) {
+        throw new RuntimeException("El motivo de autorización es obligatorio");
+    }
+    eval.setEstadoBloqueo(EstadoEvaluacionEnum.OVERRIDE_AUTORIZADO);
+    eval.setMotivoAutorizacion(motivo);
+    eval.setAutorizadoPor(usernameSupervisor);
+    repo.save(eval);
+}
+```
+
+Explicación:
+- `resetearEvaluacion` cambia `estadoBloqueo` a `RESETEADO` para permitir un nuevo intento.
+- `autorizarForzado` valida que `motivo` exista y no esté vacío.
+- Actualiza el estado a `OVERRIDE_AUTORIZADO`.
+- Guarda el `usernameSupervisor` en `autorizadoPor`.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. ENUM UTILIZADO: EstadoEvaluacionEnum
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/model/enums/EstadoEvaluacionEnum.java
+
+Valores usados:
+- `RESETEADO`
+- `OVERRIDE_AUTORIZADO`
+
+Este enum define los estados de bloqueo/evaluación usados en el servicio.
+
+═══════════════════════════════════════════════════════════════════════════════
+4. SEGURIDAD Y ROLES
+═══════════════════════════════════════════════════════════════════════════════
+
+Qué se hizo:
+- Se protegieron ambos endpoints en `EvaluacionFatigaController` con `@PreAuthorize("hasRole('SUPERVISOR')")`.
+- El control de acceso se basa en el rol `SUPERVISOR` del usuario autenticado.
+- El endpoint de autorización de fuerza mayor además registra el username del supervisor que ejecuta la acción.
+
+Explicación:
+- Solo supervisores autenticados pueden llamar a `/resetear` y `/autorizar-fuerza-mayor`.
+- Esta protección evita que otros roles modifiquen el estado de las evaluaciones.
+
+═══════════════════════════════════════════════════════════════════════════════
+5. FLUJO COMPLETO DE LA TAREA
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Un supervisor autenticado llama a POST `/api/evaluaciones/{id}/resetear`.
+2. El controlador invoca `service.resetearEvaluacion(id)`.
+3. El servicio marca la evaluación como `RESETEADO` y guarda el cambio.
+
+1. Un supervisor autenticado llama a POST `/api/evaluaciones/{id}/autorizar-fuerza-mayor` con JSON que incluye `motivo`.
+2. El controlador extrae `motivo` y el username del supervisor.
+3. El servicio valida el motivo y actualiza la evaluación a `OVERRIDE_AUTORIZADO`.
+4. El servicio guarda `motivo` y `autorizadoPor` en la evaluación.
+
+Ejemplo de request para fuerza mayor:
+```json
+{
+  "motivo": "Condiciones climáticas extremas, se autoriza nuevo intento."
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+6. RESUMEN DE HECHOS IMPLEMENTADOS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ EXISTE EN EL REPO:
+   - `EvaluacionFatigaController` con los endpoints `/api/evaluaciones/{id}/resetear` y `/api/evaluaciones/{id}/autorizar-fuerza-mayor`.
+   - `EvaluacionFatigaService.resetearEvaluacion(Long id)`.
+   - `EvaluacionFatigaService.autorizarForzado(Long id, String motivo, String usernameSupervisor)`.
+   - Uso de `EstadoEvaluacionEnum.RESETEADO` y `EstadoEvaluacionEnum.OVERRIDE_AUTORIZADO`.
+   - Verificación de `motivo` obligatorio en el servicio.
+   - Registro del supervisor responsable en `autorizadoPor`.
+
+✅ NO EXISTE EN EL REPO:
+   - `EvaluacionSupervisorController.java`.
+   - `FuerzaMayorRequestDTO.java`.
+
+═══════════════════════════════════════════════════════════════════════

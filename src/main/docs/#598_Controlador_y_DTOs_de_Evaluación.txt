@@ -1,0 +1,168 @@
+═══════════════════════════════════════════════════════════════════════════════
+TAREA #598 - CONTROLADOR Y DTOS DE EVALUACIÓN DE FATIGA
+═══════════════════════════════════════════════════════════════════════════════
+
+Integrante a cargo: Jonatan
+
+OBJETIVO:
+Documentar el controlador y los DTOs reales usados para la evaluación de fatiga en el backend.
+
+═══════════════════════════════════════════════════════════════════════════════
+1. CLASE EXISTENTE: EvaluacionFatigaRequestDTO.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/dto/EvaluacionFatigaRequestDTO.java
+
+Propósito:
+- Recibir desde el cliente los datos necesarios para procesar una evaluación de fatiga.
+- Transportar los campos usados por `EvaluacionFatigaService.procesarEvaluacion(...)`.
+- Ser deserializado desde JSON por Spring.
+
+Código real:
+```java
+@Getter
+@Setter
+public class EvaluacionFatigaRequestDTO {
+    private String idEnvio;
+    private TipoJuegoEnum tipoJuego;
+    private Long tiempoReaccionMs;
+    private String idChofer;
+}
+```
+
+Explicación:
+- `idEnvio`: Identificador del envío asociado a la evaluación.
+- `tipoJuego`: Enum `TipoJuegoEnum` para indicar el tipo de juego de fatiga.
+- `tiempoReaccionMs`: Tiempo de reacción medido en milisegundos.
+- `idChofer`: Identificador del chofer que realiza la evaluación.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. CLASE EXISTENTE: EvaluacionFatigaResponseDTO.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/dto/EvaluacionFatigaResponseDTO.java
+
+Propósito:
+- Devolver al cliente el resultado de la evaluación de fatiga.
+- Incluir el identificador de la evaluación para referencia posterior.
+- Incluir estado booleano y un mensaje legible para el frontend.
+
+Código real:
+```java
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class EvaluacionFatigaResponseDTO {
+    private Long idEvaluacion;
+    private boolean aprobado;
+    private String mensaje;
+}
+```
+
+Explicación:
+- `idEvaluacion`: ID generado de la entidad `EvaluacionPsicomotora`.
+- `aprobado`: `true` cuando la evaluación es aprobada; `false` cuando se rechaza.
+- `mensaje`: Texto de resultado para mostrar en la UI.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. CONTROLADOR REAL: EvaluacionFatigaController.java
+═══════════════════════════════════════════════════════════════════════════════
+
+Ubicación: src/main/java/com/logitrack/sistema_logistica/controller/EvaluacionFatigaController.java
+
+Propósito:
+- Exponer el endpoint POST `/api/evaluaciones` para registrar una evaluación de fatiga.
+- Delegar el procesamiento al servicio `EvaluacionFatigaService`.
+- Soportar acciones de supervisor para resetear o autorizar evaluaciones.
+
+Código real:
+```java
+@RestController
+@RequestMapping("/api/evaluaciones")
+public class EvaluacionFatigaController {
+    @Autowired 
+    private EvaluacionFatigaService service;
+
+    @PostMapping
+    public ResponseEntity<EvaluacionFatigaResponseDTO> registrarEvaluacion(
+            @RequestBody EvaluacionFatigaRequestDTO dto, 
+            Authentication auth) {
+        return ResponseEntity.ok(service.procesarEvaluacion(dto, auth.getName()));
+    }
+
+    @PostMapping("/{id}/resetear")
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    public ResponseEntity<?> resetear(@PathVariable Long id) {
+        service.resetearEvaluacion(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/autorizar-fuerza-mayor")
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    public ResponseEntity<?> autorizar(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String motivo = body.get("motivo");
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        service.autorizarForzado(id, motivo, username);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+
+Explicación:
+- `@RestController`: Marca la clase como controlador REST.
+- `@RequestMapping("/api/evaluaciones")`: Define la ruta base real del controlador.
+- `@PostMapping`: Endpoint POST para crear la evaluación de fatiga.
+- `Authentication auth`: Se usa para obtener el username del usuario autenticado y pasarlo al servicio.
+- `resetear` y `autorizar-fuerza-mayor`: endpoints adicionales protegidos con rol `SUPERVISOR`.
+
+═══════════════════════════════════════════════════════════════════════════════
+4. FLUJO REAL DEL ENDPOINT
+═══════════════════════════════════════════════════════════════════════════════
+
+1. El cliente envía un POST a `/api/evaluaciones`.
+2. Spring deserializa el cuerpo JSON a `EvaluacionFatigaRequestDTO`.
+3. El controlador llama a `service.procesarEvaluacion(dto, auth.getName())`.
+4. `EvaluacionFatigaService` procesa la lógica de fatiga y guarda la entidad.
+5. El controlador devuelve `ResponseEntity.ok(...)` con `EvaluacionFatigaResponseDTO`.
+
+Ejemplo de request real:
+```json
+{
+  "idEnvio": "LT-1234",
+  "tipoJuego": "REFLEJOS",
+  "tiempoReaccionMs": 350,
+  "idChofer": "CHOFER-001"
+}
+```
+
+Ejemplo de respuesta real:
+```json
+{
+  "idEvaluacion": 123,
+  "aprobado": true,
+  "mensaje": "Test superado correctamente."
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+5. RESUMEN DE LA IMPLEMENTACIÓN REAL
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ EXISTENTE EN REPO:
+   - `EvaluacionFatigaRequestDTO.java`
+   - `EvaluacionFatigaResponseDTO.java`
+   - `EvaluacionFatigaController.java`
+
+✅ RUTA REAL:
+   - `POST /api/evaluaciones`
+
+✅ DIFERENCIAS REALES ANTE EL DOCUMENTO ANTERIOR:
+   - No se usa `/api/evaluaciones-fatiga`.
+   - El request DTO incluye `idEnvio` e `idChofer`.
+   - El response DTO devuelve `idEvaluacion`, `aprobado` y `mensaje`, no solo un string de estado.
+   - El controlador llama al servicio con el usuario autenticado.
+
+✅ NOTA:
+   - El fichero actual refleja el diseño real del backend y no contiene código ficticio.
+═══════════════════════════════════════════════════════════════════════
