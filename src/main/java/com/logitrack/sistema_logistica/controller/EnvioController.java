@@ -448,7 +448,7 @@ public class EnvioController {
     @PutMapping("/{id}/reasignar")
     @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
     public ResponseEntity<String> reasignarViaje(
-            @PathVariable Long id, 
+            @PathVariable String id, 
             @Valid @RequestBody ReasignacionViajeRequestDTO request) {
         
         envioService.procesarReasignacion(id, request);

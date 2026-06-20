@@ -29,7 +29,8 @@
         import com.logitrack.sistema_logistica.model.ChoferDetalle;
         import com.logitrack.sistema_logistica.model.Envio;
         import com.logitrack.sistema_logistica.model.Establecimiento;
-        import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.EvaluacionPsicomotora;
+import com.logitrack.sistema_logistica.model.Usuario;
         import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
         import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
         import com.logitrack.sistema_logistica.model.enums.TipoEvento;
@@ -582,7 +583,7 @@
                         .orElseThrow(() -> new EntityNotFoundException("Camión no encontrado"));
 
                 // 3. Validar disponibilidad (Criterio 1)
-                if (!nuevoChofer.isDisponible() || !nuevoCamion.isDisponible()) {
+                if (!nuevoChofer.getDisponible() || !nuevoCamion.getDisponible()) {
                         throw new IllegalStateException("El chofer o camión seleccionado no está disponible.");
                 }
 
@@ -590,7 +591,24 @@
                 ChoferDetalle choferViejo = envio.getChofer();
                 Camion camionViejo = envio.getCamion();
                 
-                if (choferViejo != null) choferViejo.setDisponible(true);
+                if (choferViejo != null) choferViejo.setDisponible(true);{
+                        choferViejo.setDisponible(true);
+                        
+                        // --- AQUÍ INSERTA LA LÓGICA DE DESVINCULACIÓN (Tarea #588) ---
+                        List<EvaluacionPsicomotora> evaluacionesPrevias = evaluacionRepository
+                        .buscarEvaluacionesParaDesvincular(
+                        choferViejo.getIdChofer(), 
+                        viajeId, 
+                        Arrays.asList(EstadoEvaluacionEnum.ACTIVO, EstadoEvaluacionEnum.RECHAZADO)
+                        );
+
+                        for (EvaluacionPsicomotora eval : evaluacionesPrevias) {
+                        eval.setEstadoBloqueo(EstadoEvaluacionEnum.DESVINCULADO_POR_REASIGNACION);
+                        }
+                        evaluacionRepository.saveAll(evaluacionesPrevias);
+                        // ------------------------------------------------------------
+                }
+                  
                 if (camionViejo != null) camionViejo.setDisponible(true);
 
                 // 5. Asignar nuevos recursos

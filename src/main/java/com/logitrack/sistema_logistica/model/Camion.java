@@ -30,5 +30,5 @@ public class Camion {
     private Integer capacidadCargaKg;
 
     @Column(name = "disponible", nullable = false)
-    private boolean disponible = true;
+    private Boolean disponible = true;
 }
