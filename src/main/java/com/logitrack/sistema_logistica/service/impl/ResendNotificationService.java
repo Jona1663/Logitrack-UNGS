@@ -186,6 +186,7 @@ public class ResendNotificationService implements NotificationService {
     private String labelEstado(EstadoEnvio estado) {
         return switch (estado) {
             case PENDIENTE               -> "Pendiente";
+            case EN_PREPARACION          -> "En preparación";
             case EN_TRANSITO             -> "En Tránsito";
             case EN_PUNTO_DE_RECOLECCION -> "En punto de recolección";
             case EN_REPARTO              -> "En Reparto";
@@ -197,6 +198,7 @@ public class ResendNotificationService implements NotificationService {
     private String cssClass(EstadoEnvio estado) {
         return switch (estado) {
             case PENDIENTE               -> "badge--pendiente";
+            case EN_PREPARACION          -> "badge--preparacion";
             case EN_TRANSITO             -> "badge--transito";
             case EN_PUNTO_DE_RECOLECCION -> "badge--recoleccion";
             case EN_REPARTO              -> "badge--reparto";

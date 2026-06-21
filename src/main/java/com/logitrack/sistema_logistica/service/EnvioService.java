@@ -208,7 +208,8 @@ import com.logitrack.sistema_logistica.model.Usuario;
                  */
                 private boolean esTransicionValida(EstadoEnvio actual, EstadoEnvio siguiente) {
                         return switch (actual) {
-                                case PENDIENTE -> siguiente == EstadoEnvio.EN_TRANSITO;
+                                case PENDIENTE -> siguiente == EstadoEnvio.EN_PREPARACION;
+                                case EN_PREPARACION -> siguiente == EstadoEnvio.EN_TRANSITO;
                                 case EN_TRANSITO -> siguiente == EstadoEnvio.EN_PUNTO_DE_RECOLECCION;
                                 case EN_PUNTO_DE_RECOLECCION -> siguiente == EstadoEnvio.EN_REPARTO;
                                 case EN_REPARTO -> siguiente == EstadoEnvio.ENTREGADO;
@@ -494,7 +495,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 //Notificacion por mail
                 Envio envioGuardado = envioRepository.save(envio);
                 eventPublisher.publishEvent(
-                new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
+                new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_PREPARACION));
 
                 return envioRepository.save(envio);
         

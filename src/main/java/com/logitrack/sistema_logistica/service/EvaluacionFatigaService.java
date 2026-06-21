@@ -9,6 +9,7 @@ import com.logitrack.sistema_logistica.dto.EvaluacionFatigaRequestDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaResponseDTO;
 import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
 import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
@@ -101,9 +102,12 @@ public class EvaluacionFatigaService {
 
     // Lógica para la Tarea #600 - Autorización por fuerza mayor
     @Transactional
-    public void autorizarForzado(Long id, String motivo, String usernameSupervisor) {
+    public void autorizarForzado(Long id, String motivo, String username) {
         EvaluacionPsicomotora eval = repo.findById(id)
             .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
+        
+        Envio envio = eval.getIdEnvio();
+
         
         // Validamos que el motivo no sea nulo o vacío
         if (motivo == null || motivo.trim().isEmpty()) {
@@ -113,9 +117,29 @@ public class EvaluacionFatigaService {
         // Actualizamos estado y guardamos la justificación del supervisor
         eval.setEstadoBloqueo(EstadoEvaluacionEnum.OVERRIDE_AUTORIZADO);
         eval.setMotivoAutorizacion(motivo);
-        eval.setAutorizadoPor(usernameSupervisor); // Guardamos quién fue
+        eval.setAutorizadoPor(username); // Guardamos quién fue
+        envio.setEstadoActual(EstadoEnvio.EN_TRANSITO);
 
         repo.save(eval);
+    }
+
+    @Transactional
+    public void rechazarPrueba(String username, String motivo, Long id ){
+        EvaluacionPsicomotora eval = repo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
+       
+        Envio envio = eval.getIdEnvio();
+            // Validamos que el motivo no sea nulo o vacío
+        if (motivo == null || motivo.trim().isEmpty()) {
+            throw new RuntimeException("El motivo de autorización es obligatorio");
+        }
+
+        eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
+        eval.setMotivoAutorizacion(motivo);
+        eval.setAutorizadoPor(username); // Guardamos quién fue
+        envio.setEstadoActual(EstadoEnvio.PENDIENTE);
+        
+
     }
 
 
