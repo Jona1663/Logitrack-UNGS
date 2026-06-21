@@ -481,6 +481,14 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 camion.setDisponible(false);
                 choferDetalleRepository.save(chofer);
                 camionRepository.save(camion);
+
+                // CREACIÓN AUTOMÁTICA DE LA EVALUACIÓN ---
+                EvaluacionPsicomotora nuevaEvaluacion = EvaluacionPsicomotora.builder()
+                        .choferId(chofer) // Asegúrate de usar la relación o el ID que requiera tu clase
+                        .idEnvio(envio)   // Si la entidad pide el objeto Envio o el ID
+                        .estadoBloqueo(EstadoEvaluacionEnum.ACTIVO) // Usa tu Enum correcto
+                        .build();
+                evaluacionRepository.save(nuevaEvaluacion);
                 eventPublisher.publishEvent(new EnvioCambioEstadoEventNotificaciones(this, envio));
 
                 //Notificacion por mail
@@ -592,7 +600,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 ChoferDetalle choferViejo = envio.getChofer();
                 Camion camionViejo = envio.getCamion();
                 
-                if (choferViejo != null) choferViejo.setDisponible(true);{
+                if (choferViejo != null){
                         choferViejo.setDisponible(true);
                         
                         // --- AQUÍ INSERTA LA LÓGICA DE DESVINCULACIÓN (Tarea #588) ---
@@ -609,8 +617,9 @@ import com.logitrack.sistema_logistica.model.Usuario;
                         evaluacionRepository.saveAll(evaluacionesPrevias);
                         // ------------------------------------------------------------
                 }
-                  
-                if (camionViejo != null) camionViejo.setDisponible(true);
+                if (camionViejo != null) {
+                        camionViejo.setDisponible(true);
+                }
 
                 // 5. Asignar nuevos recursos
                 envio.setChofer(nuevoChofer);
