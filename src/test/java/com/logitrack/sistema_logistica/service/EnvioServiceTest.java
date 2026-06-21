@@ -492,8 +492,15 @@ public class EnvioServiceTest {
         assertEquals(EstadoEnvio.PENDIENTE, resultado.getEstadoActual()); // No cambió
         
         // Verificamos que se haya registrado la auditoría específica de prioridad
+        /*
+        //Version1
         verify(auditoriaService, times(1)).registrarEvento(
                 eq(resultado), eq(supervisor), eq(TipoEvento.CAMBIO_PRIORIDAD), eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.PENDIENTE)
+        );
+        */
+        verify(auditoriaService, times(1)).registrarEvento(
+        eq(resultado), eq(supervisor), eq(TipoEvento.CAMBIO_PRIORIDAD), 
+        eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.PENDIENTE), anyString()
         );
     }
 
@@ -730,8 +737,18 @@ public class EnvioServiceTest {
         // Assert
         assertEquals(EstadoEnvio.EN_TRANSITO, resultado.getEstadoActual());
         // Ahora sí, el estado anterior será PENDIENTE y el nuevo EN_TRANSITO
-        verify(auditoriaService, times(1)).registrarEvento(any(), eq(usuarioMock), eq(TipoEvento.CAMBIO_ESTADO), eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.EN_TRANSITO));
-    }
+        //vERSION 1
+        /* 
+        verify(auditoriaService, times(1)).registrarEvento(
+            any(), eq(usuarioMock), eq(TipoEvento.CAMBIO_ESTADO), eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.EN_TRANSITO));
+        */
+
+        verify(auditoriaService, times(1)).registrarEvento(
+                any(), eq(usuarioMock), eq(TipoEvento.CAMBIO_ESTADO), 
+                eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.EN_TRANSITO), anyString()
+        );
+
+        }
 
 
     @Test

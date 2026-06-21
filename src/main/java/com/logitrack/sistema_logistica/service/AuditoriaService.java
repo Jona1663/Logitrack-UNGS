@@ -25,9 +25,16 @@ public class AuditoriaService {
     /**
      * Centraliza la creación y guardado de cualquier evento de auditoría.
      */
-    @Transactional
+    // 1. Método original (sin detalle)
     public void registrarEvento(Envio envio, Usuario usuario, TipoEvento tipoEvento, 
                                 EstadoEnvio estadoAnterior, EstadoEnvio estadoNuevo) {
+        registrarEvento(envio, usuario, tipoEvento, estadoAnterior, estadoNuevo, null);
+    }
+
+
+    @Transactional
+    public void registrarEvento(Envio envio, Usuario usuario, TipoEvento tipoEvento, 
+                                EstadoEnvio estadoAnterior, EstadoEnvio estadoNuevo, String detalle) {
         
         HistorialEstados historial = HistorialEstados.builder()
                 .envio(envio)
@@ -35,6 +42,7 @@ public class AuditoriaService {
                 .tipoEvento(tipoEvento)
                 .estadoAnterior(estadoAnterior)
                 .estadoNuevo(estadoNuevo)
+                .detalle(detalle)
                 .build();
 
         historialEstadosRepository.save(historial);

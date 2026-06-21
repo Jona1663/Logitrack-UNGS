@@ -26,7 +26,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +48,7 @@ import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
 
@@ -63,6 +64,8 @@ import com.logitrack.sistema_logistica.service.CartaPortePdfService;
 import com.logitrack.sistema_logistica.service.CartaPorteService;
 import com.logitrack.sistema_logistica.service.EnvioService;
 import com.logitrack.sistema_logistica.service.ReporteService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -440,6 +443,20 @@ public class EnvioController {
                 .ok()
                 .headers(headers)
                 .body(pdfBytes);
+    }
+
+    @PutMapping("/{id}/reasignar")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR')")
+    public ResponseEntity<String> reasignarViaje(
+            @PathVariable String id, 
+            @RequestBody ReasignacionViajeRequestDTO request) {
+                
+        // Aquí obtenemos el nombre de usuario del "carnet de identidad" de la sesión
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        envioService.procesarReasignacion(id, request, username);
+
+        return ResponseEntity.ok().build();
     }
     
 }
