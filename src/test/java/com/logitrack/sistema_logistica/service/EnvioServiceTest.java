@@ -710,7 +710,6 @@ public class EnvioServiceTest {
         String idEnvio = "LT-OP-1";
         
         // LA CLAVE: Usamos thenAnswer para devolver un objeto NUEVO cada vez que el servicio llama al repositorio.
-        // Así evitamos que la mutación en memoria del primer método arruine al segundo método.
         when(envioRepository.findById(idEnvio)).thenAnswer(invocation -> 
             Optional.of(Envio.builder()
                 .estadoActual(EstadoEnvio.PENDIENTE)
@@ -736,19 +735,17 @@ public class EnvioServiceTest {
 
         // Assert
         assertEquals(EstadoEnvio.EN_TRANSITO, resultado.getEstadoActual());
-        // Ahora sí, el estado anterior será PENDIENTE y el nuevo EN_TRANSITO
-        //vERSION 1
-        /* 
+        
+        // CORRECCIÓN: Se eliminó el "anyString()" final porque el método de tu compañero 
+        // ahora solo acepta 5 parámetros (Envio, Usuario, TipoEvento, EstadoAnterior, EstadoNuevo).
         verify(auditoriaService, times(1)).registrarEvento(
-            any(), eq(usuarioMock), eq(TipoEvento.CAMBIO_ESTADO), eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.EN_TRANSITO));
-        */
-
-        verify(auditoriaService, times(1)).registrarEvento(
-                any(), eq(usuarioMock), eq(TipoEvento.CAMBIO_ESTADO), 
-                eq(EstadoEnvio.PENDIENTE), eq(EstadoEnvio.EN_TRANSITO), anyString()
+                any(), 
+                eq(usuarioMock), 
+                eq(TipoEvento.CAMBIO_ESTADO), 
+                eq(EstadoEnvio.PENDIENTE), 
+                eq(EstadoEnvio.EN_TRANSITO)
         );
-
-        }
+    }
 
 
     @Test
