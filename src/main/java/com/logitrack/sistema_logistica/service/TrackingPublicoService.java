@@ -39,11 +39,7 @@ public class TrackingPublicoService {
                 .eta(envio.getFechaEstimadaLlegada() != null ? envio.getFechaEstimadaLlegada().toString() : null)
                 .porcentajeCompletado(porcentaje)
                 // Usamos las coordenadas del destino o una fija si el camión no tiene datos GPS
-                .ubicacionActual(envio.getDestino() != null ? 
-                    new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-                        envio.getDestino().getLatitud(), 
-                        envio.getDestino().getLongitud()
-                    ) : null)
+                .ubicacionActual(calcularUbicacionActual(envio))
                 .build();
     }
 
@@ -61,4 +57,27 @@ public class TrackingPublicoService {
             default -> 0;
         };
     }
+
+    private com.logitrack.sistema_logistica.dto.UbicacionDTO calcularUbicacionActual(Envio envio) {
+    if (envio.getEstadoActual() == null || envio.getOrigen() == null || envio.getDestino() == null) {
+        return null;
+    }
+
+    // Devolvemos Origen o Destino dependiendo de qué tan avanzado esté el viaje
+    return switch (envio.getEstadoActual()) {
+        // Si recién empieza o está buscando la carga, marcamos que está en el Origen
+        case PENDIENTE, EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                envio.getOrigen().getLatitud(), 
+                envio.getOrigen().getLongitud()
+            );
+            
+        // Si ya está repartiendo o entregó, marcamos el Destino
+        case EN_REPARTO, ENTREGADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                envio.getDestino().getLatitud(), 
+                envio.getDestino().getLongitud()
+            );
+    };
+}
 }
