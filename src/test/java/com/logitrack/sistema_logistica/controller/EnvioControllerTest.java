@@ -130,7 +130,7 @@ public class EnvioControllerTest {
             0
         );
 
-        when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(), any()))
+        when(envioService.buscarEnviosConFiltros(any(), any(), any(), any(), any(), any() , any()))
             .thenReturn(pageMock);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/search")

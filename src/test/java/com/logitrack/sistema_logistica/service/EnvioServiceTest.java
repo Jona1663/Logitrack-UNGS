@@ -594,7 +594,7 @@ public class EnvioServiceTest {
 
         // Act
         org.springframework.data.domain.Page<Envio> resultado = envioService.buscarEnviosConFiltros(
-                EstadoEnvio.PENDIENTE, null, null, null, null, pageable);
+                EstadoEnvio.PENDIENTE, null, null, null, null, null, pageable);
 
         // Assert
         assertNotNull(resultado);
