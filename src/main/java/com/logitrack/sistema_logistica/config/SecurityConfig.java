@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Público 
+                        // Público existente
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/mock/**").permitAll()
                         .requestMatchers("/api/reportes/**").permitAll()
@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/public/tracking/consulta").permitAll()
 
                         // Endpoint para obtener PDF de Carta Porte (puede ser público o restringido según tu decisión)
                         .requestMatchers(HttpMethod.GET, "/api/envios/*/pdf-carta-porte").permitAll()
