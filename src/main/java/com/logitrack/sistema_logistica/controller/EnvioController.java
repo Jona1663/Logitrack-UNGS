@@ -1,29 +1,21 @@
 package com.logitrack.sistema_logistica.controller;
 
 import java.security.Principal;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.format.annotation.DateTimeFormat;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,11 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.logitrack.sistema_logistica.dto.AsignarTransporteDTO;
 import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO;
-import com.logitrack.sistema_logistica.dto.EnvioListadoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioOperativoDTO;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.ErrorResponseDTO;
@@ -51,12 +41,10 @@ import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
 import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
 import com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
-
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.HistorialEstados;
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
-
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.HistorialEstadosRepository;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
@@ -64,8 +52,6 @@ import com.logitrack.sistema_logistica.service.CartaPortePdfService;
 import com.logitrack.sistema_logistica.service.CartaPorteService;
 import com.logitrack.sistema_logistica.service.EnvioService;
 import com.logitrack.sistema_logistica.service.ReporteService;
-
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/envios")
@@ -106,7 +92,13 @@ public class EnvioController {
 
     // GET para buscar envíos con filtros opcionales por fecha, estado y paginación
     @GetMapping("/search")
-    public ResponseEntity<?> buscarEnvios( @RequestParam(required = false) String query, @RequestParam(required = false) String estado, @RequestParam(required = false) String fecha, @RequestParam(required = false) String tipoGrano, @RequestParam(defaultValue = "0") int page,@RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<?> buscarEnvios( @RequestParam(required = false) String query,
+     @RequestParam(required = false) String estado,
+     @RequestParam(required = false) String fecha,
+     @RequestParam(required = false) String tipoGrano,
+     @RequestParam(required = false) Boolean asignado,
+     @RequestParam(defaultValue = "0") int page,
+     @RequestParam(defaultValue = "10") int size) {
         try {
             LocalDate fechaFiltro = null;
             EstadoEnvio estadoFiltro = null;
@@ -131,7 +123,7 @@ public class EnvioController {
             String termino = (query != null && !query.isBlank()) ? query.trim() : null;
             Pageable pageable = PageRequest.of(page, size);
             Page<Envio> envios = envioService.buscarEnviosConFiltros(estadoFiltro, fechaInicio, fechaFin, termino,
-                    tipoGrano,
+                    tipoGrano, asignado, 
                     pageable);
             return ResponseEntity.ok(envios);
         
