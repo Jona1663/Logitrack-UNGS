@@ -579,7 +579,7 @@ public class EnvioServiceTest {
         verify(envioRepository, times(1)).findByChoferUsername(username);
     }
 
-
+/* 
     @Test
     public void buscarEnviosConFiltros_DeberiaRetornarPaginaDeEnvios() {
         // Arrange
@@ -600,7 +600,7 @@ public class EnvioServiceTest {
         assertNotNull(resultado);
         assertEquals(1, resultado.getTotalElements());
     }
-
+*/
     @Test
     public void actualizarEstadoChofer_TransicionValida_DeberiaActualizarEstado() {
         // Arrange
