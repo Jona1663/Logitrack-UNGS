@@ -1,20 +1,20 @@
 package com.logitrack.sistema_logistica.repository;
 
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import com.logitrack.sistema_logistica.dto.ReporteEstadoDTO;
 import com.logitrack.sistema_logistica.dto.ReporteGranoDTO;
-import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.Query;
 import com.logitrack.sistema_logistica.model.Envio;
-import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
-import java.util.stream.Stream;
-import java.util.Optional;
-import java.util.List;
-import org.springframework.data.repository.query.Param;
-import java.time.LocalDateTime;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 
 @Repository
 public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecificationExecutor<Envio> {
@@ -23,14 +23,9 @@ public interface EnvioRepository extends JpaRepository<Envio, String>, JpaSpecif
         @Query("SELECT e FROM Envio e WHERE e.idEnvio = :idEnvio")
         Optional<Envio> buscarPorId(@Param("idEnvio") String idEnvio);
         
-        // Buscar por el nombre exacto de la variable en el modelo
-        // @Query(value = "SELECT * FROM envios WHERE trackingCtg = :tracking", nativeQuery = true)
-        // Optional<Envio> buscarPorTracking(@Param("tracking") String tracking); 
-        // Devuelve envíos que no tienen chofer NI camión asignado todavía
-        @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
-        "AND e.estadoActual NOT IN " +
-        "(com.logitrack.sistema_logistica.model.enums.EstadoEnvio.CANCELADO, " +
-        "com.logitrack.sistema_logistica.model.enums.EstadoEnvio.ENTREGADO)")
+        // Devuelve envíos PENDIENTES que no tienen chofer NI camión asignado todavía
+         @Query("SELECT e FROM Envio e WHERE e.camion IS NULL AND e.chofer IS NULL " +
+        "AND e.estadoActual = com.logitrack.sistema_logistica.model.enums.EstadoEnvio.PENDIENTE")
         List<Envio> findEnviosSinAsignar();
 
         // Suma simple de kilos para el reporte

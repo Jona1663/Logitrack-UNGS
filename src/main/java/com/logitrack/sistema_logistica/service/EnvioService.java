@@ -135,11 +135,12 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 }
 
                 public Page<Envio> buscarEnviosConFiltros(EstadoEnvio estado, LocalDateTime fechaInicio,
-                                LocalDateTime fechaFin, String termino, String tipoGrano, Pageable pageable) {
+                LocalDateTime fechaFin, String termino, String tipoGrano, Boolean asignado, Pageable pageable) {
                         Specification<Envio> spec = Specification.where(EnvioSpecifications.tieneEstado(estado))
                                         .and(EnvioSpecifications.fechaCreacionEntre(fechaInicio, fechaFin))
                                         .and(EnvioSpecifications.contieneTermino(termino))
-                                        .and(EnvioSpecifications.esDeTipoGrano(tipoGrano));
+                                        .and(EnvioSpecifications.esDeTipoGrano(tipoGrano))
+                                        .and(EnvioSpecifications.tieneAsignacion(asignado));
                         return envioRepository.findAll(spec, pageable);
                 }
 
@@ -471,7 +472,6 @@ import com.logitrack.sistema_logistica.model.Usuario;
         // 6. Asignar y guardar
         envio.setChofer(chofer);
         envio.setCamion(camion);
-        envio.setEstadoActual(estadosActivos.get(0));
         envio.setPrioridadIa("ALTA");//hardcodeado por bug .
         envio.setFechaEstimadaLlegada(trackingService.calcularETAConML(envio, camion));
         trackingService.generarYGuardarRuta(envio);
@@ -493,8 +493,6 @@ import com.logitrack.sistema_logistica.model.Usuario;
 
                 //Notificacion por mail
                 Envio envioGuardado = envioRepository.save(envio);
-                eventPublisher.publishEvent(
-                new EnvioCambioEstadoEvent(this, envioGuardado, EstadoEnvio.EN_TRANSITO));
 
                 return envioRepository.save(envio);
         

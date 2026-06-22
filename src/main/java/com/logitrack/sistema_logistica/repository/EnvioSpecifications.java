@@ -1,12 +1,14 @@
 package com.logitrack.sistema_logistica.repository;
 
+import java.time.LocalDateTime;
+
+import org.springframework.data.jpa.domain.Specification;
+
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
-import org.springframework.data.jpa.domain.Specification;
+
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
-
-import java.time.LocalDateTime;
 
 public class EnvioSpecifications {
 
@@ -26,6 +28,22 @@ public class EnvioSpecifications {
             }
             return criteriaBuilder.equal(root.get("tipoGrano"), tipoGrano);
         };
+    }
+
+    public static Specification<Envio> tieneAsignacion(Boolean asignado) {
+     return (root, query, criteriaBuilder) -> {
+         if (asignado == null) {
+             return criteriaBuilder.conjunction();
+         }
+         if (asignado) {
+             return criteriaBuilder.and(
+                     criteriaBuilder.isNotNull(root.get("chofer")),
+                     criteriaBuilder.isNotNull(root.get("camion")));
+         }
+         return criteriaBuilder.or(
+                 criteriaBuilder.isNull(root.get("chofer")),
+                 criteriaBuilder.isNull(root.get("camion")));
+     };
     }
 
     public static Specification<Envio> fechaCreacionEntre(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
