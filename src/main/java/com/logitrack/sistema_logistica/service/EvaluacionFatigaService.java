@@ -48,6 +48,9 @@ public class EvaluacionFatigaService {
         eval.setTiempoReaccionMs(dto.getTiempoReaccionMs());
         eval.setFechaCreacion(LocalDateTime.now());
 
+        // --- HACEMOS EL SAVE ANTES DE DISPARAR ALERTAS ---
+        EvaluacionPsicomotora evaluacionGuardada = repo.save(eval);
+
         // 3. Lógica de Validación (Criterio 2 y 3)
         if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
             // Falló: Marcamos resultado RECHAZADO y el bloqueo queda ACTIVO
@@ -59,8 +62,11 @@ public class EvaluacionFatigaService {
             AlertaFatigaDTO alerta = new AlertaFatigaDTO(
                 envio.getIdEnvio(),
                 chofer.getPersonaAsociada().getIdUsuario().getUsername(), // O el nombre que tengas en la entidad Chofer/Persona
-                "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms"
+                "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms",
+                evaluacionGuardada.getId()
             );
+
+            //System.out.println("DEBUG WEBSOCKET: Enviando alerta con ID EVALUACION: " + alerta.getIdEvaluacion());
 
             // Alerta WebSocket
             //System.out.println("DEBUG: Disparando alerta WebSocket al canal /topic/alertas para el chofer: " + username);
