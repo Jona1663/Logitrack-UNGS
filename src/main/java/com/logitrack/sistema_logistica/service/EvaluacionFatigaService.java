@@ -9,6 +9,7 @@ import com.logitrack.sistema_logistica.dto.EvaluacionFatigaRequestDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaResponseDTO;
 import com.logitrack.sistema_logistica.model.ChoferDetalle;
 import com.logitrack.sistema_logistica.model.Envio;
+import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
 import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
@@ -122,6 +123,23 @@ public class EvaluacionFatigaService {
         eval.setAutorizadoPor(usernameSupervisor); // Guardamos quién fue
 
         repo.save(eval);
+    }
+
+        @Transactional
+        public void rechazarPrueba(String username, String motivo, Long id ){
+            EvaluacionPsicomotora eval = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
+        
+                // Validamos que el motivo no sea nulo o vacío
+            if (motivo == null || motivo.trim().isEmpty()) {
+                throw new RuntimeException("El motivo de autorización es obligatorio");
+            }
+
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
+            eval.setMotivoAutorizacion(motivo);
+            eval.setAutorizadoPor(username); // Guardamos quién fue
+        
+
     }
 
 

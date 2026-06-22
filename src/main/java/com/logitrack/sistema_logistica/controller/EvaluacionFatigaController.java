@@ -46,4 +46,14 @@ public class EvaluacionFatigaController {
         return ResponseEntity.ok().build();
     }    
 
+    @PostMapping("/{id}/rechazar")
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    public ResponseEntity<?> rechazar(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String motivo = body.get("motivo");
+        // Pasamos también el username para cumplir con "guarda el ID/usuario del supervisor"
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        service.rechazarPrueba(username, motivo, id);
+        return ResponseEntity.ok().build();
+    }    
+
 }
