@@ -12,6 +12,8 @@ public class TrackingPublicoService {
     @Autowired
     private EnvioRepository envioRepository;
 
+    @Autowired private TrackingGeospatialService trackingService;
+    
     public TrackingPublicoResponseDTO obtenerInfoPublica(TrackingPublicoRequestDTO request) {
         // 1. Buscar el envío en la base de datos
         Envio envio = envioRepository.findById(request.getTrackingId())
@@ -39,11 +41,7 @@ public class TrackingPublicoService {
                 .eta(envio.getFechaEstimadaLlegada() != null ? envio.getFechaEstimadaLlegada().toString() : null)
                 .porcentajeCompletado(porcentaje)
                 // Usamos las coordenadas del destino o una fija si el camión no tiene datos GPS
-                .ubicacionActual(envio.getDestino() != null ? 
-                    new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-                        envio.getDestino().getLatitud(), 
-                        envio.getDestino().getLongitud()
-                    ) : null)
+                .ubicacionActual(calcularUbicacionActual(envio))
                 .build();
     }
 
@@ -60,5 +58,46 @@ public class TrackingPublicoService {
             case CANCELADO -> 0;
             default -> 0;
         };
+    }
+
+    private com.logitrack.sistema_logistica.dto.UbicacionDTO calcularUbicacionActual(Envio envio) {
+    if (envio.getEstadoActual() == null || envio.getOrigen() == null || envio.getDestino() == null) {
+        return null;
+    }
+
+    //Extraemos las coordenadas en variables para que el código quede más limpio
+    Double latOrigen = envio.getOrigen().getLatitud();
+    Double lonOrigen = envio.getOrigen().getLongitud();
+    Double latDestino = envio.getDestino().getLatitud();
+    Double lonDestino = envio.getDestino().getLongitud();
+
+    // Devolvemos Origen o Destino dependiendo de qué tan avanzado esté el viaje
+    return switch (envio.getEstadoActual()) {
+        // Si recién empieza o está buscando la carga, marcamos que está en el Origen
+        case PENDIENTE, EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(latOrigen, lonOrigen);
+            
+        // MITAD DE CAMINO: Sumamos las coordenadas y dividimos por 2
+        case EN_REPARTO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                (latOrigen + latDestino) / 2.0, 
+                (lonOrigen + lonDestino) / 2.0
+            );
+        
+            // SOLO si está entregado, lo mostramos en el destino exacto
+        case ENTREGADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(latDestino, lonDestino);
+        };
+        
+        
+        /* 
+            // Si ya está repartiendo o entregó, marcamos el Destino
+        case EN_REPARTO, ENTREGADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                envio.getDestino().getLatitud(), 
+                envio.getDestino().getLongitud()
+            );
+        };
+        */
     }
 }
