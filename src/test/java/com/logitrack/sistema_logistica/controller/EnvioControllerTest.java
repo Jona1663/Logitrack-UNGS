@@ -3,6 +3,7 @@ package com.logitrack.sistema_logistica.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logitrack.sistema_logistica.dto.EnvioRequestDTO;
 import com.logitrack.sistema_logistica.dto.HistorialResponseDTO;
+import com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
 import com.logitrack.sistema_logistica.service.AuditoriaService;
@@ -402,4 +404,167 @@ public class EnvioControllerTest {
                 // AUDITORÍA (#623): Verificamos que se devuelva un error HTTP de cliente (4xx) en lugar de los datos
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().is4xxClientError());
     }
+
+    @Test
+    public void cancelarEnvio_DeberiaRetornar200() throws Exception {
+        // GIVEN: El servicio devuelve un objeto Envio válido
+        when(envioService.cancelarEnvio(anyString(), anyString())).thenReturn(new Envio());
+
+        // WHEN: Llamamos al endpoint
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/envios/LT-1/cancelar")
+                .principal(() -> "admin")) // Simulamos el usuario autenticado
+               .andExpect(status().isOk());
+    }
+// ==========================================
+    // TESTS PARA MATAR EL 0% DE LA CAPTURA
+    // ==========================================
+
+    @Test
+    public void cobertura_lambdaHistorial() throws Exception {
+        // Para que JaCoCo lea el lambda, la lista NO puede estar vacía.
+        com.logitrack.sistema_logistica.model.HistorialEstados mockHistorial = new com.logitrack.sistema_logistica.model.HistorialEstados();
+        when(historialEstadosRepository.findAll()).thenReturn(java.util.List.of(mockHistorial));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/historial-completo"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_obtenerRutaCompleta() throws Exception {
+        // La ruta real en tu controller es /{idEnvio}/ruta-completa
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.JsonNode dummyNode = mapper.createObjectNode();
+        when(envioService.obtenerGeometriaRuta(anyString())).thenReturn(dummyNode);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/LT-1/ruta-completa"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_descargarPdf() throws Exception {
+        // La ruta real es /{id}/pdf-carta-porte
+        when(cartaPortePdfService.generarPdf(anyString())).thenReturn(new byte[0]);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/LT-1/pdf-carta-porte"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_cartaPorteQR() throws Exception {
+        // La ruta real es /{id}/carta-porte
+        when(cartaPorteService.obtenerCartaPorte(anyString())).thenReturn(new com.logitrack.sistema_logistica.dto.CartaPorteDTO());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/LT-1/carta-porte"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_reporteATiempo() throws Exception {
+        when(reporteService.obtenerMetricasATiempo(any(), any())).thenReturn(new com.logitrack.sistema_logistica.dto.ReporteEficienciaDTO());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/reportes/a-tiempo")
+                .param("fechaInicio", "2026-01-01")
+                .param("fechaFin", "2026-01-31"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_lambdaCrearEnvioError() throws Exception {
+        // Fuerza el catch RuntimeException ("Usuario autenticado no existe")
+        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        when(auth.getName()).thenReturn("fantasma");
+        when(usuarioRepository.findByUsername(anyString())).thenReturn(java.util.Optional.empty());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/envios")
+                .principal(auth)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void cobertura_obtenerEnvioPorIdInterno() throws Exception {
+        // Tu endpoint GET /{idEnvio} usa obtenerDetalleConETA
+        when(envioService.obtenerDetalleConETA(anyString())).thenReturn(new com.logitrack.sistema_logistica.dto.EnvioDetalleResponseDTO());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/LT-123456"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_trackingErrorFuerzaCatch() throws Exception {
+        // Para subir la cobertura de obtenerTrackingTiempoReal forzando el catch
+        when(envioService.obtenerUbicacionActual(anyString())).thenThrow(new RuntimeException("Error simulado"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/LT-1/tracking"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest());
+    }
+    // ==========================================
+    // TESTS PARA LIQUIDAR LOS ÚLTIMOS ROJOS
+    // ==========================================
+
+  @Test
+    public void cobertura_reasignarViaje_Correcto() throws Exception {
+        // Simulamos el SecurityContext de Spring de forma estática para evitar el NullPointerException
+        org.springframework.security.core.Authentication auth = mock(org.springframework.security.core.Authentication.class);
+        when(auth.getName()).thenReturn("operador_test");
+        org.springframework.security.core.context.SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
+
+        // Mockeamos el método void del servicio para que no haga nada interno
+        doNothing().when(envioService).procesarReasignacion(anyString(), any(com.logitrack.sistema_logistica.dto.ReasignacionViajeRequestDTO.class), anyString());
+
+        // Ejecutamos la petición esperando éxito rotundo (200 OK)
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/envios/LT-1/reasignar")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"nuevoChoferId\": 1, \"nuevoCamionId\": \"ABC\", \"motivoReasignacion\": \"Test\"}"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_getReporteGranos_ParametrosCorrectos() throws Exception {
+        // getReporteGranos tiene 0% porque la fecha necesitaba un formato exacto ISO
+        when(envioRepository.obtenerMetricasPorGrano(any(), any())).thenReturn(java.util.Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/reportes/granos")
+                .param("fechaInicio", "2026-01-01T10:00:00") // Formato LocalDateTime
+                .param("fechaFin", "2026-12-31T23:59:59"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_getReporteGranos_Correcto() throws Exception {
+        // Forzamos el mock del repositorio para el reporte
+        when(envioRepository.obtenerMetricasPorGrano(any(), any())).thenReturn(java.util.Collections.emptyList());
+
+        // Enviamos las fechas con formato ISO directo para evitar fallos de conversión en el parseo automático
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/reportes/granos")
+                .param("fechaInicio", "2026-06-23T00:00:00")
+                .param("fechaFin", "2026-06-23T23:59:59"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    public void cobertura_obtenerEnvioPorId_FuerzaCatch() throws Exception {
+        // obtenerEnvioPorId está en 36%. Le falta entrar al catch.
+        when(envioService.obtenerDetalleConETA(anyString())).thenThrow(new RuntimeException("No existe"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/envios/LT-999"))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
+    }
+
+    @Test
+    public void cobertura_actualizarEstadoChofer_PasaElCatch() throws Exception {
+        // actualizarEstadoChofer está en 48%. Le falta simular el Principal y el éxito
+        org.springframework.security.core.Authentication auth = org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
+        when(auth.getName()).thenReturn("chofer_loco");
+        when(envioService.actualizarEstadoChofer(anyString(), anyString(), anyString())).thenReturn(new Envio());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/envios/LT-1/estado")
+                .param("nuevoEstado", "EN_TRANSITO")
+                .principal(auth))
+               .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
 }
