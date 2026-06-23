@@ -505,8 +505,7 @@ private String calcularPrioridad(Envio envio) {
         // 6. Asignar y guardar
         envio.setChofer(chofer);
         envio.setCamion(camion);
-        envio.setPrioridadIa("ALTA");//hardcodeado por bug .
-        envio.setPrioridadIa(calcularPrioridad(envio));
+        envio.setPrioridadIa(calcularPrioridad(envio)); //envio.setPrioridadIa("ALTA");  hardcodeado por bug .
         envio.setFechaEstimadaLlegada(trackingService.calcularETAConML(envio, camion));
         trackingService.generarYGuardarRuta(envio);
 
