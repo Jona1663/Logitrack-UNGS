@@ -16,4 +16,5 @@ public class AlertaFatigaDTO {
     private String nombreChofer;
     private String motivo;
     private Long idEvaluacion;
+    
 }

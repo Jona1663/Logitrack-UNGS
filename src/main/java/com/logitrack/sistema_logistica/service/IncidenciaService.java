@@ -87,6 +87,7 @@ public class IncidenciaService {
         String mensaje = "El chofer ha reportado un problema.\nUbicación: " + ubicacionFormateada + "\nDetalle: " + dto.getDescripcion();
         
         notificationService.enviarNotificacion("supervisor@logitrack.com", asunto, mensaje);
+        
         try {
                 // Buscamos a TODOS los supervisores de la base de datos
                 List<Usuario> supervisores = usuarioRepository.findByRol(RolUsuario.SUPERVISOR);
@@ -102,6 +103,7 @@ public class IncidenciaService {
             } catch (Exception e) {
                 System.err.println("No se pudo enviar la alerta visual: " + e.getMessage());
             }
+      
     }
 
     // --- MÉTODOS DEL SUPERVISOR ---

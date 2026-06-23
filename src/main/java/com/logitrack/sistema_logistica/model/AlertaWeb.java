@@ -16,6 +16,9 @@ public class AlertaWeb {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idAlertaWeb;
 
+    @Column(name = "id_envio", length = 20)
+    private String idEnvio;
+
     private String mensaje;
     private String tipo; 
     private boolean leido;
