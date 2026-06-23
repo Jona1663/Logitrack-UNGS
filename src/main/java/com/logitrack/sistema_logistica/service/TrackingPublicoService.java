@@ -12,6 +12,8 @@ public class TrackingPublicoService {
     @Autowired
     private EnvioRepository envioRepository;
 
+    @Autowired private TrackingGeospatialService trackingService;
+    
     public TrackingPublicoResponseDTO obtenerInfoPublica(TrackingPublicoRequestDTO request) {
         // 1. Buscar el envío en la base de datos
         Envio envio = envioRepository.findById(request.getTrackingId())

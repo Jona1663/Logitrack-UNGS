@@ -245,6 +245,8 @@ import com.logitrack.sistema_logistica.model.Usuario;
                         }
 
 
+
+
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
                         if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
@@ -279,6 +281,17 @@ import com.logitrack.sistema_logistica.model.Usuario;
                                 camionRepository.save(envio.getCamion());
                         }
                         }
+
+                        if (estadoNuevo == EstadoEnvio.EN_REPARTO) {
+                                try {
+                                        // Esto fuerza al servicio de Tracking a recalcular la ruta 
+                                        // desde la posición actual del camión hasta el destino final.
+                                        trackingService.generarYGuardarRuta(envio); 
+                                } catch (Exception e) {
+                                        System.err.println("Error al regenerar ruta en EN_REPARTO: " + e.getMessage());
+                                }
+                        }
+                        
                         // 3. Guardamos el envío
                         Envio envioGuardado = envioRepository.save(envio);
 
