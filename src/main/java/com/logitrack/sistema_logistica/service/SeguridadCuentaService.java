@@ -1,17 +1,18 @@
 package com.logitrack.sistema_logistica.service;
 
-import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-import org.springframework.transaction.annotation.Transactional;
-import com.logitrack.sistema_logistica.model.enums.RolUsuario;
-import com.logitrack.sistema_logistica.model.Usuario;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.RolUsuario;
+import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -60,7 +61,8 @@ public class SeguridadCuentaService {
             }
             
             // ¡AQUÍ ESTÁ LA CORRECCIÓN! Le pasamos 'correoDestino'
-            notificationService.enviarNotificacion(correoDestino, asunto, mensaje);
+            //notificationService.enviarNotificacion(correoDestino, asunto, mensaje);
+            notificationService.enviarNotificacion("logitrack.agro@gmail.com", asunto, mensaje);
             log.info("Cuenta bloqueada. Código enviado a: {}", correoDestino);
 
             // 2. BONUS: Le avisamos en tiempo real a los supervisores que alguien se bloqueó
