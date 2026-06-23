@@ -34,6 +34,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
         import com.logitrack.sistema_logistica.model.enums.EstadoEnvio;
         import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
         import com.logitrack.sistema_logistica.model.enums.TipoEvento;
+        import com.logitrack.sistema_logistica.model.enums.TipoGrano;
         import com.logitrack.sistema_logistica.repository.CamionRepository;
         import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
         import com.logitrack.sistema_logistica.repository.EnvioRepository;
@@ -41,6 +42,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
         import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
         import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
         import com.logitrack.sistema_logistica.repository.UsuarioRepository;
+
         import jakarta.persistence.EntityNotFoundException;
 
         
@@ -420,6 +422,37 @@ import com.logitrack.sistema_logistica.model.Usuario;
                 return EnvioDetalleResponseDTO.fromEntity(envio, eta);
         }
 
+        /* Calcula la prioridad  
+    +1 punto si la carga > 15 toneladas
+    +1 punto si el TipoGrano = SOJA o TRIGO
+Puntaje 0 -> BAJA
+Puntaje 1 -> MEDIA
+Puntaje 2 -> ALTA */
+
+private String calcularPrioridad(Envio envio) {
+        final int UMBRAL_TONELADAS_KG = 15_000;
+
+        int puntaje = 0;
+
+        if (envio.getKgOrigen() != null && envio.getKgOrigen() > UMBRAL_TONELADAS_KG) {
+                puntaje++;
+        }
+
+        TipoGrano grano = envio.getTipoGrano();
+        if (grano == TipoGrano.SOJA || grano == TipoGrano.TRIGO) {
+                puntaje++;
+        }
+
+        switch (puntaje) {
+                case 2:
+                        return "ALTA";
+                case 1:
+                        return "MEDIA";
+                default:
+                        return "BAJA";
+        }
+}
+
         @Transactional
         public Envio asignarTransporte(String idEnvio, AsignarTransporteDTO dto) {
                 List<EstadoEnvio> estadosActivos = Arrays.asList(
@@ -472,7 +505,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
         // 6. Asignar y guardar
         envio.setChofer(chofer);
         envio.setCamion(camion);
-        envio.setPrioridadIa("ALTA");//hardcodeado por bug .
+        envio.setPrioridadIa(calcularPrioridad(envio)); //envio.setPrioridadIa("ALTA");  hardcodeado por bug .
         envio.setFechaEstimadaLlegada(trackingService.calcularETAConML(envio, camion));
         trackingService.generarYGuardarRuta(envio);
 
