@@ -93,6 +93,7 @@ public class EvaluacionFatigaService {
         */
 
         //version 2
+        /* 
         if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
             // Falló: Marcamos resultado RECHAZADO y el bloqueo queda ACTIVO
             eval.setResultado(EstadoEvaluacionEnum.RECHAZADO);
@@ -132,7 +133,48 @@ public class EvaluacionFatigaService {
                 System.err.println("Error al guardar la alerta de fatiga en BD: " + e.getMessage());
             }
             
-        } else {
+        } 
+        */
+       //Version 3
+       if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
+            // Falló: Marcamos resultado RECHAZADO y el bloqueo queda ACTIVO
+            eval.setResultado(EstadoEvaluacionEnum.RECHAZADO);
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
+
+            // --- ELIMINAMOS LA DOBLE NOTIFICACIÓN ---
+            // Borramos la creación de AlertaFatigaDTO y el messagingTemplate flotante de acá arriba.
+            // Ahora centralizamos todo en la persistencia de la base de datos.
+
+            try {
+                // Buscamos a todos los supervisores
+                List<com.logitrack.sistema_logistica.model.Usuario> supervisores = 
+                    usuarioRepository.findByRol(com.logitrack.sistema_logistica.model.enums.RolUsuario.SUPERVISOR);
+
+                String mensajeVisual = "ALERTA DE FATIGA: El chofer " + chofer.getPersonaAsociada().getIdUsuario().getUsername() 
+                                     + " registró " + dto.getTiempoReaccionMs() + "ms en viaje " + envio.getIdEnvio();
+
+                String nombreCompletoChofer = chofer.getPersonaAsociada().getNombre() + " " + chofer.getPersonaAsociada().getApellido();
+                String motivoDetalle = "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms";
+
+                // Guardamos en BD para cada supervisor pasando la estructura completa
+                for (com.logitrack.sistema_logistica.model.Usuario supervisor : supervisores) {
+                    if (supervisor.getActivo()) {
+                        // Pasamos los 7 parámetros requeridos para salvar el F5
+                        alertaWebService.crearYEnviarAlerta(
+                            supervisor, 
+                            mensajeVisual, 
+                            "FATIGA", 
+                            envio.getIdEnvio(),
+                            evaluacionGuardada.getId(), // idEvaluacion crucial para los botones
+                            nombreCompletoChofer,
+                            motivoDetalle
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error al guardar la alerta de fatiga en BD: " + e.getMessage());
+            }
+        }else {
             // Aprobó: Marcamos resultado APROBADO y el bloqueo como APROBADO (o LIBERADO)
             eval.setResultado(EstadoEvaluacionEnum.APROBADO);
             eval.setEstadoBloqueo(EstadoEvaluacionEnum.APROBADO);

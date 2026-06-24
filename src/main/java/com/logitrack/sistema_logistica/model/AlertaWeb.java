@@ -27,4 +27,12 @@ public class AlertaWeb {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario; 
+
+    @Column(name = "id_evaluacion")
+    private Long idEvaluacion;
+
+    @Column(name = "nombre_chofer", length = 150)
+    private String nombreChofer;
+
+    private String motivo;
 }
