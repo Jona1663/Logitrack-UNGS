@@ -40,6 +40,7 @@ public class TrackingGeospatialService {
      * Se comunica con GraphHopper, obtiene la ruta y la guarda en la Base de Datos.
      */
     public void generarYGuardarRuta(Envio envio) {
+    //Version 1
         Double latInicio;
         Double lonInicio;
         Double latFin;
@@ -117,8 +118,81 @@ public class TrackingGeospatialService {
         return calcularETA(envio.getDistanciaKm(), fechaSalida);
     }
 
-    // Calcula la ubicación exacta en tiempo real simulado (interpolación sobre el LineString)
+    //Version2
+    // 1. Método original (sin parámetros), mantiene compatibilidad con el resto del sistema
+    public Map<String, Object> calcularUbicacionInterpolada(Envio envio) {
+        return calcularUbicacionInterpolada(envio, -1.0); // -1 indica "modo tiempo real"
+    }
 
+    // 2. Nuevo método para tu TrackingPublicoService
+    public Map<String, Object> calcularUbicacionMitad(Envio envio) {
+        return calcularUbicacionInterpolada(envio, 0.5); // 0.5 indica "fijo en la mitad"
+    }
+
+    // 3. Lógica centralizada (El "motor" que hace el trabajo pesado)
+    private Map<String, Object> calcularUbicacionInterpolada(Envio envio, double porcentajeForzado) {
+        if (envio.getEstadoActual() != EstadoEnvio.EN_TRANSITO && envio.getEstadoActual() != EstadoEnvio.EN_REPARTO) {
+            throw new RuntimeException("El envío no se encuentra en un estado activo de transporte.");
+        }
+
+        RutaEnvio ruta = envio.getRutaEnvio();
+        if (ruta == null || ruta.getPolylineJson() == null || ruta.getPolylineJson().isBlank()) {
+            throw new RuntimeException("No se encontraron datos de ruta registrados para este envío.");
+        }
+
+        try {
+            double porcentaje;
+            
+            // Lógica inteligente: ¿tiempo real o fijo?
+            if (porcentajeForzado >= 0) {
+                porcentaje = porcentajeForzado;
+            } else {
+                LocalDateTime ahora = LocalDateTime.now();
+                LocalDateTime salida = envio.getFechaSalida();
+                long segundosTranscurridos = Duration.between(salida, ahora).getSeconds();
+                long duracionTotal = ruta.getDuracionTotalSegundos();
+                
+                porcentaje = (double) segundosTranscurridos / duracionTotal;
+                porcentaje = Math.min(Math.max(porcentaje, 0.0), 1.0); // Clamp entre 0 y 1
+            }
+
+            // Conversión de coordenadas (La lógica que ya tenías)
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode arrayCoordenadas = mapper.readTree(ruta.getPolylineJson());
+
+            Coordinate[] coords = new Coordinate[arrayCoordenadas.size()];
+            for (int i = 0; i < arrayCoordenadas.size(); i++) {
+                JsonNode punto = arrayCoordenadas.get(i);
+                coords[i] = new Coordinate(punto.get(0).asDouble(), punto.get(1).asDouble());
+            }
+
+            GeometryFactory gf = new GeometryFactory();
+            LineString lineaRuta = gf.createLineString(coords);
+
+            LengthIndexedLine indexedLine = new LengthIndexedLine(lineaRuta);
+            double distanciaObjetivo = lineaRuta.getLength() * porcentaje;
+            Coordinate puntoActual = indexedLine.extractPoint(distanciaObjetivo);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("idEnvio", envio.getIdEnvio());
+            response.put("estadoActual", envio.getEstadoActual().name());
+            response.put("porcentajeCompletado", porcentaje * 100.0);
+            response.put("latitudActual", puntoActual.y);
+            response.put("longitudActual", puntoActual.x);
+
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error en el procesamiento geométrico: " + e.getMessage());
+        }
+    }    
+
+
+
+
+
+    // Calcula la ubicación exacta en tiempo real simulado (interpolación sobre el LineString)
+    /* Metodo original
     public Map<String, Object> calcularUbicacionInterpolada(Envio envio) {
         if (envio.getEstadoActual() != EstadoEnvio.EN_TRANSITO
                 && envio.getEstadoActual() != EstadoEnvio.EN_REPARTO) {
@@ -172,6 +246,7 @@ public class TrackingGeospatialService {
             throw new RuntimeException("Error en el procesamiento geométrico del tracking: " + e.getMessage());
         }
     }
+    */
 
     // Parsea la ruta a un formato apto para devolver al frontend
     public JsonNode extraerGeometriaRuta(RutaEnvio ruta) {

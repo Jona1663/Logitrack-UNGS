@@ -247,11 +247,14 @@ import com.logitrack.sistema_logistica.model.Usuario;
                         }
 
 
-
-
+                        // 2. Actualizamos los campos en la entidad
+                        envio.setEstadoActual(estadoNuevo);
+                        envio.setPrioridadIa(nuevaPrioridad); // Aquí el chofer mantiene la que ya tenía
+                        
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
-                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION) {
+                        if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION || 
+                                estadoNuevo == EstadoEnvio.EN_REPARTO) {
                                 try {
                                         trackingService.generarYGuardarRuta(envio);
                                 } catch (Exception e) {
@@ -261,9 +264,8 @@ import com.logitrack.sistema_logistica.model.Usuario;
                                 }
                         }
 
-                        // 2. Actualizamos los campos en la entidad
-                        envio.setEstadoActual(estadoNuevo);
-                        envio.setPrioridadIa(nuevaPrioridad); // Aquí el chofer mantiene la que ya tenía
+                       
+                        
 
                         //#222 - Liberamos a los choferes y camiónes si el envío termina o se cancela
                         if (estadoNuevo == EstadoEnvio.ENTREGADO || estadoNuevo == EstadoEnvio.CANCELADO) {
