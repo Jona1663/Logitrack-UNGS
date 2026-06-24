@@ -4,6 +4,9 @@ import com.logitrack.sistema_logistica.dto.TrackingPublicoRequestDTO;
 import com.logitrack.sistema_logistica.dto.TrackingPublicoResponseDTO;
 import com.logitrack.sistema_logistica.model.Envio;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
+
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,10 +64,11 @@ public class TrackingPublicoService {
     }
 
     private com.logitrack.sistema_logistica.dto.UbicacionDTO calcularUbicacionActual(Envio envio) {
-    if (envio.getEstadoActual() == null || envio.getOrigen() == null || envio.getDestino() == null) {
-        return null;
-    }
+        if (envio.getEstadoActual() == null || envio.getOrigen() == null || envio.getDestino() == null) {
+            return null;
+        }
 
+    /*Version 1 
     //Extraemos las coordenadas en variables para que el código quede más limpio
     Double latOrigen = envio.getOrigen().getLatitud();
     Double lonOrigen = envio.getOrigen().getLongitud();
@@ -88,6 +92,10 @@ public class TrackingPublicoService {
         case ENTREGADO -> 
             new com.logitrack.sistema_logistica.dto.UbicacionDTO(latDestino, lonDestino);
         };
+        */
+
+        //Version 2
+
         
         
         /* 
@@ -99,5 +107,37 @@ public class TrackingPublicoService {
             );
         };
         */
+
+        return switch (envio.getEstadoActual()) {
+        case PENDIENTE, EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                envio.getOrigen().getLatitud(), 
+                envio.getOrigen().getLongitud()
+            );
+            
+        case EN_REPARTO -> {
+    try {
+        // Usamos nuestro nuevo método específico para la mitad del camino
+        Map<String, Object> ubicacionMitad = trackingService.calcularUbicacionMitad(envio);
+        
+        yield new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+            (Double) ubicacionMitad.get("latitudActual"), 
+            (Double) ubicacionMitad.get("longitudActual")
+        );
+    } catch (Exception e) {
+        // Tu fallback de emergencia
+        yield new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+            (envio.getOrigen().getLatitud() + envio.getDestino().getLatitud()) / 2.0, 
+            (envio.getOrigen().getLongitud() + envio.getDestino().getLongitud()) / 2.0
+        );
+    }
+        }
+
+        case ENTREGADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                envio.getDestino().getLatitud(), 
+                envio.getDestino().getLongitud()
+            );
+        };
     }
 }
