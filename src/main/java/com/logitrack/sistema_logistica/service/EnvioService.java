@@ -252,7 +252,7 @@ import com.logitrack.sistema_logistica.model.Usuario;
                         // logica de ruteo
                         // Si el estado cambia a En transito o Enreparto , pedimos la ruta
                         if (estadoNuevo == EstadoEnvio.EN_TRANSITO || estadoNuevo == EstadoEnvio.EN_PUNTO_DE_RECOLECCION || 
-                                estadoNuevo == EstadoEnvio.PENDIENTE) {
+                                estadoNuevo == EstadoEnvio.EN_REPARTO) {
                                 try {
                                         trackingService.generarYGuardarRuta(envio);
                                 } catch (Exception e) {
