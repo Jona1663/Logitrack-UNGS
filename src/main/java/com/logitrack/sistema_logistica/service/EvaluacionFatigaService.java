@@ -15,11 +15,14 @@ import com.logitrack.sistema_logistica.repository.ChoferDetalleRepository;
 import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import com.logitrack.sistema_logistica.repository.EvaluacionPsicomotoraRepository;
 import org.springframework.beans.factory.annotation.Value;
+import com.logitrack.sistema_logistica.model.Usuario;
+import com.logitrack.sistema_logistica.model.enums.RolUsuario;
+import java.util.List;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EvaluacionFatigaService {
@@ -27,6 +30,8 @@ public class EvaluacionFatigaService {
     @Autowired private EnvioRepository envioRepository; // Necesario para buscar el envío
     @Autowired private ChoferDetalleRepository choferDetalleRepository; // Necesario para buscar el chofer
     @Autowired private SimpMessagingTemplate messagingTemplate;
+    @Autowired private AlertaWebService alertaWebService;
+    @Autowired private com.logitrack.sistema_logistica.repository.UsuarioRepository usuarioRepository;
 
     @Value("${logitrack.fatiga.umbral-ms}")
     private long umbralFatiga;
@@ -52,6 +57,8 @@ public class EvaluacionFatigaService {
         // --- HACEMOS EL SAVE ANTES DE DISPARAR ALERTAS ---
         EvaluacionPsicomotora evaluacionGuardada = repo.save(eval);
 
+        //  Version 1
+        /*
         // 3. Lógica de Validación (Criterio 2 y 3)
         if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
             // Falló: Marcamos resultado RECHAZADO y el bloqueo queda ACTIVO
@@ -83,6 +90,78 @@ public class EvaluacionFatigaService {
             messagingTemplate.convertAndSend("/topic/alertas-supervisores", 
                 "Alerta: Chofer " + username + " aprobó el test de fatiga en el envío " + dto.getIdEnvio());
         } 
+        */
+
+        //version 2 
+        /*
+        if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
+            // Falló: Marcamos resultado RECHAZADO y el bloqueo queda ACTIVO
+            eval.setResultado(EstadoEvaluacionEnum.RECHAZADO);
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
+            //eval.setMensaje("Test no superado: Fatiga detectada o error de ejecución.");
+
+            // Nueva lógica de WebSocket:
+            AlertaFatigaDTO alerta = new AlertaFatigaDTO(
+                envio.getIdEnvio(),
+                chofer.getPersonaAsociada().getIdUsuario().getUsername(), // O el nombre que tengas en la entidad Chofer/Persona
+                "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms",
+                evaluacionGuardada.getId()
+            );
+
+            //System.out.println("DEBUG WEBSOCKET: Enviando alerta con ID EVALUACION: " + alerta.getIdEvaluacion());
+
+            // Alerta WebSocket
+            //System.out.println("DEBUG: Disparando alerta WebSocket al canal /topic/alertas para el chofer: " + username);
+            messagingTemplate.convertAndSend("/topic/alertas-supervisores", alerta);
+
+            // 2. --- NUEVA LÓGICA DE PERSISTENCIA (Para solucionar el F5) ---
+            try {
+                // Buscamos a todos los supervisores
+                List<com.logitrack.sistema_logistica.model.Usuario> supervisores = 
+                    usuarioRepository.findByRol(com.logitrack.sistema_logistica.model.enums.RolUsuario.SUPERVISOR);
+
+                String mensajeVisual = "ALERTA DE FATIGA: El chofer " + chofer.getPersonaAsociada().getIdUsuario().getUsername() 
+                                     + " registró " + dto.getTiempoReaccionMs() + "ms en viaje " + envio.getIdEnvio();
+
+                // Guardamos en BD para cada supervisor usando tu nuevo método que acepta idEnvio
+                for (com.logitrack.sistema_logistica.model.Usuario supervisor : supervisores) {
+                    if (supervisor.getActivo()) {
+                        alertaWebService.crearYEnviarAlerta(supervisor, mensajeVisual, "FATIGA", envio.getIdEnvio());
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error al guardar la alerta de fatiga en BD: " + e.getMessage());
+            }           
+        } 
+        */
+         // 3. Lógica de Validación (Versión 1 - WebSocket Directo)
+        if (dto.getTiempoReaccionMs() < 100 || dto.getTiempoReaccionMs() > umbralFatiga) {
+            eval.setResultado(EstadoEvaluacionEnum.RECHAZADO);
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.RECHAZADO);
+
+            // Creamos el DTO exacto que Jamil quiere reutilizar
+            AlertaFatigaDTO alerta = new AlertaFatigaDTO(
+                envio.getIdEnvio(),
+                chofer.getPersonaAsociada().getNombre() + " " + chofer.getPersonaAsociada().getApellido(), // Mejor enviar el nombre real
+                "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms",
+                evaluacionGuardada.getId(),
+                evaluacionGuardada.getEstadoBloqueo()
+            );
+
+            // Disparamos la alerta WebSocket
+            messagingTemplate.convertAndSend("/topic/alertas-supervisores", alerta);       
+
+        }else {
+            // Aprobó: Marcamos resultado APROBADO y el bloqueo como APROBADO (o LIBERADO)
+            eval.setResultado(EstadoEvaluacionEnum.APROBADO);
+            eval.setEstadoBloqueo(EstadoEvaluacionEnum.APROBADO);
+            eval.setMensaje("Test superado correctamente.");
+            
+            // Disparar Alerta WebSocket al supervisor
+            messagingTemplate.convertAndSend("/topic/alertas-supervisores", 
+                "Alerta: Chofer " + username + " aprobó el test de fatiga en el envío " + dto.getIdEnvio());
+        } 
+
 
         // 4. Guardar en base de datos
         repo.save(eval);
@@ -140,6 +219,28 @@ public class EvaluacionFatigaService {
             eval.setAutorizadoPor(username); // Guardamos quién fue
         
 
+    }
+
+    // Lógica para la Opción B: Obtener el pendiente para el F5
+    @Transactional(readOnly = true)
+    public AlertaFatigaDTO obtenerEvaluacionPendienteParaEnvio(String idEnvio) {
+        // Buscamos si hay alguna evaluación en estado RECHAZADO para este viaje
+        return repo.findFirstByIdEnvio_IdEnvioAndEstadoBloqueoOrderByFechaCreacionDesc(idEnvio, EstadoEvaluacionEnum.RECHAZADO)
+                .map(eval -> {
+                    // Si existe, armamos el DTO
+                    String nombreCompleto = eval.getChoferId().getPersonaAsociada().getNombre() + " " + 
+                                            eval.getChoferId().getPersonaAsociada().getApellido();
+                    
+                    return new AlertaFatigaDTO(
+                        eval.getIdEnvio().getIdEnvio(),
+                        nombreCompleto,
+                        "Fatiga detectada: Tiempo de reacción de " + eval.getTiempoReaccionMs() + "ms",
+                        eval.getId(),
+                        eval.getEstadoBloqueo()
+                    );
+                })
+                // Si no hay nada rechazado, devolvemos null
+                .orElse(null); 
     }
 
 

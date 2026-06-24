@@ -19,6 +19,30 @@ public class AlertaWebService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    // --- METODO NUEVO: Acepta idEnvio ---
+    @Transactional
+    public void crearYEnviarAlerta(Usuario destino, String mensaje, String tipo, String idEnvio, Long idEvaluacion, String nombreChofer, String motivo) {
+        // 1. guardar en base de datos para el historial
+        AlertaWeb alerta = AlertaWeb.builder()
+                .usuario(destino)
+                .mensaje(mensaje)
+                .tipo(tipo)
+                .idEnvio(idEnvio) // <-- AQUÍ SE GUARDA EL DATO EN LA BD
+                .idEvaluacion(idEvaluacion) // <-- Guardamos los nuevos datos
+                .nombreChofer(nombreChofer)
+                .motivo(motivo)
+                .leido(false)
+                .leido(false)
+                .fechaHora(LocalDateTime.now())
+                .build();
+
+        alertaWebRepository.save(alerta);
+
+        // 2. enviar por websocket en tiempo real al canal del usuario
+        String destinoCanal = "/queue/alertas-" + destino.getIdUsuario();
+        messagingTemplate.convertAndSend(destinoCanal, alerta);
+    }
+
     @Transactional
     public void crearYEnviarAlerta(Usuario destino, String mensaje, String tipo) {
         // 1. guardar en base de datos para el historial

@@ -1,6 +1,7 @@
 package com.logitrack.sistema_logistica.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +24,7 @@ public interface EvaluacionPsicomotoraRepository extends JpaRepository<Evaluacio
         @Param("envioId") String envioId, 
         @Param("estados") List<EstadoEvaluacionEnum> estados
     );
+
+    // Busca la última evaluación de un viaje que tenga un estado específico (ej. RECHAZADO)
+    Optional<EvaluacionPsicomotora> findFirstByIdEnvio_IdEnvioAndEstadoBloqueoOrderByFechaCreacionDesc(String idEnvio, EstadoEvaluacionEnum estadoBloqueo);
 }
