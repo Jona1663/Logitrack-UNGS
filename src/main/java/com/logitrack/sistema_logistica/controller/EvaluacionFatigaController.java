@@ -76,7 +76,7 @@ public class EvaluacionFatigaController {
     }
         */ 
    @GetMapping("/envio/{idEnvio}/pendiente")
-    public ResponseEntity<FatigaPendienteResponseDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
+    public ResponseEntity<AlertaFatigaDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
         
         AlertaFatigaDTO pendiente = service.obtenerEvaluacionPendienteParaEnvio(idEnvio);
         
@@ -87,7 +87,7 @@ public class EvaluacionFatigaController {
         
         
         // Si hay una evaluación rechazada, la devolvemos con un 200 OK
-        return ResponseEntity.ok(new FatigaPendienteResponseDTO(pendiente));
+        return ResponseEntity.ok(pendiente);
     }
 
 

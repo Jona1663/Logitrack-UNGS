@@ -144,7 +144,8 @@ public class EvaluacionFatigaService {
                 envio.getIdEnvio(),
                 chofer.getPersonaAsociada().getNombre() + " " + chofer.getPersonaAsociada().getApellido(), // Mejor enviar el nombre real
                 "Fatiga detectada: Tiempo de reacción de " + dto.getTiempoReaccionMs() + "ms",
-                evaluacionGuardada.getId()
+                evaluacionGuardada.getId(),
+                evaluacionGuardada.getEstadoBloqueo()
             );
 
             // Disparamos la alerta WebSocket
@@ -234,7 +235,8 @@ public class EvaluacionFatigaService {
                         eval.getIdEnvio().getIdEnvio(),
                         nombreCompleto,
                         "Fatiga detectada: Tiempo de reacción de " + eval.getTiempoReaccionMs() + "ms",
-                        eval.getId()
+                        eval.getId(),
+                        eval.getEstadoBloqueo()
                     );
                 })
                 // Si no hay nada rechazado, devolvemos null
