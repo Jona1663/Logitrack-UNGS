@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.logitrack.sistema_logistica.dto.AlertaFatigaDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaRequestDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaResponseDTO;
+import com.logitrack.sistema_logistica.dto.FatigaPendienteResponseDTO;
 import com.logitrack.sistema_logistica.service.EvaluacionFatigaService;
 import java.util.Map;
 
@@ -56,7 +57,9 @@ public class EvaluacionFatigaController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         service.rechazarPrueba(username, motivo, id);
         return ResponseEntity.ok().build();
-    }    
+    } 
+    //Verrsion1 
+    /*  
     @GetMapping("/envio/{idEnvio}/pendiente")
     public ResponseEntity<AlertaFatigaDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
         
@@ -67,8 +70,25 @@ public class EvaluacionFatigaController {
             return ResponseEntity.noContent().build();
         }
         
+        
         // Si hay una evaluación rechazada, la devolvemos con un 200 OK
         return ResponseEntity.ok(pendiente);
     }
+        */ 
+   @GetMapping("/envio/{idEnvio}/pendiente")
+    public ResponseEntity<FatigaPendienteResponseDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
+        
+        AlertaFatigaDTO pendiente = service.obtenerEvaluacionPendienteParaEnvio(idEnvio);
+        
+        if (pendiente == null) {
+            // Requisito de Jamil: Si no hay nada pendiente, devolver 204 No Content
+            return ResponseEntity.noContent().build();
+        }
+        
+        
+        // Si hay una evaluación rechazada, la devolvemos con un 200 OK
+        return ResponseEntity.ok(new FatigaPendienteResponseDTO(pendiente));
+    }
+
 
 }
