@@ -73,7 +73,7 @@ public class TrackingGeospatialService {
         Double lonFin = envio.getDestino().getLongitud();
 
         // Lógica mejorada para definir el punto de partida
-        if (envio.getEstadoActual() == EstadoEnvio.EN_TRANSITO) {
+        if (envio.getEstadoActual() == EstadoEnvio.PENDIENTE || envio.getEstadoActual() == EstadoEnvio.EN_TRANSITO) {
             // Viaje de aproximación desde la base
             latInicio = -34.522881; 
             lonInicio = -58.700085;

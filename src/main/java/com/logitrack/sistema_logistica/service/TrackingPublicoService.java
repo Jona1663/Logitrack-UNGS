@@ -108,12 +108,20 @@ public class TrackingPublicoService {
         };
         */
 
+        /* */
         return switch (envio.getEstadoActual()) {
+        
+        /* 
         case PENDIENTE, EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
             new com.logitrack.sistema_logistica.dto.UbicacionDTO(
                 envio.getOrigen().getLatitud(), 
                 envio.getOrigen().getLongitud()
-            );
+            );*/
+        case PENDIENTE -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(-34.522881, -58.700085);
+
+        case EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
+            new com.logitrack.sistema_logistica.dto.UbicacionDTO(envio.getOrigen().getLatitud(), envio.getOrigen().getLongitud());
             
         case EN_REPARTO -> {
     try {
