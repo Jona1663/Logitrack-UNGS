@@ -41,7 +41,6 @@ public class TrackingGeospatialService {
      */
     public void generarYGuardarRuta(Envio envio) {
     //Version 1
-    /*
         Double latInicio;
         Double lonInicio;
         Double latFin;
@@ -65,52 +64,6 @@ public class TrackingGeospatialService {
             latFin = envio.getDestino().getLatitud();
             lonFin = envio.getDestino().getLongitud();
         }
-    */
-        Double latInicio;
-        Double lonInicio;
-        Double latFin = envio.getDestino().getLatitud();
-        Double lonFin = envio.getDestino().getLongitud();
-
-        //VERSION MAS O MENos
-        /*
-        // Lógica mejorada para definir el punto de partida
-        if (envio.getEstadoActual() == EstadoEnvio.PENDIENTE || envio.getEstadoActual() == EstadoEnvio.EN_TRANSITO) {
-            // Viaje de aproximación desde la base
-            latInicio = -34.522881; 
-            lonInicio = -58.700085;
-        } else {
-            // En cualquier otro caso (EN_PUNTO_DE_RECOLECCION o EN_REPARTO), 
-            // el origen del movimiento es el establecimiento de origen
-            latInicio = envio.getOrigen().getLatitud();
-            lonInicio = envio.getOrigen().getLongitud();
-        }
-        */
-
-            // Lógica por estados:
-    if (envio.getEstadoActual() == EstadoEnvio.PENDIENTE) {
-        // En PENDIENTE, el envío está estático en la UNGS. 
-        // Para que GraphHopper no falle, definimos inicio = fin = UNGS.
-        latInicio = -34.522881; 
-        lonInicio = -58.700085;
-        latFin = -34.522881;
-        lonFin = -58.700085;
-    } 
-    else if (envio.getEstadoActual() == EstadoEnvio.EN_TRANSITO) {
-        // TRAMO 1: UNGS -> Punto de Origen (Recolección)
-        latInicio = -34.522881; 
-        lonInicio = -58.700085;
-        latFin = envio.getOrigen().getLatitud();
-        lonFin = envio.getOrigen().getLongitud();
-    } 
-    else {
-        // TRAMO 2: Punto de Origen -> Destino Final
-        // Esto cubre EN_REPARTO y cualquier otro estado activo
-        latInicio = envio.getOrigen().getLatitud();
-        lonInicio = envio.getOrigen().getLongitud();
-        latFin = envio.getDestino().getLatitud();
-        lonFin = envio.getDestino().getLongitud();
-    }
-
 
         JsonNode pathData = graphHopperService.obtenerRuta(latInicio, lonInicio, latFin, lonFin);
 
