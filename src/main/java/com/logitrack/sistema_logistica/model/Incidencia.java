@@ -39,14 +39,13 @@ public class Incidencia {
     @Column(nullable = false)
     private LocalDateTime fechaReporte;
 
-    // Estos campos se llenan cuando el supervisor interviene
     private LocalDateTime fechaResolucion;
 
     @Column(length = 500)
     private String notasSupervisor;
 
-    @Column(columnDefinition = "TEXT")//actualmente es un text, si en algun momento decidimos implementar 
-    private String lugarIncidencia;   // mostrar en el mapa la ubicacion de la incidencia podemos dejarlo como coordenadas 
+    @Column(columnDefinition = "TEXT")
+    private String lugarIncidencia;   
 
     @Column(nullable = false, updatable = false)
     private String creadoPor;

@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 // tabla de datos para almacenar la ruta de cada envio
-//para no sobrecargar la tabla de envios con datos de ruta
 @Entity
 @Table(name = "rutas_envio")
 @Data

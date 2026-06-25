@@ -30,8 +30,7 @@ public class HistorialEstados {
     private Usuario usuario;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_evento") // , nullable = false) habria que agregarle el nullable false cuando terminemos
-                                  // las pruebas, o modifiquemos el data seed
+    @Column(name = "tipo_evento")
     private TipoEvento tipoEvento;
 
     @Enumerated(EnumType.STRING)
@@ -45,7 +44,7 @@ public class HistorialEstados {
     @Column(name = "fecha_hora", updatable = false)
     private LocalDateTime fechaHora;
 
-    @Column(name = "detalle", length = 255) // Agrega esta línea
+    @Column(name = "detalle", length = 255)
     private String detalle;
 
     @PrePersist

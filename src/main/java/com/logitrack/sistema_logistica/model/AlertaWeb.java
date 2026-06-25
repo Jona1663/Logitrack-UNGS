@@ -20,13 +20,13 @@ public class AlertaWeb {
     private String idEnvio;
 
     private String mensaje;
-    private String tipo; 
+    private String tipo;
     private boolean leido;
     private LocalDateTime fechaHora;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", nullable = false)
-    private Usuario usuario; 
+    private Usuario usuario;
 
     @Column(name = "id_evaluacion")
     private Long idEvaluacion;
