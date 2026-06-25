@@ -31,19 +31,19 @@ public class EnvioSpecifications {
     }
 
     public static Specification<Envio> tieneAsignacion(Boolean asignado) {
-     return (root, query, criteriaBuilder) -> {
-         if (asignado == null) {
-             return criteriaBuilder.conjunction();
-         }
-         if (asignado) {
-             return criteriaBuilder.and(
-                     criteriaBuilder.isNotNull(root.get("chofer")),
-                     criteriaBuilder.isNotNull(root.get("camion")));
-         }
-         return criteriaBuilder.or(
-                 criteriaBuilder.isNull(root.get("chofer")),
-                 criteriaBuilder.isNull(root.get("camion")));
-     };
+        return (root, query, criteriaBuilder) -> {
+            if (asignado == null) {
+                return criteriaBuilder.conjunction();
+            }
+            if (asignado) {
+                return criteriaBuilder.and(
+                        criteriaBuilder.isNotNull(root.get("chofer")),
+                        criteriaBuilder.isNotNull(root.get("camion")));
+            }
+            return criteriaBuilder.or(
+                    criteriaBuilder.isNull(root.get("chofer")),
+                    criteriaBuilder.isNull(root.get("camion")));
+        };
     }
 
     public static Specification<Envio> fechaCreacionEntre(LocalDateTime fechaInicio, LocalDateTime fechaFin) {

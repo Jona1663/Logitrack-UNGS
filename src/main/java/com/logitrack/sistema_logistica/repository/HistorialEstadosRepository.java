@@ -12,9 +12,6 @@ public interface HistorialEstadosRepository extends JpaRepository<HistorialEstad
 
     List<HistorialEstados> findAllByOrderByFechaHoraDesc();
 
-    // Usamos @Query para evitar el lío de los nombres automáticos con guiones bajos
-    // JOIN FETCH se agrega para traer la información de envío y usuario junto con
-    // el historial
     @Query("SELECT h FROM HistorialEstados h JOIN FETCH h.envio e JOIN FETCH h.usuario u WHERE e.idEnvio = :idEnvio ORDER BY h.fechaHora DESC")
     List<HistorialEstados> buscarHistorialPorEnvio(@Param("idEnvio") String idEnvio);
 }
