@@ -26,11 +26,7 @@ public class ClienteController {
 
     private final ClienteService clienteService;
 
-    /**
-     * POST /api/clientes
-     * Alta de nuevo cliente (US-38).
-     * Roles permitidos: OPERADOR y ADMINISTRADOR.
-     */
+    //POST /api/clientes Alta de nuevo cliente (US-38). Roles permitidos: OPERADOR y ADMINISTRADOR.
     @PostMapping
     @PreAuthorize("hasAnyRole('OPERADOR', 'ADMINISTRADOR')")
     public ResponseEntity<?> crearCliente(@Valid @RequestBody ClienteRequestDTO dto) {
@@ -39,17 +35,15 @@ public class ClienteController {
             return ResponseEntity.status(HttpStatus.CREATED).body(creado);
 
         } catch (IllegalArgumentException ex) {
-            // Criterio 3: CUIT duplicado → 409 Conflict con mensaje claro
+
+            // CUIT duplicado → 409 Conflict con mensaje
             return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(Map.of("message", ex.getMessage()));
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", ex.getMessage()));
         }
     }
-
-    /**
-     * GET /api/clientes
-     * Listado de clientes (para el catálogo del formulario de envíos).
-     */
+    
+    //GET /api/cliente Listado de clientes (para el catálogo del formulario de envíos).
     @GetMapping
     @PreAuthorize("hasAnyRole('OPERADOR', 'SUPERVISOR', 'ADMINISTRADOR')")
     public ResponseEntity<List<EmpresaCliente>> listarClientes() {

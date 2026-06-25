@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
                         // Público existente
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/mock/**").permitAll()
@@ -43,32 +44,37 @@ public class SecurityConfig {
                         .requestMatchers("/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/public/tracking/consulta").permitAll()
 
-                        // Endpoint para obtener PDF de Carta Porte (puede ser público o restringido según tu decisión)
+                        // Endpoint para obtener PDF de Carta Porte (puede ser público o restringido
                         .requestMatchers(HttpMethod.GET, "/api/envios/*/pdf-carta-porte").permitAll()
 
-                        // Admin 
+                        // Admin
                         .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
-                        // Chofer 
+
+                        // Chofer
                         .requestMatchers("/api/chofer/**").hasRole("CHOFER")
                         .requestMatchers(HttpMethod.PATCH, "/api/envios/*/estado").hasRole("CHOFER")
                         .requestMatchers(HttpMethod.POST, "/api/envios/*/incidencias").hasRole("CHOFER")
-                        // Solo Supervisor 
+
+                        // Solo Supervisor
                         .requestMatchers(HttpMethod.GET, "/api/envios/historial-completo").hasRole("SUPERVISOR")
-                        // Operador y Supervisor 
+
+                        // Operador y Supervisor
                         .requestMatchers(HttpMethod.POST, "/api/envios").hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.GET, "/api/envios/sin-asignar").hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.GET, "/api/envios/search").hasAnyRole("OPERADOR", "SUPERVISOR")
-                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/operativo").hasAnyRole("OPERADOR", "SUPERVISOR")
-                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/asignar-transporte").hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/operativo")
+                        .hasAnyRole("OPERADOR", "SUPERVISOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/envios/*/asignar-transporte")
+                        .hasAnyRole("OPERADOR", "SUPERVISOR")
                         .requestMatchers(HttpMethod.PUT, "/api/envios/*/cancelar").hasAnyRole("SUPERVISOR")
                         .requestMatchers(HttpMethod.GET, "/api/catalogos/**").hasAnyRole("OPERADOR", "SUPERVISOR")
 
-                        // Envío por ID — todos los roles autenticados 
+                        // Envío por ID — todos los roles autenticados
                         .requestMatchers(HttpMethod.GET, "/api/envios/*").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/envios/buscar/*").authenticated()
 
                         .requestMatchers("/ws-logistica/**").permitAll() // Libera el WebSocket
-                        //.requestMatchers("/test-ws.html").permitAll() //para testear los websockets
+                        // .requestMatchers("/test-ws.html").permitAll() //para testear los websockets
 
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -82,41 +88,14 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /*
-     * @Bean
-     * CorsConfigurationSource corsConfigurationSource() {
-     * CorsConfiguration configuration = new CorsConfiguration();
-     * 
-     * 
-     * configuration.setAllowedOrigins(Arrays.asList(
-     * "https://tu-proyecto-front.vercel.app", // poner
-     * "http://localhost:5500",
-     * "http://localhost:3000",
-     * "http://localhost:5173"
-     * ));
-     * configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-     * configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE",
-     * "OPTIONS"));
-     * configuration.setAllowedHeaders(Arrays.asList("Authorization",
-     * "Content-Type"));
-     * configuration.setAllowCredentials(true);
-     * 
-     * UrlBasedCorsConfigurationSource source = new
-     * UrlBasedCorsConfigurationSource();
-     * source.registerCorsConfiguration("/**", configuration);
-     * return source;
-     * }
-     */
-
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Deshabilitamos credenciales si usamos SOLO JWT
-        // (Como me confirmaste que usan JWT, esto no afectará tu autenticación)
+        // Deshabilitamos credenciales si usamos SOLO JWT
         configuration.setAllowCredentials(true);
 
-        // 2. Al estar en false, PODEMOS usar el comodín global
+        // Al estar en false, podemos usar el comodín global
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000",
                 "https://logitrackagro.vercel.app",
                 "https://logitrackagro-git-main-logi-track-s-projects.vercel.app"));

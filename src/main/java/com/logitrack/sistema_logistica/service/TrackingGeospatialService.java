@@ -40,20 +40,19 @@ public class TrackingGeospatialService {
      * Se comunica con GraphHopper, obtiene la ruta y la guarda en la Base de Datos.
      */
     public void generarYGuardarRuta(Envio envio) {
-    //Version 1
         Double latInicio;
         Double lonInicio;
         Double latFin;
         Double lonFin;
 
         if (envio.getEstadoActual() == EstadoEnvio.EN_TRANSITO) {
-            // TRAMO 1: UNGS -> Origen
+            //UNGS -> Origen
             latInicio = -34.522881;
             lonInicio = -58.700085;
             latFin = envio.getOrigen().getLatitud();
             lonFin = envio.getOrigen().getLongitud();
         } else {
-            // TRAMO 2: Origen -> Destino
+            //Origen -> Destino
             if (envio.getRutaEnvio() != null) {
                 rutaEnvioRepository.delete(envio.getRutaEnvio());
                 rutaEnvioRepository.flush();
@@ -89,9 +88,6 @@ public class TrackingGeospatialService {
 
         envio.setRutaEnvio(ruta);
         envio.setFechaSalida(LocalDateTime.now());
-
-        // Antes: envio.setFechaEstimadaLlegada(LocalDateTime.now().plusSeconds(tiempoSegundos));
-        // Ahora: la fecha estimada se asigna desde EnvioService usando el modelo ML
     }
 
     public LocalDateTime calcularETAConML(Envio envio, Camion camion) {
@@ -118,18 +114,17 @@ public class TrackingGeospatialService {
         return calcularETA(envio.getDistanciaKm(), fechaSalida);
     }
 
-    //Version2
-    // 1. Método original (sin parámetros), mantiene compatibilidad con el resto del sistema
+    // Método original (sin parámetros), mantiene compatibilidad con el resto del sistema
     public Map<String, Object> calcularUbicacionInterpolada(Envio envio) {
         return calcularUbicacionInterpolada(envio, -1.0); // -1 indica "modo tiempo real"
     }
 
-    // 2. Nuevo método para tu TrackingPublicoService
+    // método para TrackingPublicoService (mitad de camino)
     public Map<String, Object> calcularUbicacionMitad(Envio envio) {
         return calcularUbicacionInterpolada(envio, 0.5); // 0.5 indica "fijo en la mitad"
     }
 
-    // 3. Lógica centralizada (El "motor" que hace el trabajo pesado)
+    // Lógica centralizada
     private Map<String, Object> calcularUbicacionInterpolada(Envio envio, double porcentajeForzado) {
         if (envio.getEstadoActual() != EstadoEnvio.EN_TRANSITO && envio.getEstadoActual() != EstadoEnvio.EN_REPARTO) {
             throw new RuntimeException("El envío no se encuentra en un estado activo de transporte.");
