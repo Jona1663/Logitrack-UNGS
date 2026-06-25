@@ -27,23 +27,21 @@ public class AlertaWebController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    
     @GetMapping(value = "/pendientes", produces = "application/json")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<List<AlertaWeb>> obtenerAlertasPendientes(Principal principal) {
-        
+
         Usuario usuario = usuarioRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         List<AlertaWeb> pendientes = alertaWebService.obtenerPendientes(usuario.getIdUsuario());
         return ResponseEntity.ok(pendientes);
     }
 
-    
     @PatchMapping("/{id}/leer")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<?> marcarAlertaComoLeida(@PathVariable Integer id) {
-        
+
         alertaWebService.marcarComoLeida(id);
         return ResponseEntity.noContent().build();
     }

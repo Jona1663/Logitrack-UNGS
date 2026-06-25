@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class EstadoUpdateRequestDTO {
-    private String nuevoEstado; // Debe coincidir con el JSON: { "nuevoEstado": "..." } [cite: 43-44]
+    private String nuevoEstado;
 }

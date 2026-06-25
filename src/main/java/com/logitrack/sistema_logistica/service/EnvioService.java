@@ -264,9 +264,6 @@ import com.logitrack.sistema_logistica.model.Usuario;
                                 }
                         }
 
-                       
-                        
-
                         //#222 - Liberamos a los choferes y camiónes si el envío termina o se cancela
                         if (estadoNuevo == EstadoEnvio.ENTREGADO || estadoNuevo == EstadoEnvio.CANCELADO) {
                             if (estadoNuevo == EstadoEnvio.ENTREGADO) {

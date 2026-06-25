@@ -4,7 +4,8 @@ public class ReporteTotalesDTO {
     private long totalViajes;
     private long totalKilos;
 
-    public ReporteTotalesDTO() {}
+    public ReporteTotalesDTO() {
+    }
 
     public ReporteTotalesDTO(long totalViajes, long totalKilos) {
         this.totalViajes = totalViajes;

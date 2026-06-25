@@ -8,7 +8,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FatigaPendienteResponseDTO {
-    // Este campo tiene que llamarse exactamente así para que el JSON
-    // tenga la clave "evaluacionFatigaPendiente"
     private AlertaFatigaDTO evaluacionFatigaPendiente;
 }

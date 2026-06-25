@@ -9,10 +9,10 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Getter
-@Setter // Importante: siempre es bueno tener setters por si acaso
-@AllArgsConstructor // Genera el constructor con los 3 campos automáticamente
-@NoArgsConstructor  // Necesario para que Spring pueda deserializar el JSON si hace falta
-@ToString//Para probar log en consola
+@Setter 
+@AllArgsConstructor 
+@NoArgsConstructor  
+@ToString
 public class AlertaFatigaDTO {
     private String idEnvio;
     private String nombreChofer;

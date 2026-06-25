@@ -12,15 +12,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-
 @Data
 @Builder
-@NoArgsConstructor  
+@NoArgsConstructor
 @AllArgsConstructor
 public class UsuarioRequestDTO {
-
-    // --- Datos de Usuario ---
     @NotBlank(message = "El email/username es obligatorio")
     @Email(message = "Formato de email inválido")
     private String username;
@@ -31,7 +27,6 @@ public class UsuarioRequestDTO {
     @NotNull(message = "El rol es obligatorio")
     private RolUsuario rol;
 
-    // --- Datos de Persona ---
     @NotBlank(message = "El CUIL es obligatorio")
     private String cuil;
 
@@ -43,11 +38,8 @@ public class UsuarioRequestDTO {
 
     private String telefono;
 
-    // --- Datos de Chofer (Opcionales, solo se usan si rol == CHOFER) ---
     private String nroLicencia;
     private LocalDate vtoLicencia;
     private LocalDate vtoLinti;
-
-
 
 }

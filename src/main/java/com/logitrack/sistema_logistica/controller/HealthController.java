@@ -11,7 +11,7 @@ public class HealthController {
 
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
-        
+
         // Retorna un HTTP 200 OK instantáneo
         return ResponseEntity.ok("OK");
     }

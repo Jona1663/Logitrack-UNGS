@@ -4,10 +4,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-/**
- * DTO para el alta de un nuevo cliente (US-38).
- * El backend valida los datos antes de persistirlos.
- */
 public record ClienteRequestDTO(
 
     @NotBlank(message = "El CUIT es obligatorio")
@@ -23,12 +19,9 @@ public record ClienteRequestDTO(
 
     @Email(message = "El formato del email no es válido")
     String email,
-    
-    // Campos opcionales
     String rucaNro,
-    String vtoRuca,    // Se recibe como String "YYYY-MM-DD" y se convierte en el servicio
-    
-    SedeDTO sede  // nullable — es opcional
+    String vtoRuca,    // Se recibe como String "YYYY-MM-DD" y se convierte en el servicio  
+    SedeDTO sede 
 ) {
     public record SedeDTO(
         String nombreLugar,
