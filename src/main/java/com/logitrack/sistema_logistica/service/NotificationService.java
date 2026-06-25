@@ -8,6 +8,6 @@ public interface NotificationService {
     // Método original — usado por IncidenciaService para alertar al supervisor
     void enviarNotificacion(String destinatario, String asunto, String mensaje);
 
-    // Método nuevo — usado por EnvioCambioEstadoListener para notificar al cliente (US-44)
+    // Método nuevo — usado por EnvioCambioEstadoListener para notificar al cliente
     void notificarCambioEstado(Envio envio, EstadoEnvio nuevoEstado);
 }

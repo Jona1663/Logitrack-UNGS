@@ -1,11 +1,9 @@
 package com.logitrack.sistema_logistica.service;
 
 import java.util.List;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.logitrack.sistema_logistica.dto.UsuarioRequestDTO;
 import com.logitrack.sistema_logistica.dto.UsuarioResponseDTO;
 import com.logitrack.sistema_logistica.model.ChoferDetalle;
@@ -30,14 +28,10 @@ public class AdminService {
     @Transactional
     public UsuarioResponseDTO crearUsuario(UsuarioRequestDTO request) {
 
-        // --- AGREGAMOS ESTA VALIDACIÓN MANUAL ---
+        // agregamos validacion manual
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new RuntimeException("La contraseña es obligatoria para crear un nuevo usuario.");
         }
-
-
-
-
 
         if (usuarioRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Error: El nombre de usuario (email) ya está en uso.");

@@ -3,11 +3,9 @@ package com.logitrack.sistema_logistica.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.logitrack.sistema_logistica.dto.AlertaListadoDTO;
 import com.logitrack.sistema_logistica.dto.ChoferAlertaDTO;
 import com.logitrack.sistema_logistica.dto.IncidenciaDTO;
@@ -33,10 +31,10 @@ public class IncidenciaService {
     private EnvioRepository envioRepository;
 
     @Autowired
-    private TrackingGeospatialService trackingService; // Inyectamos el servicio de ubicaciones
+    private TrackingGeospatialService trackingService;
 
     @Autowired
-    private NotificationService notificationService; // Inyectamos el de tu compañero
+    private NotificationService notificationService;
 
     @Autowired
     private AlertaWebService alertaWebService;
@@ -46,16 +44,16 @@ public class IncidenciaService {
 
     @Transactional
     public void reportarIncidencia(String idEnvio, IncidenciaDTO dto) {
-        // 1. Buscamos el viaje
+        // Buscamos el viaje
         Envio envio = envioRepository.findById(idEnvio)
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado"));
 
-        // 2. Regla de negocio: Bloqueo de alertas sin viaje activo (Criterio 3 del Chofer)
+        // Regla de negocio: Bloqueo de alertas sin viaje activo (Criterio 3 del Chofer)
         if (envio.getEstadoActual() != EstadoEnvio.EN_TRANSITO && envio.getEstadoActual() != EstadoEnvio.EN_REPARTO) {
             throw new IllegalStateException("Solo se pueden reportar incidencias sobre viajes en curso.");
         }
 
-        // 3.  Calculamos dónde está el camión ahora mismo
+        // Calculamos dónde está el camión ahora mismo
         String ubicacionFormateada = "Ubicación no disponible";
         try {
             Map<String, Object> ubicacion = trackingService.calcularUbicacionInterpolada(envio);
@@ -67,7 +65,7 @@ public class IncidenciaService {
 
         String usuarioActual = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
 
-        // 4. Creamos la entidad
+        // Creamos la entidad
         Incidencia nuevaIncidencia = Incidencia.builder()
                 .envio(envio)
                 .tipoIncidencia(dto.getTipoIncidencia())
@@ -82,7 +80,7 @@ public class IncidenciaService {
 
         incidenciaRepository.save(nuevaIncidencia);
 
-        // 5. Enviamos la notificación al supervisor
+        // Enviamos la notificación al supervisor
         String asunto = "NUEVA ALERTA: " + dto.getTipoIncidencia().name() + " en viaje " + idEnvio;
         String mensaje = "El chofer ha reportado un problema.\nUbicación: " + ubicacionFormateada + "\nDetalle: " + dto.getDescripcion();
         
@@ -105,8 +103,6 @@ public class IncidenciaService {
             }
       
     }
-
-    // --- MÉTODOS DEL SUPERVISOR ---
 
     @Transactional(readOnly = true)
     public List<AlertaListadoDTO> listarAlertas() {
@@ -153,7 +149,5 @@ public class IncidenciaService {
 
         incidenciaRepository.save(incidencia);
     }
-
-    
 
 }

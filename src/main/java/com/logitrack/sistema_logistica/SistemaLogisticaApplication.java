@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class SistemaLogisticaApplication {
 
 	public static void main(String[] args) {
-		System.setProperty("user.timezone", "UTC");  //para solucionar un error con docker y la zona horaria
+		System.setProperty("user.timezone", "UTC");
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 		SpringApplication.run(SistemaLogisticaApplication.class, args);
 	}

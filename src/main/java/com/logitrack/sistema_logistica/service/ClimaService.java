@@ -2,11 +2,9 @@ package com.logitrack.sistema_logistica.service;
 
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,7 +33,8 @@ public class ClimaService {
 
             // OpenWeatherMap devuelve weather[0].main con la condición principal
             List<Map<?, ?>> weatherList = (List<Map<?, ?>>) response.get("weather");
-            if (weatherList == null || weatherList.isEmpty()) return "despejado";
+            if (weatherList == null || weatherList.isEmpty())
+                return "despejado";
 
             String condicion = String.valueOf(weatherList.get(0).get("main")).toLowerCase();
             String resultado = mapearCondicion(condicion);
@@ -52,13 +51,13 @@ public class ClimaService {
     // Mapea las condiciones de OpenWeatherMap a los valores que acepta el modelo ML
     private String mapearCondicion(String owmCondicion) {
         return switch (owmCondicion) {
-            case "drizzle"                    -> "lluvia_leve";
-            case "rain"                       -> "lluvia_leve";
-            case "thunderstorm"               -> "lluvia_fuerte";
-            case "snow"                       -> "lluvia_fuerte"; // nieve → impacto similar
-            case "fog", "mist", "haze"        -> "niebla";
-            case "squall", "tornado", "ash"   -> "granizo";      // condiciones extremas
-            default                           -> "despejado";    // "clear", "clouds", etc.
+            case "drizzle" -> "lluvia_leve";
+            case "rain" -> "lluvia_leve";
+            case "thunderstorm" -> "lluvia_fuerte";
+            case "snow" -> "lluvia_fuerte"; // nieve → impacto similar
+            case "fog", "mist", "haze" -> "niebla";
+            case "squall", "tornado", "ash" -> "granizo"; // condiciones extremas
+            default -> "despejado"; // "clear", "clouds", etc.
         };
     }
 }
