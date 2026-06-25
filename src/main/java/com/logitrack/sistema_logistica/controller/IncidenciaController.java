@@ -19,7 +19,6 @@ import com.logitrack.sistema_logistica.dto.ResolverIncidenciaDTO;
 import com.logitrack.sistema_logistica.service.IncidenciaService;
 import com.logitrack.sistema_logistica.service.IncidenciaMapaService;
 
-
 @RestController
 @RequestMapping("/api")
 public class IncidenciaController {
@@ -46,10 +45,12 @@ public class IncidenciaController {
             return ResponseEntity.status(HttpStatus.CREATED).build(); // 201 Created sin body
 
         } catch (IllegalStateException e) {
+
             // 409 Conflict: El viaje no está EN_TRANSITO o EN_REPARTO
             return ResponseEntity.status(HttpStatus.CONFLICT).body("{\"message\": \"" + e.getMessage() + "\"}");
 
         } catch (RuntimeException e) {
+
             // 404 Not Found: El viaje no existe
             if (e.getMessage().contains("no encontrado")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"message\": \"Envío no encontrado.\"}");
@@ -59,9 +60,6 @@ public class IncidenciaController {
         }
     }
 
-    // US 33 ENDPOINTS DEL SUPERVISOR
-
-    // Listado de Alertas
     @GetMapping("/incidencias/alertas")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<List<AlertaListadoDTO>> obtenerAlertas() {
@@ -69,7 +67,6 @@ public class IncidenciaController {
         return ResponseEntity.ok(alertas); // 200 OK
     }
 
-    // Resolución de Alertas
     @PatchMapping("/incidencias/{id}/resolver")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<?> resolverIncidencia(
@@ -78,14 +75,13 @@ public class IncidenciaController {
 
         try {
             incidenciaService.resolverIncidencia(id, dto);
-            return ResponseEntity.noContent().build(); // 204 No Content (Éxito silencioso, como pidió el Front)
+            return ResponseEntity.noContent().build(); // 204 No Content (Éxito silencioso)
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"message\": \"Incidencia no encontrada.\"}");
         }
     }
 
-    // US 63 ENDPOINT PARA EL MAPA DE INCIDENCIAS (SUPERVISOR)
     @GetMapping("/incidencias/mapa")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<List<IncidenciaMapaDTO>> obtenerMapaIncidencias() {
