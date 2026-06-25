@@ -2,16 +2,13 @@ package com.logitrack.sistema_logistica.security;
 
 import java.io.IOException;
 import java.util.List;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,13 +24,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
 
-        // Si no hay token, dejamos pasar (SecurityConfig decide si la ruta es pública o no)
+        // Si no hay token, dejamos pasar (SecurityConfig decide si la ruta es pública o
+        // no)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -46,14 +44,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             usuarioRepository.findByUsername(username).ifPresentOrElse(usuario -> {
                 if (Boolean.TRUE.equals(usuario.getActivo())) {
+
                     // Usuario activo: registramos la autenticación en el contexto
                     var auth = new UsernamePasswordAuthenticationToken(
                             username,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
-                    );
+                            List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name())));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 } else {
+                    
                     // Usuario existe pero está inactivo: rechazamos explícitamente
                     try {
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -82,7 +81,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return; // Cortamos la cadena, no seguimos procesando
         }
 
-        // Si la respuesta ya fue comprometida (usuario inactivo o no encontrado), no seguimos
+        // Si la respuesta ya fue comprometida (usuario inactivo o no encontrado), no
+        // seguimos
         if (response.isCommitted()) {
             return;
         }
