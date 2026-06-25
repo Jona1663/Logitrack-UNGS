@@ -23,7 +23,5 @@ public class EnvioRequestDTO {
     private TipoGrano tipoGrano;
     private String prioridadIa;
     private Integer kgOrigen;
-    
-    // Necesitamos saber qué usuario está creando esto para dejarlo asentado en el Historial
     private Integer idUsuarioCreador; 
 }

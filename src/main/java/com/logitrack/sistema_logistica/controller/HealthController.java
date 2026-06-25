@@ -6,11 +6,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api") // Mapea a la base de tu API
+@RequestMapping("/api")
 public class HealthController {
 
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
+
         // Retorna un HTTP 200 OK instantáneo
         return ResponseEntity.ok("OK");
     }

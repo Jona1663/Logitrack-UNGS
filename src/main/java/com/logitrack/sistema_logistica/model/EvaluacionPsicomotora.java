@@ -1,7 +1,7 @@
 package com.logitrack.sistema_logistica.model;
 
 import java.time.LocalDateTime;
-import jakarta.persistence.*; // Cambiado a jakarta
+import jakarta.persistence.*;
 import com.logitrack.sistema_logistica.model.enums.EstadoEvaluacionEnum;
 import com.logitrack.sistema_logistica.model.enums.TipoJuegoEnum;
 
@@ -36,7 +36,7 @@ public class EvaluacionPsicomotora {
     private EstadoEvaluacionEnum resultado;
 
     private String mensaje;
-    private String autorizadoPor; // Username del supervisor
+    private String autorizadoPor; 
     private String motivoAutorizacion;
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 

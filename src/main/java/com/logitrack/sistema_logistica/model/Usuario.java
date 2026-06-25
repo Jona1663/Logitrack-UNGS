@@ -28,7 +28,7 @@ public class Usuario {
     private Integer idUsuario;
 
     @Column(unique = true, nullable = false, length = 100)
-    private String username;// es un mail
+    private String username;
 
     @Column(nullable = false, length = 255)
     private String passwordHash;
@@ -40,8 +40,6 @@ public class Usuario {
     @Builder.Default
     @Column(columnDefinition = "boolean default true")
     private Boolean activo = true;
-    
-    // --- NUEVOS CAMPOS DE SEGURIDAD ---
 
     @Builder.Default
     @Column(name = "intentos_fallidos", columnDefinition = "integer default 0")

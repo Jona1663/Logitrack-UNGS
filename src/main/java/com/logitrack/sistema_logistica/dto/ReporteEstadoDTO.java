@@ -10,7 +10,6 @@ import lombok.Builder;
 @AllArgsConstructor
 @NoArgsConstructor
 
-
 public class ReporteEstadoDTO {
     private String estado;
     private Long cantidadEnvios;
@@ -38,6 +37,6 @@ public class ReporteEstadoDTO {
 
     public void setKilos(long kilos) {
         this.kilos = kilos;
-    }     
+    }
 
 }

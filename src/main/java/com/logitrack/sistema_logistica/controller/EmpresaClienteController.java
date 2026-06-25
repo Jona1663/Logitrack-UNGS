@@ -21,6 +21,7 @@ public class EmpresaClienteController {
             EmpresaCliente nuevaEmpresa = empresaClienteService.crearEmpresa(empresa);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaEmpresa);
         } catch (RuntimeException e) {
+            
             // Atajamos tu validación y devolvemos un 400 Bad Request
             return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
         }

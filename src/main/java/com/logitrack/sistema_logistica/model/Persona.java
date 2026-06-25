@@ -18,7 +18,6 @@ public class Persona {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer idPersona;
 
-    // Relación 1 a 1 con Usuario
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_usuario")
     private Usuario idUsuario; 

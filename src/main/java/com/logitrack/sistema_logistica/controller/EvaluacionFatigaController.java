@@ -11,23 +11,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.logitrack.sistema_logistica.dto.AlertaFatigaDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaRequestDTO;
 import com.logitrack.sistema_logistica.dto.EvaluacionFatigaResponseDTO;
-import com.logitrack.sistema_logistica.dto.FatigaPendienteResponseDTO;
 import com.logitrack.sistema_logistica.service.EvaluacionFatigaService;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/evaluaciones")
 public class EvaluacionFatigaController {
-    @Autowired 
+    @Autowired
     private EvaluacionFatigaService service;
 
     @PostMapping
     public ResponseEntity<EvaluacionFatigaResponseDTO> registrarEvaluacion(
-            @RequestBody EvaluacionFatigaRequestDTO dto, 
+            @RequestBody EvaluacionFatigaRequestDTO dto,
             Authentication auth) {
         return ResponseEntity.ok(service.procesarEvaluacion(dto, auth.getName()));
     }
@@ -43,52 +41,33 @@ public class EvaluacionFatigaController {
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<?> autorizar(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String motivo = body.get("motivo");
-        // Pasamos también el username para cumplir con "guarda el ID/usuario del supervisor"
+
+        // Pasamos el username para cumplir con "guarda el ID/usuario del supervisor"
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         service.autorizarForzado(id, motivo, username);
         return ResponseEntity.ok().build();
-    }    
+    }
 
     @PostMapping("/{id}/rechazar")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<?> rechazar(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String motivo = body.get("motivo");
-        // Pasamos también el username para cumplir con "guarda el ID/usuario del supervisor"
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         service.rechazarPrueba(username, motivo, id);
         return ResponseEntity.ok().build();
-    } 
-    //Verrsion1 
-    /*  
-    @GetMapping("/envio/{idEnvio}/pendiente")
-    public ResponseEntity<AlertaFatigaDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
-        
-        AlertaFatigaDTO pendiente = service.obtenerEvaluacionPendienteParaEnvio(idEnvio);
-        
-        if (pendiente == null) {
-            // Requisito de Jamil: Si no hay nada pendiente, devolver 204 No Content
-            return ResponseEntity.noContent().build();
-        }
-        
-        
-        // Si hay una evaluación rechazada, la devolvemos con un 200 OK
-        return ResponseEntity.ok(pendiente);
-    }
-        */ 
-   @GetMapping("/envio/{idEnvio}/pendiente")
-    public ResponseEntity<AlertaFatigaDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
-        
-        AlertaFatigaDTO pendiente = service.obtenerEvaluacionPendienteParaEnvio(idEnvio);
-        
-        if (pendiente == null) {
-            // Requisito de Jamil: Si no hay nada pendiente, devolver 204 No Content
-            return ResponseEntity.noContent().build();
-        }
-        
-        
-        // Si hay una evaluación rechazada, la devolvemos con un 200 OK
-        return ResponseEntity.ok(pendiente);
     }
 
+    @GetMapping("/envio/{idEnvio}/pendiente")
+    public ResponseEntity<AlertaFatigaDTO> obtenerFatigaPendiente(@PathVariable String idEnvio) {
+
+        AlertaFatigaDTO pendiente = service.obtenerEvaluacionPendienteParaEnvio(idEnvio);
+
+        if (pendiente == null) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // Si hay una evaluación rechazada, la devolvemos con un 200 OK
+        return ResponseEntity.ok(pendiente);
+    }
 
 }

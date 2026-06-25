@@ -10,13 +10,13 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class IncidenciaMapaService {
-private final IncidenciaRepository incidenciaRepository;
+    private final IncidenciaRepository incidenciaRepository;
 
     @Transactional(readOnly = true)
     public List<IncidenciaMapaDTO> obtenerDatosMapaHistorico() {
         // Al llamar a este método, la consulta optimizada hace todo el trabajo pesado.
-        // Si hay 10.000 incidencias, esto se ejecuta en milisegundos y no consume casi RAM.
+        // Si hay 10.000 incidencias, esto se ejecuta en milisegundos y no consume casi
+        // RAM.
         return incidenciaRepository.obtenerIncidenciasOptimizadasParaMapa();
     }
 }
-

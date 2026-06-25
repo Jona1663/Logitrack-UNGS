@@ -13,12 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDate;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor // Usamos Lombok para inyectar dependencias limpiamente
+@RequiredArgsConstructor
 public class ValidacionExternaService {
 
     private final RestTemplate restTemplate;
@@ -41,7 +40,8 @@ public class ValidacionExternaService {
                     camionRepository.save(camion);
                 }
             } catch (HttpClientErrorException e) {
-                throw new RuntimeException("Validación SENASA rechazada: El camión no está habilitado para transporte de granos.");
+                throw new RuntimeException(
+                        "Validación SENASA rechazada: El camión no está habilitado para transporte de granos.");
             } catch (Exception e) {
                 throw new RuntimeException("Error de conexión al validar con SENASA.");
             }
@@ -90,7 +90,7 @@ public class ValidacionExternaService {
         }
     }
 
-    public String getNroAutorizacionArca(String cpe) { // Nota: le paso el String directo
+    public String getNroAutorizacionArca(String cpe) {
         String nroAutorizacionArca = "";
         try {
             String arcaUrl = mockBaseUrl + "/arca/validar-cpe/" + cpe;

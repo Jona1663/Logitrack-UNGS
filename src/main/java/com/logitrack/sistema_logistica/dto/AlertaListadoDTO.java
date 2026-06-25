@@ -22,6 +22,6 @@ public class AlertaListadoDTO {
     private String estado;
     private LocalDateTime fechaReporte;
     private LocalDateTime fechaResolucion;
-    private String lugarIncidencia; // Agregamos la ubicación para el front!
+    private String lugarIncidencia;
     
 }

@@ -28,39 +28,44 @@ import com.logitrack.sistema_logistica.repository.EstablecimientoRepository;
 @RequestMapping("/api/catalogos")
 public class CatalogoController {
 
-    @Autowired private EmpresaClienteRepository empresaRepository;
-    @Autowired private EstablecimientoRepository establecimientoRepository;
-    @Autowired private ChoferDetalleRepository choferRepository;
-    @Autowired private CamionRepository camionRepository;
+    @Autowired
+    private EmpresaClienteRepository empresaRepository;
+    @Autowired
+    private EstablecimientoRepository establecimientoRepository;
+    @Autowired
+    private ChoferDetalleRepository choferRepository;
+    @Autowired
+    private CamionRepository camionRepository;
 
-    // 1. Empresas Clientes
+    //Empresas Clientes
     @GetMapping("/empresas")
     public List<EmpresaCliente> getEmpresas() {
         return empresaRepository.findAll();
     }
 
-    // 2. Establecimientos (Orígenes/Destinos)
+    // Establecimientos (Orígenes/Destinos)
     @GetMapping("/establecimientos")
     public List<Establecimiento> getEstablecimientos() {
         return establecimientoRepository.findAll();
     }
 
-    // 3. Choferes
+    // Choferes
     @GetMapping("/choferes")
     public List<ChoferDetalle> getChoferes() {
         return choferRepository.findAll();
     }
 
-    // 4. Camiones
+    // Camiones
     @GetMapping("/camiones")
     public List<Camion> getCamiones() {
         return camionRepository.findAll();
     }
+
     // Choferes disponibles (sin viaje activo)
     @GetMapping("/choferes/disponibles")
     public List<ChoferDetalle> getChoferesDisponibles() {
         return choferRepository.findByDisponibleTrue();
-}
+    }
 
     // Camiones disponibles (sin viaje activo)
     @GetMapping("/camiones/disponibles")
@@ -68,8 +73,8 @@ public class CatalogoController {
         return camionRepository.findByDisponibleTrue();
     }
 
-    // 5. ENUMS (Metadatos dinámicos)
-    // Esto es muy valorado en la industria porque si agregás un grano en Java, el Front se actualiza solo.
+    // ENUMS (Metadatos dinámicos)
+    // si agregamos un grano por ejemplo, el Front se actualiza solo.
     @GetMapping("/metadatos")
     public MetadatosDTO getMetadatos() {
         return MetadatosDTO.builder()

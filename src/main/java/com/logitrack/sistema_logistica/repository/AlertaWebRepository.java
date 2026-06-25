@@ -7,6 +7,5 @@ import java.util.List;
 
 @Repository
 public interface AlertaWebRepository extends JpaRepository<AlertaWeb, Integer> {
-    // alertas no leidas por fecha
     List<AlertaWeb> findByUsuarioIdUsuarioAndLeidoFalseOrderByFechaHoraDesc(Integer idUsuario);
 }

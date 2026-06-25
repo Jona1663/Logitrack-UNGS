@@ -3,9 +3,7 @@ package com.logitrack.sistema_logistica.events;
 import com.logitrack.sistema_logistica.dto.ViajeEstadoUpdateDTO;
 import com.logitrack.sistema_logistica.model.enums.PlantillaNotificacion;
 import com.logitrack.sistema_logistica.service.NotificationService;
-
 import java.time.LocalDateTime;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,10 +62,10 @@ public class EnvioCambioEstadoListenerNotificaciones {
             // Cualquiera que esté mirando el dashboard va a estar escuchando este canal.
             messagingTemplate.convertAndSend("/topic/viajes", updatePayload);
 
-            System.out.println("📢 [WebSocket] Estado de viaje " + envio.getIdEnvio() + " transmitido a /topic/viajes");
+            System.out.println("[WebSocket] Estado de viaje " + envio.getIdEnvio() + " transmitido a /topic/viajes");
 
         } catch (Exception e) {
-            System.err.println("❌ Error transmitiendo actualización de viaje por socket: " + e.getMessage());
+            System.err.println("Error transmitiendo actualización de viaje por socket: " + e.getMessage());
         }
 
     }

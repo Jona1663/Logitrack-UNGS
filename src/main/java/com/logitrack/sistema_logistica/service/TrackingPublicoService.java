@@ -15,25 +15,26 @@ public class TrackingPublicoService {
     @Autowired
     private EnvioRepository envioRepository;
 
-    @Autowired private TrackingGeospatialService trackingService;
-    
+    @Autowired
+    private TrackingGeospatialService trackingService;
+
     public TrackingPublicoResponseDTO obtenerInfoPublica(TrackingPublicoRequestDTO request) {
-        // 1. Buscar el envío en la base de datos
+        // Buscar el envío en la base de datos
         Envio envio = envioRepository.findById(request.getTrackingId())
                 .orElseThrow(() -> new RuntimeException("No encontrado"));
 
-        // 2. Acceder al CUIT siguiendo la estructura del modelo
+        // Acceder al CUIT siguiendo la estructura del modelo
         String cuitOrigen = envio.getOrigen().getEmpresa().getCuit();
         String cuitDestino = envio.getDestino().getEmpresa().getCuit();
 
-        // 3. Validar coincidencia
+        // Validar coincidencia
         if (!request.getCuit().equals(cuitOrigen) && !request.getCuit().equals(cuitDestino)) {
             throw new RuntimeException("No encontrado");
         }
 
         Integer porcentaje = calcularPorcentaje(envio);
 
-        // 4. Mapear al DTO
+        // Mapear al DTO
         return TrackingPublicoResponseDTO.builder()
                 .trackingId(envio.getIdEnvio())
                 .estadoActual(envio.getEstadoActual().toString())
@@ -43,15 +44,17 @@ public class TrackingPublicoService {
                 .fechaSalida(envio.getFechaSalida() != null ? envio.getFechaSalida().toString() : null)
                 .eta(envio.getFechaEstimadaLlegada() != null ? envio.getFechaEstimadaLlegada().toString() : null)
                 .porcentajeCompletado(porcentaje)
+
                 // Usamos las coordenadas del destino o una fija si el camión no tiene datos GPS
                 .ubicacionActual(calcularUbicacionActual(envio))
                 .build();
     }
 
     private Integer calcularPorcentaje(Envio envio) {
-        if (envio.getEstadoActual() == null) return 0;
-        
-        // Usamos los estados exactos definidos en tu Enum EstadoEnvio
+        if (envio.getEstadoActual() == null)
+            return 0;
+
+        // Usamos los estados exactos definidos en Enum EstadoEnvio
         return switch (envio.getEstadoActual()) {
             case PENDIENTE -> 0;
             case EN_PUNTO_DE_RECOLECCION -> 20;
@@ -68,84 +71,32 @@ public class TrackingPublicoService {
             return null;
         }
 
-    /*Version 1 
-    //Extraemos las coordenadas en variables para que el código quede más limpio
-    Double latOrigen = envio.getOrigen().getLatitud();
-    Double lonOrigen = envio.getOrigen().getLongitud();
-    Double latDestino = envio.getDestino().getLatitud();
-    Double lonDestino = envio.getDestino().getLongitud();
-
-    // Devolvemos Origen o Destino dependiendo de qué tan avanzado esté el viaje
-    return switch (envio.getEstadoActual()) {
-        // Si recién empieza o está buscando la carga, marcamos que está en el Origen
-        case PENDIENTE, EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(latOrigen, lonOrigen);
-            
-        // MITAD DE CAMINO: Sumamos las coordenadas y dividimos por 2
-        case EN_REPARTO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-                (latOrigen + latDestino) / 2.0, 
-                (lonOrigen + lonDestino) / 2.0
-            );
-        
-            // SOLO si está entregado, lo mostramos en el destino exacto
-        case ENTREGADO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(latDestino, lonDestino);
-        };
-        */
-
-        //Version 2
-
-        
-        
-        /* 
-            // Si ya está repartiendo o entregó, marcamos el Destino
-        case EN_REPARTO, ENTREGADO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-                envio.getDestino().getLatitud(), 
-                envio.getDestino().getLongitud()
-            );
-        };
-        */
-
-        /* */
         return switch (envio.getEstadoActual()) {
-        
-        /* 
-        case PENDIENTE, EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-                envio.getOrigen().getLatitud(), 
-                envio.getOrigen().getLongitud()
-            );*/
-        case PENDIENTE -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(-34.522881, -58.700085);
+            case PENDIENTE ->
+                new com.logitrack.sistema_logistica.dto.UbicacionDTO(-34.522881, -58.700085);
 
-        case EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(envio.getOrigen().getLatitud(), envio.getOrigen().getLongitud());
-            
-        case EN_REPARTO -> {
-    try {
-        // Usamos nuestro nuevo método específico para la mitad del camino
-        Map<String, Object> ubicacionMitad = trackingService.calcularUbicacionMitad(envio);
-        
-        yield new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-            (Double) ubicacionMitad.get("latitudActual"), 
-            (Double) ubicacionMitad.get("longitudActual")
-        );
-    } catch (Exception e) {
-        // Tu fallback de emergencia
-        yield new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-            (envio.getOrigen().getLatitud() + envio.getDestino().getLatitud()) / 2.0, 
-            (envio.getOrigen().getLongitud() + envio.getDestino().getLongitud()) / 2.0
-        );
-    }
-        }
+            case EN_TRANSITO, EN_PUNTO_DE_RECOLECCION, CANCELADO ->
+                new com.logitrack.sistema_logistica.dto.UbicacionDTO(envio.getOrigen().getLatitud(),
+                        envio.getOrigen().getLongitud());
 
-        case ENTREGADO -> 
-            new com.logitrack.sistema_logistica.dto.UbicacionDTO(
-                envio.getDestino().getLatitud(), 
-                envio.getDestino().getLongitud()
-            );
+            case EN_REPARTO -> {
+                try {
+                    Map<String, Object> ubicacionMitad = trackingService.calcularUbicacionMitad(envio);
+
+                    yield new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                            (Double) ubicacionMitad.get("latitudActual"),
+                            (Double) ubicacionMitad.get("longitudActual"));
+                } catch (Exception e) {
+                    yield new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                            (envio.getOrigen().getLatitud() + envio.getDestino().getLatitud()) / 2.0,
+                            (envio.getOrigen().getLongitud() + envio.getDestino().getLongitud()) / 2.0);
+                }
+            }
+
+            case ENTREGADO ->
+                new com.logitrack.sistema_logistica.dto.UbicacionDTO(
+                        envio.getDestino().getLatitud(),
+                        envio.getDestino().getLongitud());
         };
     }
 }

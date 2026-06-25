@@ -3,30 +3,25 @@ package com.logitrack.sistema_logistica.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.logitrack.sistema_logistica.model.Usuario;
 import com.logitrack.sistema_logistica.model.enums.RolUsuario;
 import com.logitrack.sistema_logistica.repository.UsuarioRepository;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-//@RequiredArgsConstructor
-
 public class SeguridadCuentaService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private NotificationService notificationService; // ¡Usamos la interfaz de tu compañero!
+    private NotificationService notificationService;
     
     @Autowired
-    private AlertaWebService alertaWebService;       // ¡Usamos las alertas web de tu compañero!
+    private AlertaWebService alertaWebService;   
 
     @Transactional
     public void manejarIntentoFallido(String username) {
@@ -46,7 +41,7 @@ public class SeguridadCuentaService {
             usuario.setCodigoDesbloqueo(codigo);
             usuario.setVencimientoCodigo(LocalDateTime.now().plusMinutes(10));
             
-            // 1. Mandamos el mail asíncrono usando la infraestructura de Resend
+            // Mandamos el mail asíncrono usando la infraestructura de Resend
             String asunto = "LogiTrack - Código de Seguridad para Desbloqueo";
             String mensaje = "Tu cuenta ha sido bloqueada tras 5 intentos fallidos.\n"
                            + "Para recuperar el acceso, ingresá el siguiente código de 6 dígitos:\n\n"
@@ -60,12 +55,11 @@ public class SeguridadCuentaService {
                 log.info("El username no es un mail. Redirigiendo código a: {}", correoDestino);
             }
             
-            // ¡AQUÍ ESTÁ LA CORRECCIÓN! Le pasamos 'correoDestino'
-            //notificationService.enviarNotificacion(correoDestino, asunto, mensaje);
+            // Le pasamos 'correoDestino'
             notificationService.enviarNotificacion("logitrack.agro@gmail.com", asunto, mensaje);
             log.info("Cuenta bloqueada. Código enviado a: {}", correoDestino);
 
-            // 2. BONUS: Le avisamos en tiempo real a los supervisores que alguien se bloqueó
+            // Le avisamos en tiempo real a los supervisores que alguien se bloqueó
             usuarioRepository.findByRol(RolUsuario.SUPERVISOR).forEach(supervisor -> 
                 alertaWebService.crearYEnviarAlerta(
                     supervisor, 
@@ -98,7 +92,7 @@ public class SeguridadCuentaService {
                 usuario.getVencimientoCodigo() != null &&
                 usuario.getVencimientoCodigo().isAfter(LocalDateTime.now())) {
                 
-                // Código válido: Desbloqueamos la cuenta
+                //Código válido: Desbloqueamos la cuenta
                 usuario.setBloqueado(false);
                 usuario.setIntentosFallidos(0);
                 usuario.setCodigoDesbloqueo(null);

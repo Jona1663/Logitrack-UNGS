@@ -16,10 +16,7 @@ public interface IncidenciaRepository extends JpaRepository<Incidencia, Integer>
     // Método para contar incidencias en un rango de fechas para el reporte de eficiencia
     long countByFechaReporteBetween(LocalDateTime inicio, LocalDateTime fin);
 
-    /**
-     * TAREA #528: Proyección optimizada para el mapa histórico.
-     * Solo extrae las columnas necesarias sin cargar entidades completas en memoria.
-     */
+    // extrae las columnas necesarias sin cargar entidades completas en memoria.
     @Query("SELECT new com.logitrack.sistema_logistica.dto.IncidenciaMapaDTO(" +
            "i.latitud, i.longitud, CAST(i.estado AS string), c.patente, " +
            "CONCAT(p.nombre, ' ', p.apellido), i.descripcion, i.fechaReporte) " +

@@ -4,24 +4,21 @@ import com.logitrack.sistema_logistica.repository.EnvioRepository;
 import org.springframework.transaction.annotation.Transactional;
 import com.logitrack.sistema_logistica.dto.CartaPorteDTO;
 import com.logitrack.sistema_logistica.model.Envio;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-//@RequiredArgsConstructor
 @Service
-
 public class CartaPorteService {
     @Autowired
     private  EnvioRepository envioRepository;
 
     @Transactional(readOnly = true)
     public CartaPorteDTO obtenerCartaPorte(String idEnvio) {
-        // 1. Buscamos el envío principal
+        // Buscamos el envío principal
         Envio envio = envioRepository.findById(idEnvio)
                 .orElseThrow(() -> new RuntimeException("No se encontró el envío con ID: " + idEnvio));
 
-        // 2. Validaciones preventivas para evitar NullPointerExceptions
+        // Validaciones preventivas para evitar NullPointerExceptions
         String patente = (envio.getCamion() != null) ? envio.getCamion().getPatente() : "S/D";
         
         String nombreChofer = "S/D";
@@ -37,7 +34,7 @@ public class CartaPorteService {
         String nombreOrigen = (envio.getOrigen() != null) ? envio.getOrigen().getNombreLugar() : "S/D";
         String nombreDestino = (envio.getDestino() != null) ? envio.getDestino().getNombreLugar() : "S/D";
 
-        // 3. Construimos y retornamos el DTO
+        // Construimos y retornamos el DTO
         return CartaPorteDTO.builder()
                 .idEnvio(envio.getIdEnvio())
                 .cpe(envio.getCpe() != null ? envio.getCpe() : "Pendiente de ARCA")

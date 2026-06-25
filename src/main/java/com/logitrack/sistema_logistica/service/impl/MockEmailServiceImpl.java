@@ -2,12 +2,10 @@ package com.logitrack.sistema_logistica.service.impl;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-
 import com.logitrack.sistema_logistica.service.EmailService;
 
 @Primary
@@ -29,15 +27,5 @@ public class MockEmailServiceImpl implements EmailService {
         System.out.println("║ Hora:    " + LocalDateTime.now().format(FORMATTER));
         System.out.println("╚══════════════════════════════════════════════════╝");
         System.out.println();
-
-        // Implementación real con JavaMailSender
-        // Descomentar cuando haya clientes con email real
-        // y AGRAGAR spring-boot-starter-mail al pom.xml
-        // ->
-        // SimpleMailMessage message = new SimpleMailMessage();
-        // message.setTo(to);
-        // message.setSubject(subject);
-        // message.setText(body);
-        // mailSender.send(message);
     }
 }
